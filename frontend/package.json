@@ -17,6 +17,7 @@
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "@reduxjs/toolkit": "^2.9.0",
+    "@sentry/react": "^10.38.0",
     "@tailwindcss/vite": "^4.1.13",
     "axios": "^1.12.2",
     "date-fns": "^4.1.0",
