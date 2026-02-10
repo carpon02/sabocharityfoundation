@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+  namespace: default
+data:
+  VITE_API_URL: "http://localhost:5000/api/v1" # Should be updated to real ingress URL in prod
+  VITE_SENTRY_DSN: "https://85e022664de9c5c5ccf98ab17929dcca@o4508708700553216.ingest.us.sentry.io/4510861716619264"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: admin-config
+  namespace: default
+data:
+  VITE_API_URL: "http://localhost:5000/api/v1"
+  VITE_SENTRY_DSN: "https://0b77443039e1b50b528b1f10d42242ce@o4508708700553216.ingest.us.sentry.io/4510861724680192"

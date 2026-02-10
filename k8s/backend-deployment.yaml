@@ -23,9 +23,9 @@ spec:
               value: "production"
             - name: PORT
               value: "5000"
-            - name: MONGO_URI
-              value: "mongodb://mongo:27017/charity_db"
-          # Secrets should be managed securely via Secrets or ExternalSecrets
+          envFrom:
+            - secretRef:
+                name: backend-secrets
           livenessProbe:
             httpGet:
               path: /health

@@ -18,6 +18,9 @@ spec:
           image: carpon02/sabo-frontend:latest # REPLACE
           ports:
             - containerPort: 80
+          envFrom:
+            - configMapRef:
+                name: frontend-config
           livenessProbe:
             httpGet:
               path: /
