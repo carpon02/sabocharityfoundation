@@ -9,32 +9,34 @@ const Logger = {
         Sentry.replayIntegration(),
       ],
       // Performance Monitoring
-      tracesSampleRate: 1.0, // Capture 100% of the transactions
+      tracesSampleRate: 1.0, // Capture 100% of transactions for development
       // Session Replay
-      replaysSessionSampleRate: 0.1, // This sets the sample rate at 10%. You may want to change it to 100% while in development and then sample at a lower rate in production.
-      replaysOnErrorSampleRate: 1.0, // If you're not already sampling the entire session, change the sample rate to 100% when sampling sessions where errors occur.
+      replaysSessionSampleRate: 0.1, // 10% of sessions
+      replaysOnErrorSampleRate: 1.0, // 100% of sessions with errors
+      environment: import.meta.env.MODE || "development",
     });
   },
+
   error: (error, context = {}) => {
     console.error(error);
-    Sentry.captureException(error, { extra: context });
-  },
-  info: (message, context = {}) => {
-    console.info(message);
-    Sentry.addBreadcrumb({
-      category: "info",
-      message: message,
-      level: "info",
-      data: context,
+    Sentry.captureException(error, {
+      extra: context,
     });
   },
+
+  info: (message, context = {}) => {
+    console.log(message);
+    Sentry.captureMessage(message, {
+      level: "info",
+      extra: context,
+    });
+  },
+
   warn: (message, context = {}) => {
     console.warn(message);
-    Sentry.addBreadcrumb({
-      category: "warning",
-      message: message,
+    Sentry.captureMessage(message, {
       level: "warning",
-      data: context,
+      extra: context,
     });
   },
 };

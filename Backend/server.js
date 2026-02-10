@@ -1,13 +1,14 @@
+// IMPORTANT: Import instrument.js FIRST to initialize Sentry
+import "./instrument.js";
+
 import dotenv from "dotenv";
 dotenv.config(); // Load environment variables as early as possible
 
+import * as Sentry from "@sentry/node";
 import mongoose from "mongoose";
 import app from "./app.js";
 import connectDB from "./src/config/database.js";
-import logger, { SentryLogger } from "./src/utils/logger.js"; // Updated import
-
-// Initialize Sentry
-SentryLogger.init(app);
+import logger from "./src/utils/logger.js"; // Updated import - removed SentryLogger
 
 // Health Check Endpoint
 app.get("/health", (req, res) => {
@@ -128,8 +129,8 @@ const gracefulShutdown = async (signal) => {
   }
 };
 
-// Sentry Error Handler (must be before any other error middleware)
-app.use(SentryLogger.errorHandler());
+// Sentry Error Handler (must be added after all controllers and before any other error middleware)
+Sentry.setupExpressErrorHandler(app);
 
 // --------------------
 // Event Listeners
