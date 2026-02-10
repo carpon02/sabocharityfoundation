@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend
+  namespace: default
 spec:
   replicas: 2
   selector:
@@ -14,18 +15,39 @@ spec:
     spec:
       containers:
         - name: backend
-          image: your-registry/backend:latest
+          image: carpon02/sabo-backend:latest # REPLACE with your actual image
           ports:
             - containerPort: 5000
           env:
-            - name: PORT
-              value: "5000"
             - name: NODE_ENV
               value: "production"
-          # Add other env vars or secrets here
+            - name: PORT
+              value: "5000"
+            - name: MONGO_URI
+              value: "mongodb://mongo:27017/charity_db"
+          # Secrets should be managed securely via Secrets or ExternalSecrets
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /health
               port: 5000
             initialDelaySeconds: 10
             periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: default
+spec:
+  selector:
+    app: backend
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
