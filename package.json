@@ -1,0 +1,29 @@
+{
+  "name": "charity-project-root",
+  "private": true,
+  "scripts": {
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.0.0",
+    "@commitlint/config-conventional": "^19.0.0",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.2.0"
+  },
+  "lint-staged": {
+    "frontend/**/*.{js,jsx,ts,tsx}": [
+      "cd frontend && npm run lint"
+    ],
+    "admin/**/*.{js,jsx,ts,tsx}": [
+      "cd admin && npm run lint"
+    ],
+    "Backend/**/*.{js,mjs,cjs}": [
+      "cd Backend && npm run lint"
+    ]
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  }
+}

@@ -1,0 +1,142 @@
+import express from "express";
+import path from "path";
+import cors from "cors";
+import helmet from "helmet";
+import morgan from "morgan";
+import compression from "compression";
+import mongoSanitize from "express-mongo-sanitize";
+import cookieParser from "cookie-parser";
+import rateLimit from "express-rate-limit";
+import logger from "./src/config/logger.js";
+import errorHandler, { notFound } from "./src/middleware/error.middleware.js";
+import { handleUploadError } from "./src/middleware/upload.middleware.js";
+
+// Import routes
+import authRoutes from "./src/routes/authRoutes.js";
+import campaignRoutes from "./src/routes/campaignRoutes.js";
+import donationRoutes from "./src/routes/donationRoutes.js";
+import eventRoutes from "./src/routes/eventRoutes.js";
+import userRoutes from "./src/routes/userRoutes.js";
+import volunteerRoutes from "./src/routes/volunteerRoutes.js";
+import blogsRoutes from "./src/routes/blogsRoutes.js";
+import newsletterRoutes from "./src/routes/newsletterRoutes.js";
+import contactRoutes from "./src/routes/contactRoutes.js";
+import paymentRoutes from "./src/routes/paymentRoutes.js";
+import settingsRoutes from "./src/routes/settingsRoutes.js";
+import analyticsRoutes from "./src/routes/analyticsRoute.js";
+
+const app = express();
+
+// ✅ Always start with the parsers
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(cookieParser());
+
+// ✅ CORS: Support multiple dev origins and prod origin
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  process.env.CLIENT_URL_PROD || "https://saboyouthfoundation.org",
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // allow requests with no origin (like Postman or server-to-server)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS policy: Origin ${origin} not allowed`));
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
+
+// ✅ Basic security middleware
+app.set("trust proxy", 1);
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  }),
+);
+
+// ✅ Protect MongoDB injection
+app.use(mongoSanitize());
+
+// ✅ Compression only for production
+if (process.env.NODE_ENV === "production") app.use(compression());
+
+// ✅ Logging
+if (process.env.NODE_ENV === "development") {
+  app.use(morgan("dev"));
+  logger.info("🧰 Morgan logging enabled (development mode)");
+} else {
+  app.use(morgan("combined", { stream: logger.stream }));
+}
+
+// ✅ Rate Limiting
+if (process.env.NODE_ENV === "production") {
+  const limiter = rateLimit({
+    windowMs:
+      parseInt(process.env.RATE_LIMIT_WINDOW) * 60 * 1000 || 15 * 60 * 1000,
+    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
+    message: "Too many requests from this IP, please try again later",
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  app.use("/api/", limiter);
+}
+
+// ✅ Auth limiter (safe for dev)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: "Too many authentication attempts, please try again later",
+});
+
+// ✅ Health Check (consider /api/v1/health for harmony, but root suffices)
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    environment: process.env.NODE_ENV,
+    message: "✅ Server is running properly",
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// ✅ API version
+const API_VERSION = process.env.API_VERSION || "v1";
+
+// ✅ Register routes
+// ✅ Register routes (with selective limiter)
+if (process.env.NODE_ENV !== "test") {
+  app.use(`/api/${API_VERSION}/auth/login`, authLimiter);
+  app.use(`/api/${API_VERSION}/auth/register`, authLimiter);
+}
+app.use(`/api/${API_VERSION}/auth`, authRoutes);
+app.use(`/api/${API_VERSION}/campaigns`, campaignRoutes);
+app.use(`/api/${API_VERSION}/donations`, donationRoutes);
+app.use(`/api/${API_VERSION}/events`, eventRoutes);
+app.use(`/api/${API_VERSION}/users`, userRoutes);
+app.use(`/api/${API_VERSION}/volunteers`, volunteerRoutes);
+app.use(`/api/${API_VERSION}/blogs`, blogsRoutes);
+app.use(`/api/${API_VERSION}/newsletters`, newsletterRoutes);
+app.use(`/api/${API_VERSION}/contact`, contactRoutes);
+app.use(`/api/${API_VERSION}/payments`, paymentRoutes);
+app.use(`/api/${API_VERSION}/settings`, settingsRoutes);
+app.use(`/api/${API_VERSION}/analytics`, analyticsRoutes);
+
+// ✅ Serve static files from uploads directory
+const uploadsPath = path.join(process.cwd(), "uploads");
+app.use("/uploads", express.static(uploadsPath));
+
+// ✅ Handle upload errors and global errors
+app.use(handleUploadError);
+app.use(notFound);
+app.use(errorHandler);
+
+export default app;
