@@ -30,7 +30,7 @@
     "@sentry/node": "^10.38.0",
     "@sentry/profiling-node": "^10.38.0",
     "axios": "^1.6.2",
-    "bcryptjs": "^2.4.3",
+    "bcryptjs": "^3.0.3",
     "cloudinary": "^1.41.0",
     "compression": "^1.7.4",
     "cookie-parser": "^1.4.6",
