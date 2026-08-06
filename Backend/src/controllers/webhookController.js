@@ -187,7 +187,7 @@ const handleSuccessfulCharge = async (chargeData) => {
     donation.verificationDetails = {
       method: 'paystack_webhook',
       notes: 'Payment verified via Paystack webhook',
-      verifiedBy: null // System verification
+      verifiedBy: null, // System verification
     };
 
     // Save authorization code for recurring donations
@@ -202,6 +202,19 @@ const handleSuccessfulCharge = async (chargeData) => {
     }
 
     await donation.save();
+
+    // Update campaign raised amount — critical for progress bars
+    if (donation.campaign?._id) {
+      await Campaign.findByIdAndUpdate(
+        donation.campaign._id,
+        { $inc: { raisedAmount: donation.amount } },
+        { new: true }
+      );
+      logger.info('Campaign raisedAmount updated', {
+        campaignId: donation.campaign._id,
+        incrementBy: donation.amount,
+      });
+    }
 
     logger.info('Donation verified via webhook', {
       donationId: donation.donationId,
@@ -225,33 +238,46 @@ const handleSuccessfulCharge = async (chargeData) => {
       });
     }
 
-    // Notify admins
+    // Notify admins — use Promise.allSettled so one failed email
+    // doesn't abort the others or crash the webhook handler
     const admins = await User.find({ role: 'admin', isActive: true });
 
-    // Create a specific, linked database notification for finance and super admins
+    // Create a database notification for finance/super admins
     await Notification.create({
-      title: "New Donation Pending Approval",
+      title: 'New Donation Pending Approval',
       message: `${donation.anonymous ? 'Anonymous' : donation.donor.fullName} donated ${donation.amount} to "${donation.campaign.title}".`,
-      type: "donation",
-      link: `/admin/payments`, // Link directly to payments
-      recipientRole: "finance_admin"
+      type: 'donation',
+      link: '/admin/payments',
+      recipientRole: 'finance_admin',
     });
 
-    for (const admin of admins) {
-      await sendEmail({
-        to: admin.email,
-        subject: 'New Donation Pending Approval',
-        template: 'admin-donation-notification',
-        data: {
-          adminName: admin.fullName,
-          donorName: donation.anonymous ? 'Anonymous' : donation.donor.fullName,
-          amount: donation.amount,
-          campaignTitle: donation.campaign.title,
-          donationId: donation.donationId,
-          approvalUrl: `${process.env.FRONTEND_URL || process.env.ADMIN_URL}/admin/payments`
-        }
-      });
-    }
+    // Fire all admin emails concurrently; log failures individually
+    const adminEmailResults = await Promise.allSettled(
+      admins.map((admin) =>
+        sendEmail({
+          to: admin.email,
+          subject: 'New Donation Pending Approval',
+          template: 'admin-donation-notification',
+          data: {
+            adminName: admin.fullName,
+            donorName: donation.anonymous ? 'Anonymous' : donation.donor.fullName,
+            amount: donation.amount,
+            campaignTitle: donation.campaign.title,
+            donationId: donation.donationId,
+            approvalUrl: `${process.env.FRONTEND_URL || process.env.ADMIN_URL}/admin/payments`,
+          },
+        })
+      )
+    );
+
+    adminEmailResults.forEach((result, i) => {
+      if (result.status === 'rejected') {
+        logger.warn('Admin notification email failed', {
+          adminEmail: admins[i]?.email,
+          error: result.reason?.message,
+        });
+      }
+    });
 
   } catch (error) {
     logger.error('Error handling successful charge:', {
