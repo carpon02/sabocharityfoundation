@@ -11,10 +11,12 @@ const getAllCampaigns = async (params = {}) => {
 /**
  * Get campaign by ID
  */
-const getCampaignById = async (id) => {
+const getCampaign = async (id) => {
   const response = await apiClient.get(`/campaigns/${id}`);
   return response.data;
 };
+
+const getCampaignById = getCampaign;
 
 /**
  * Get campaign by slug
@@ -54,7 +56,7 @@ const createCampaign = async (campaignData) => {
     formData,
     {
       headers: { "Content-Type": "multipart/form-data" },
-    }
+    },
   );
   return response.data;
 };
@@ -121,6 +123,7 @@ const approveCampaign = async (id, status) => {
 
 export default {
   getAllCampaigns,
+  getCampaign,
   getCampaignById,
   getCampaignBySlug,
   getCampaignStats,

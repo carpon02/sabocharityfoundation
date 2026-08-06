@@ -1,14 +1,15 @@
 // src/features/campaigns/CampaignsSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import toast from "react-hot-toast";
-import campaignService from "../../../../admin/services/campaignService";
+import campaignsService from "../../services/campaignsService";
+const campaignService = campaignsService;
 
 // =============== FETCH ALL CAMPAIGNS (Public + User's) ===============
 export const fetchUserCampaigns = createAsyncThunk(
   "userCampaigns/fetchUserCampaigns",
   async (
     { category, search, featured, showOnlyMine = false } = {},
-    { rejectWithValue, getState }
+    { rejectWithValue, getState },
   ) => {
     try {
       const params = {
@@ -42,10 +43,10 @@ export const fetchUserCampaigns = createAsyncThunk(
       return rejectWithValue(
         error.response?.data?.message ||
           error.message ||
-          "Failed to fetch campaigns"
+          "Failed to fetch campaigns",
       );
     }
-  }
+  },
 );
 
 // =============== FETCH SINGLE CAMPAIGN ===============
@@ -59,10 +60,10 @@ export const fetchCampaignById = createAsyncThunk(
       return rejectWithValue(
         error.response?.data?.message ||
           error.message ||
-          "Failed to fetch campaign"
+          "Failed to fetch campaign",
       );
     }
-  }
+  },
 );
 
 // =============== CREATE CAMPAIGN (Donor) ===============
@@ -86,7 +87,7 @@ export const createUserCampaign = createAsyncThunk(
       // Target amount
       formData.append(
         "targetAmount",
-        campaignData.target || campaignData.targetAmount
+        campaignData.target || campaignData.targetAmount,
       );
 
       // Dates
@@ -142,7 +143,7 @@ export const createUserCampaign = createAsyncThunk(
 
       toast.success(
         "Campaign created successfully! It's pending admin approval and will appear on the public page once approved.",
-        { duration: 5000 }
+        { duration: 5000 },
       );
 
       return { campaign: createdCampaign, userId };
@@ -154,7 +155,7 @@ export const createUserCampaign = createAsyncThunk(
       toast.error(message);
       return rejectWithValue(message);
     }
-  }
+  },
 );
 
 // =============== UPDATE CAMPAIGN ===============
@@ -174,7 +175,7 @@ export const updateUserCampaign = createAsyncThunk(
       formData.append("category", campaignData.category.toLowerCase());
       formData.append(
         "targetAmount",
-        campaignData.target || campaignData.targetAmount
+        campaignData.target || campaignData.targetAmount,
       );
       formData.append("startDate", campaignData.startDate);
       formData.append("endDate", campaignData.endDate);
@@ -237,7 +238,7 @@ export const updateUserCampaign = createAsyncThunk(
       toast.error(message);
       return rejectWithValue(message);
     }
-  }
+  },
 );
 
 // =============== DELETE CAMPAIGN ===============
@@ -256,7 +257,7 @@ export const deleteUserCampaign = createAsyncThunk(
       toast.error(message);
       return rejectWithValue(message);
     }
-  }
+  },
 );
 
 // =============== GET CAMPAIGN STATS ===============
@@ -270,10 +271,10 @@ export const fetchUserCampaignStats = createAsyncThunk(
       return rejectWithValue(
         error.response?.data?.message ||
           error.message ||
-          "Failed to fetch stats"
+          "Failed to fetch stats",
       );
     }
-  }
+  },
 );
 
 // =============== INITIAL STATE ===============
@@ -370,7 +371,7 @@ const userCampaignsSlice = createSlice({
 
         console.log(
           "fetchUserCampaigns fulfilled, campaigns:",
-          action.payload.campaigns.length
+          action.payload.campaigns.length,
         );
 
         // Automatically separate campaigns if userId is available
@@ -380,11 +381,11 @@ const userCampaignsSlice = createSlice({
 
         console.log(
           "After separation - myCampaigns:",
-          state.myCampaigns.length
+          state.myCampaigns.length,
         );
         console.log(
           "After separation - allCampaigns:",
-          state.allCampaigns.length
+          state.allCampaigns.length,
         );
       })
       .addCase(fetchUserCampaigns.rejected, handleRejected)
@@ -429,7 +430,7 @@ const userCampaignsSlice = createSlice({
 
         // Update in allCampaigns
         const allIndex = state.allCampaigns.findIndex(
-          (c) => c._id === id || c.id === id
+          (c) => c._id === id || c.id === id,
         );
         if (allIndex !== -1) {
           state.allCampaigns[allIndex] = campaign;
@@ -437,7 +438,7 @@ const userCampaignsSlice = createSlice({
 
         // Update in myCampaigns
         const myIndex = state.myCampaigns.findIndex(
-          (c) => c._id === id || c.id === id
+          (c) => c._id === id || c.id === id,
         );
         if (myIndex !== -1) {
           state.myCampaigns[myIndex] = campaign;
@@ -460,10 +461,10 @@ const userCampaignsSlice = createSlice({
       .addCase(deleteUserCampaign.fulfilled, (state, action) => {
         state.loading = false;
         state.allCampaigns = state.allCampaigns.filter(
-          (c) => c._id !== action.payload && c.id !== action.payload
+          (c) => c._id !== action.payload && c.id !== action.payload,
         );
         state.myCampaigns = state.myCampaigns.filter(
-          (c) => c._id !== action.payload && c.id !== action.payload
+          (c) => c._id !== action.payload && c.id !== action.payload,
         );
         if (
           state.selectedCampaign?._id === action.payload ||

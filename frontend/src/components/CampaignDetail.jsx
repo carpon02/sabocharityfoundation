@@ -37,6 +37,7 @@ import { calculateProgress } from "../utils/calculateProgress";
 import { getDaysLeft } from "../utils/getDaysLeft";
 import { formatCurrency } from "../utils/formatCurrency";
 import DonationModal from "./DonationModal";
+import Meta from "./Meta";
 
 const CampaignDetail = () => {
   const { id } = useParams();
@@ -230,6 +231,12 @@ const CampaignDetail = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <Meta
+        title={campaign.title}
+        description={campaign.shortDescription || campaign.description?.substring(0, 160)}
+        ogImage={primaryImage?.url || "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&h=600&fit=crop"}
+        ogType="article"
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <nav className="text-sm text-gray-500 dark:text-gray-400 mb-6 flex items-center gap-2 flex-wrap">

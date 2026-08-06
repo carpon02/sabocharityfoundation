@@ -9,10 +9,12 @@ import settingsReducer from '../features/settings/settingsSlice';
 import adminPaymentsReducer from '../features/payment/adminPaymentsSlice';
 import adminDonorsReducer from '../features/donor/adminDonorsSlice';
 import analyticReducer from '../features/analytics/analyticsSlice';
+import adminVolunteersReducer from '../features/volunteer/adminVolunteersSlice';
 // ✅ Persist config for adminAuth
 const adminPersistConfig = {
   key: 'adminAuth',
   storage,
+  blacklist: ['loading', 'error']
 };
 
 // ✅ Wrap adminAuthReducer with persistReducer
@@ -28,6 +30,7 @@ export const store = configureStore({
     adminDonors: adminDonorsReducer,
     adminPayments: adminPaymentsReducer,
     analytics: analyticReducer,
+    adminVolunteers: adminVolunteersReducer,
     
     // other slices
   },

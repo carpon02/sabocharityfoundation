@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation, NavLink } from "react-router-dom";
+import { useLocation, NavLink } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Menu, X, ChevronDown, User, LogOut } from "lucide-react";
 import { assets } from "../assets/assets";
@@ -21,7 +21,6 @@ const NavbarModern = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const navigate = useNavigate();
   const location = useLocation();
   const { user } = useSelector((state) => state.auth);
 
@@ -64,10 +63,7 @@ const NavbarModern = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
-            <NavLink
-              to="/"
-              className="flex items-center gap-3 group"
-            >
+            <NavLink to="/" className="flex items-center gap-3 group">
               <div className="relative">
                 <img
                   src={assets.logo}
@@ -80,7 +76,9 @@ const NavbarModern = () => {
                 <h1 className="font-bold text-lg text-gray-900 group-hover:text-emerald-600 transition-colors leading-tight">
                   Sabo Ibadan Youth
                   <br />
-                  <span className="text-sm text-gray-600">Charity Foundation</span>
+                  <span className="text-sm text-gray-600">
+                    Charity Foundation
+                  </span>
                 </h1>
               </div>
             </NavLink>
@@ -126,13 +124,16 @@ const NavbarModern = () => {
                 <div className="relative">
                   <button
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                    aria-label="Open user menu"
                     className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
                   >
                     <User className="w-4 h-4" />
                     <span className="text-sm font-semibold">
-                      {user.fullName?.split(' ')[0] || 'Account'}
+                      {user.fullName?.split(" ")[0] || "Account"}
                     </span>
-                    <ChevronDown className={`w-4 h-4 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform ${isUserMenuOpen ? "rotate-180" : ""}`}
+                    />
                   </button>
 
                   {isUserMenuOpen && (
@@ -216,7 +217,11 @@ const NavbarModern = () => {
       >
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <img src={assets.logo} alt="logo" className="h-10 w-10 rounded-lg" />
+            <img
+              src={assets.logo}
+              alt="logo"
+              className="h-10 w-10 rounded-lg"
+            />
             <span className="font-bold text-gray-900">Menu</span>
           </div>
           <button
@@ -308,7 +313,3 @@ const NavbarModern = () => {
 };
 
 export default NavbarModern;
-
-
-
-

@@ -10,7 +10,6 @@ import Settings from "./component/pages/Settings";
 import AdminDashboard from "./component/pages/AdminDashboard";
 import Blog from "./component/pages/Blog";
 import AdminLogin from "./component/pages/AdminLogin";
-// import ProtectedRoute from "./component/ProtectedRoute";
 import { Route, Routes, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -20,6 +19,7 @@ import CreateEvent from "./component/pages/CreateEvent";
 import EditEvent from "./component/pages/EditEvent";
 import EventDetails from "./component/pages/EventDetails";
 import Campaigns from "./component/pages/Campaigns";
+import VolunteerQueue from "./component/pages/VolunteerQueue";
 import { loadAdminFromStorage } from "./features/auth/adminAuthSlice";
 
 const App = () => {
@@ -83,6 +83,7 @@ const App = () => {
           <Route path="settings" element={<Settings />} />
           <Route path="help" element={<Help />} />
           <Route path="blogs" element={<Blog />} />
+          <Route path="volunteers" element={<VolunteerQueue />} />
 
           {/* Redirect /admin to /admin/admin-dashboard */}
           <Route index element={<Navigate to="admin-dashboard" replace />} />

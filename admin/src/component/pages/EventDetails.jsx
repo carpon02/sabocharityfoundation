@@ -24,7 +24,7 @@ import {
   Globe,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
-import axios from "axios";
+import apiClient from "../../config/apiConfig";
 import { toast } from "react-hot-toast";
 import { StatsCard } from "../shared";
 
@@ -42,13 +42,7 @@ const EventDetails = () => {
     const fetchEvent = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem("adminToken");
-        const response = await axios.get(
-          `${import.meta.env.VITE_API_URL}/events/${id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
+        const response = await apiClient.get(`/events/${id}`);
         setEvent(response.data.data.event);
       } catch {
         toast.error("Process Error: Failed to fetch event details");
@@ -61,10 +55,7 @@ const EventDetails = () => {
 
   const handleDelete = async () => {
     try {
-      const token = localStorage.getItem("adminToken");
-      await axios.delete(`${import.meta.env.VITE_API_URL}/events/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await apiClient.delete(`/events/${id}`);
       toast.success("Event Deleted Successfully");
       navigate("/admin/events");
     } catch {

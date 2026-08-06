@@ -27,6 +27,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { submitVolunteerApplication } from "../../features/volunteer/volunteerSlice";
 import { submitContactForm } from "../../features/contact/contactSlice";
 import toast from "react-hot-toast";
+import Meta from "../../components/Meta";
 
 const opportunities = [
   {
@@ -65,13 +66,17 @@ const opportunities = [
 // Volunteer Application Modal
 const VolunteerModal = ({ isOpen, onClose, type = "volunteer" }) => {
   const dispatch = useDispatch();
-  const { loading, applicationSubmitted } = useSelector((state) => state.volunteer);
+  const { loading } = useSelector((state) => state.volunteer);
   const { user } = useSelector((state) => state.auth);
 
   const [formData, setFormData] = useState({
     personalInfo: {
-      firstName: user?.fullName?.split(" ")[0] || user?.name?.split(" ")[0] || "",
-      lastName: user?.fullName?.split(" ").slice(1).join(" ") || user?.name?.split(" ").slice(1).join(" ") || "",
+      firstName:
+        user?.fullName?.split(" ")[0] || user?.name?.split(" ")[0] || "",
+      lastName:
+        user?.fullName?.split(" ").slice(1).join(" ") ||
+        user?.name?.split(" ").slice(1).join(" ") ||
+        "",
       email: user?.email || "",
       phone: user?.phone || "",
       dateOfBirth: "",
@@ -111,7 +116,7 @@ const VolunteerModal = ({ isOpen, onClose, type = "volunteer" }) => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked, files } = e.target;
-    
+
     if (name.includes(".")) {
       const [parent, child, grandchild] = name.split(".");
       if (grandchild) {
@@ -154,15 +159,22 @@ const VolunteerModal = ({ isOpen, onClose, type = "volunteer" }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validation
-    if (!formData.personalInfo.firstName || !formData.personalInfo.lastName || 
-        !formData.personalInfo.email || !formData.personalInfo.phone) {
+    if (
+      !formData.personalInfo.firstName ||
+      !formData.personalInfo.lastName ||
+      !formData.personalInfo.email ||
+      !formData.personalInfo.phone
+    ) {
       toast.error("Please fill in all required personal information fields");
       return;
     }
 
-    if (!formData.volunteerPreferences.availability || !formData.volunteerPreferences.timeCommitment) {
+    if (
+      !formData.volunteerPreferences.availability ||
+      !formData.volunteerPreferences.timeCommitment
+    ) {
       toast.error("Please select your availability and time commitment");
       return;
     }
@@ -181,7 +193,7 @@ const VolunteerModal = ({ isOpen, onClose, type = "volunteer" }) => {
       toast.success(
         type === "ambassador"
           ? "Ambassador application submitted successfully! We'll review and get back to you soon."
-          : "Volunteer application submitted successfully! We'll review and get back to you soon."
+          : "Volunteer application submitted successfully! We'll review and get back to you soon.",
       );
       onClose();
       // Reset form
@@ -237,7 +249,9 @@ const VolunteerModal = ({ isOpen, onClose, type = "volunteer" }) => {
         <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-6 flex items-center justify-between z-10">
           <div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {type === "ambassador" ? "Impact Ambassador Application" : "Volunteer Application"}
+              {type === "ambassador"
+                ? "Impact Ambassador Application"
+                : "Volunteer Application"}
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               Step {currentStep} of {totalSteps}
@@ -259,7 +273,7 @@ const VolunteerModal = ({ isOpen, onClose, type = "volunteer" }) => {
                 <User size={20} />
                 Personal Information
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
@@ -475,7 +489,9 @@ const VolunteerModal = ({ isOpen, onClose, type = "volunteer" }) => {
                     onChange={handleInputChange}
                     className="w-4 h-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                   />
-                  <span className="text-sm text-gray-900 dark:text-white">Willing to Travel</span>
+                  <span className="text-sm text-gray-900 dark:text-white">
+                    Willing to Travel
+                  </span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -485,7 +501,9 @@ const VolunteerModal = ({ isOpen, onClose, type = "volunteer" }) => {
                     onChange={handleInputChange}
                     className="w-4 h-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                   />
-                  <span className="text-sm text-gray-900 dark:text-white">Has Transportation</span>
+                  <span className="text-sm text-gray-900 dark:text-white">
+                    Has Transportation
+                  </span>
                 </label>
               </div>
             </div>
@@ -501,7 +519,9 @@ const VolunteerModal = ({ isOpen, onClose, type = "volunteer" }) => {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                  Why do you want to {type === "ambassador" ? "become an ambassador" : "volunteer"}? <span className="text-red-500">*</span>
+                  Why do you want to{" "}
+                  {type === "ambassador" ? "become an ambassador" : "volunteer"}
+                  ? <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   name="motivation"
@@ -527,7 +547,9 @@ const VolunteerModal = ({ isOpen, onClose, type = "volunteer" }) => {
                       </p>
                       <button
                         type="button"
-                        onClick={() => setFormData((prev) => ({ ...prev, resume: null }))}
+                        onClick={() =>
+                          setFormData((prev) => ({ ...prev, resume: null }))
+                        }
                         className="text-red-600 hover:text-red-700 dark:text-red-400 text-sm font-semibold flex items-center gap-2 mx-auto"
                       >
                         <X size={16} />
@@ -631,9 +653,15 @@ const CorporateModal = ({ isOpen, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!formData.firstName || !formData.lastName || !formData.email || 
-        !formData.phone || !formData.message || !formData.agreedToTerms) {
+
+    if (
+      !formData.firstName ||
+      !formData.lastName ||
+      !formData.email ||
+      !formData.phone ||
+      !formData.message ||
+      !formData.agreedToTerms
+    ) {
       toast.error("Please fill in all required fields and agree to terms");
       return;
     }
@@ -649,7 +677,9 @@ const CorporateModal = ({ isOpen, onClose }) => {
       };
 
       await dispatch(submitContactForm(contactData)).unwrap();
-      toast.success("Partnership inquiry submitted successfully! We'll contact you soon.");
+      toast.success(
+        "Partnership inquiry submitted successfully! We'll contact you soon.",
+      );
       onClose();
       setFormData({
         firstName: "",
@@ -796,8 +826,12 @@ const CorporateModal = ({ isOpen, onClose }) => {
               required
               className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
             />
-            <label htmlFor="terms" className="ml-2 block text-sm text-gray-900 dark:text-white">
-              I agree to the terms and conditions <span className="text-red-500">*</span>
+            <label
+              htmlFor="terms"
+              className="ml-2 block text-sm text-gray-900 dark:text-white"
+            >
+              I agree to the terms and conditions{" "}
+              <span className="text-red-500">*</span>
             </label>
           </div>
 
@@ -859,9 +893,14 @@ const ProspectusModal = ({ isOpen, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!formData.firstName || !formData.lastName || !formData.email || 
-        !formData.phone || !formData.agreedToTerms) {
+
+    if (
+      !formData.firstName ||
+      !formData.lastName ||
+      !formData.email ||
+      !formData.phone ||
+      !formData.agreedToTerms
+    ) {
       toast.error("Please fill in all required fields and agree to terms");
       return;
     }
@@ -877,7 +916,9 @@ const ProspectusModal = ({ isOpen, onClose }) => {
       };
 
       await dispatch(submitContactForm(contactData)).unwrap();
-      toast.success("Prospectus request submitted successfully! We'll send you the information soon.");
+      toast.success(
+        "Prospectus request submitted successfully! We'll send you the information soon.",
+      );
       onClose();
       setFormData({
         firstName: "",
@@ -997,9 +1038,15 @@ const ProspectusModal = ({ isOpen, onClose }) => {
                 className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-800 dark:text-white transition-all"
               >
                 <option value="">Select Tier of Interest</option>
-                <option value="Platinum Foundation ($10k+)">Platinum Foundation ($10k+)</option>
-                <option value="Gold Empowerment ($5k+)">Gold Empowerment ($5k+)</option>
-                <option value="Community Builder ($1k+)">Community Builder ($1k+)</option>
+                <option value="Platinum Foundation ($10k+)">
+                  Platinum Foundation ($10k+)
+                </option>
+                <option value="Gold Empowerment ($5k+)">
+                  Gold Empowerment ($5k+)
+                </option>
+                <option value="Community Builder ($1k+)">
+                  Community Builder ($1k+)
+                </option>
               </select>
             </div>
           </div>
@@ -1028,8 +1075,12 @@ const ProspectusModal = ({ isOpen, onClose }) => {
               required
               className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
             />
-            <label htmlFor="terms-prospectus" className="ml-2 block text-sm text-gray-900 dark:text-white">
-              I agree to the terms and conditions <span className="text-red-500">*</span>
+            <label
+              htmlFor="terms-prospectus"
+              className="ml-2 block text-sm text-gray-900 dark:text-white"
+            >
+              I agree to the terms and conditions{" "}
+              <span className="text-red-500">*</span>
             </label>
           </div>
 
@@ -1078,6 +1129,10 @@ const GetInvolved = () => {
 
   return (
     <div className="bg-white dark:bg-gray-950 min-h-screen overflow-hidden">
+      <Meta
+        title="Get Involved"
+        description="Join the Sabo Ibadan Youth Charity Foundation. Volunteer, become an ambassador, or partner with us to create a lasting impact."
+      />
       {/* --- HERO SECTION --- */}
       <section className="relative pt-32 pb-40 bg-primary-950 overflow-hidden">
         {/* Abstract Background */}

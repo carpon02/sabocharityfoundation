@@ -1,5 +1,6 @@
 import { motion as Motion } from "framer-motion";
 import { assets } from "../assets/assets";
+import { Link } from "react-router-dom";
 import { fadeIn, staggerContainer, scaleIn } from "../utils/animations";
 import { ArrowRight, CheckCircle2, ShieldCheck } from "lucide-react";
 
@@ -98,16 +99,16 @@ const WhatWeDo = () => {
               ))}
             </div>
 
-            <Motion.button
+            <Link
+              to="/campaigns"
               className="group relative inline-flex items-center justify-center px-10 sm:px-12 py-5 sm:py-6 font-black text-white transition-all bg-dark rounded-[1.5rem] sm:rounded-[2rem] hover:bg-primary-900 hover-scale-subtle shadow-2xl overflow-hidden"
-              variants={fadeIn("up", 0.8)}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-primary-400/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <span className="relative flex items-center gap-3 text-sm sm:text-base">
                 Deploy Our Programs
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
               </span>
-            </Motion.button>
+            </Link>
           </Motion.div>
 
           {/* MEDIA SECTION: The Vision Stack */}

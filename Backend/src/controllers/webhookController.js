@@ -4,10 +4,13 @@
 import Donation from '../models/Donation.js';
 import Campaign from '../models/Campaign.js';
 import User from '../models/User.js';
+import Notification from '../models/Notification.js';
 import { verifyWebhookSignature, verifyPayment } from '../services/paystackService.js';
 import { sendEmail } from '../services/emailService.js';
 import { generateReceipt } from '../services/receiptService.js';
 import logger from '../config/logger.js';
+import crypto from 'crypto';
+import IdempotencyKey from '../models/IdempotencyKey.js';
 
 /**
  * Handle Paystack webhook events
@@ -66,6 +69,23 @@ export const handlePaystackWebhook = async (req, res) => {
     event: event.event,
     reference: event.data?.reference
   });
+
+  // Strict Idempotency Check using atomic insert
+  const eventId = event.data?.id || crypto.createHash('sha256').update(rawBody).digest('hex');
+  const idempotencyKey = `paystack-${event.event}-${eventId}`;
+
+  try {
+    await IdempotencyKey.create({ key: idempotencyKey });
+  } catch (error) {
+    if (error.code === 11000) {
+      logger.info('Duplicate webhook event received, ignoring idempotently', { event: event.event, idempotencyKey });
+      return res.status(200).json({
+        success: true,
+        message: 'Duplicate webhook ignored'
+      });
+    }
+    throw error;
+  }
 
   try {
     // Handle different event types
@@ -170,6 +190,17 @@ const handleSuccessfulCharge = async (chargeData) => {
       verifiedBy: null // System verification
     };
 
+    // Save authorization code for recurring donations
+    const authorization = verificationResponse.data.authorization;
+    if (donation.isRecurring && authorization && authorization.reusable) {
+      donation.authorizationCode = authorization.authorization_code;
+      logger.info('Saved reusable authorization for recurring donation', {
+        donationId: donation.donationId,
+        authorizationType: authorization.card_type,
+        last4: authorization.last4,
+      });
+    }
+
     await donation.save();
 
     logger.info('Donation verified via webhook', {
@@ -196,6 +227,16 @@ const handleSuccessfulCharge = async (chargeData) => {
 
     // Notify admins
     const admins = await User.find({ role: 'admin', isActive: true });
+
+    // Create a specific, linked database notification for finance and super admins
+    await Notification.create({
+      title: "New Donation Pending Approval",
+      message: `${donation.anonymous ? 'Anonymous' : donation.donor.fullName} donated ${donation.amount} to "${donation.campaign.title}".`,
+      type: "donation",
+      link: `/admin/payments`, // Link directly to payments
+      recipientRole: "finance_admin"
+    });
+
     for (const admin of admins) {
       await sendEmail({
         to: admin.email,

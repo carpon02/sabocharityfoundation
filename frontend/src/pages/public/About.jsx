@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import {
   ArrowRight,
   Heart,
@@ -17,6 +18,7 @@ import WhatWeDo from "../../components/WhatWeDo";
 import History from "../../components/History";
 import FAQ from "../../components/FAQ";
 import Team from "../../components/Team";
+import Meta from "../../components/Meta";
 
 const stats = [
   {
@@ -52,6 +54,10 @@ const stats = [
 const About = () => {
   return (
     <div className="bg-paper overflow-hidden">
+      <Meta
+        title="About Our Mission"
+        description="Discover the story and heartbeat of Sabo Ibadan Youth Charity Foundation. Founded in 2010, we are on a mission to disrupt poverty and empower the next generation."
+      />
       {/* --- PREMIUM HERO SECTION --- */}
       <section className="relative pt-32 pb-24 overflow-hidden bg-primary-950 text-white">
         {/* Abstract Background Flashes */}
@@ -218,17 +224,23 @@ const About = () => {
             </p>
 
             <div className="flex flex-wrap justify-center gap-8 pt-6">
-              <button className="relative group/btn overflow-hidden px-12 py-6 bg-primary-600 text-white font-black rounded-[2rem] shadow-[0_20px_50px_rgba(16,185,129,0.3)] hover:scale-110 active:scale-95 transition-all">
+              <Link
+                to="/get-involved"
+                className="relative group/btn overflow-hidden px-12 py-6 bg-primary-600 text-white font-black rounded-[2rem] shadow-[0_20px_50px_rgba(16,185,129,0.3)] hover:scale-110 active:scale-95 transition-all"
+              >
                 <span className="relative z-10 flex items-center gap-3">
-                  Become a Vanguard <Users className="w-5 h-5" />
+                  Join Our Mission <Users className="w-5 h-5" />
                 </span>
                 <div className="absolute inset-0 bg-gradient-to-r from-primary-400 to-primary-600 opacity-0 group-hover/btn:opacity-100 transition-opacity" />
-              </button>
+              </Link>
 
-              <button className="relative px-12 py-6 bg-white text-dark font-black rounded-[2rem] shadow-2xl hover:bg-gray-100 hover:scale-110 active:scale-95 transition-all flex items-center gap-3 group/heart">
-                Secure Transmission
+              <Link
+                to="/make-donation"
+                className="relative px-12 py-6 bg-white text-dark font-black rounded-[2rem] shadow-2xl hover:bg-gray-100 hover:scale-110 active:scale-95 transition-all flex items-center gap-3 group/heart"
+              >
+                Support a Child
                 <Heart className="w-5 h-5 text-primary-600 group-hover/heart:fill-primary-600 transition-all" />
-              </button>
+              </Link>
             </div>
 
             {/* Trust Markers */}

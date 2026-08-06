@@ -32,7 +32,7 @@ apiClient.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 /**
@@ -42,14 +42,16 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     // Handle 401 Unauthorized globally
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && !error.config.url.includes("/auth/login")) {
       localStorage.removeItem("adminToken"); // Changed from "token" to "adminToken"
       localStorage.removeItem("adminUser"); // Also remove admin user data
-      // Optionally redirect to login
-      // window.location.href = '/login';
+      // Redirect to login
+      if (window.location.pathname !== "/admin-login") {
+        window.location.href = "/admin-login";
+      }
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export default apiClient;

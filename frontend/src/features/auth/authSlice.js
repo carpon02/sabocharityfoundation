@@ -26,7 +26,28 @@ export const loginUser = createAsyncThunk(
         error.response?.data?.message || error.message || "Login failed";
       return rejectWithValue(message);
     }
-  }
+  },
+);
+
+// =============== GOOGLE LOGIN ===============
+export const loginWithGoogle = createAsyncThunk(
+  "auth/loginWithGoogle",
+  async (credential, { rejectWithValue }) => {
+    try {
+      const response = await apiClient.post("/auth/google", { credential });
+      const { token, user } = response.data.data;
+
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+
+      toast.success("Login with Google successful!");
+      return { token, user };
+    } catch (error) {
+      const message =
+        error.response?.data?.message || error.message || "Google login failed";
+      return rejectWithValue(message);
+    }
+  },
 );
 
 // =============== REGISTER ===============
@@ -54,7 +75,7 @@ export const registerUser = createAsyncThunk(
         error.response?.data?.message || error.message || "Registration failed";
       return rejectWithValue(message);
     }
-  }
+  },
 );
 
 // =============== LOAD USER FROM STORAGE ===============
@@ -74,7 +95,7 @@ export const loadUserFromStorage = createAsyncThunk(
       localStorage.clear();
       return rejectWithValue("Failed to load user");
     }
-  }
+  },
 );
 
 // =============== VERIFY EMAIL (via token in URL) ===============
@@ -96,7 +117,7 @@ export const verifyEmail = createAsyncThunk(
         error.response?.data?.message || error.message || "Verification failed";
       return rejectWithValue(message);
     }
-  }
+  },
 );
 
 // =============== RESEND VERIFICATION ===============
@@ -117,7 +138,7 @@ export const resendVerification = createAsyncThunk(
         "Failed to resend link";
       return rejectWithValue(message);
     }
-  }
+  },
 );
 
 // =============== GET CURRENT USER ===============
@@ -138,7 +159,7 @@ export const getCurrentUser = createAsyncThunk(
         "Failed to fetch user";
       return rejectWithValue(message);
     }
-  }
+  },
 );
 
 // =============== LOGOUT ===============
@@ -158,7 +179,7 @@ export const logoutUser = createAsyncThunk(
         error.response?.data?.message || error.message || "Logout failed";
       return rejectWithValue(message);
     }
-  }
+  },
 );
 
 // =============== FORGOT PASSWORD ===============
@@ -177,7 +198,7 @@ export const forgotPassword = createAsyncThunk(
         "Failed to send reset email";
       return rejectWithValue(message);
     }
-  }
+  },
 );
 
 // =============== RESET PASSWORD ===============
@@ -204,7 +225,7 @@ export const resetPassword = createAsyncThunk(
         "Password reset failed";
       return rejectWithValue(message);
     }
-  }
+  },
 );
 
 // =============== CLEAR ERROR ===============
@@ -246,6 +267,23 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
       })
       .addCase(loginUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+        toast.error(action.payload);
+      })
+
+      // GOOGLE LOGIN
+      .addCase(loginWithGoogle.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(loginWithGoogle.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload.user;
+        state.token = action.payload.token;
+        state.isAuthenticated = true;
+      })
+      .addCase(loginWithGoogle.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
         toast.error(action.payload);

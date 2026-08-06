@@ -66,7 +66,15 @@ const NAVIGATION_CONFIG = {
 };
 
 // Mobile Sidebar Component
-const MobileSidebar = ({ isOpen, setIsOpen, darkMode, location, onLogout, userName, userStats }) => (
+const MobileSidebar = ({
+  isOpen,
+  setIsOpen,
+  darkMode,
+  location,
+  onLogout,
+  userName,
+  user,
+}) => (
   <AnimatePresence>
     {isOpen && (
       <>
@@ -95,8 +103,12 @@ const MobileSidebar = ({ isOpen, setIsOpen, darkMode, location, onLogout, userNa
                   <Heart size={20} className="text-white fill-white" />
                 </div>
                 <div>
-                  <h1 className="text-sm font-bold text-dark dark:text-white">Sabo Ibadan</h1>
-                  <p className="text-[10px] text-gray-500 font-medium">Youth Foundation</p>
+                  <h1 className="text-sm font-bold text-dark dark:text-white">
+                    Sabo Ibadan
+                  </h1>
+                  <p className="text-[10px] text-gray-500 font-medium">
+                    Youth Foundation
+                  </p>
                 </div>
               </div>
               <button
@@ -111,13 +123,18 @@ const MobileSidebar = ({ isOpen, setIsOpen, darkMode, location, onLogout, userNa
             <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50">
               <div className="w-10 h-10 rounded-full bg-gradient-premium overflow-hidden">
                 <img
-                  src={`https://ui-avatars.com/api/?name=${userName}&background=059669&color=fff`}
-                  alt="User"
+                  src={
+                    user?.avatar ||
+                    `https://ui-avatars.com/api/?name=${userName}&background=059669&color=fff`
+                  }
+                  alt={`${userName}'s profile`}
                   className="w-full h-full object-cover"
                 />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-dark dark:text-white truncate">{userName}</p>
+                <p className="text-sm font-semibold text-dark dark:text-white truncate">
+                  {userName}
+                </p>
                 <p className="text-xs text-gray-500">Member</p>
               </div>
             </div>
@@ -135,13 +152,16 @@ const MobileSidebar = ({ isOpen, setIsOpen, darkMode, location, onLogout, userNa
                     to={link.path}
                     onClick={() => setIsOpen(false)}
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all relative group
-                      ${isActive 
-                        ? "bg-primary-500 text-white shadow-lg shadow-primary-500/25" 
-                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      ${
+                        isActive
+                          ? "bg-primary-500 text-white shadow-lg shadow-primary-500/25"
+                          : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
                       }`}
                   >
                     <Icon size={20} className={isActive ? "text-white" : ""} />
-                    <span className="text-sm font-semibold flex-1">{link.name}</span>
+                    <span className="text-sm font-semibold flex-1">
+                      {link.name}
+                    </span>
                     {link.badge && (
                       <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-primary-500 text-white">
                         {link.badge}
@@ -162,9 +182,10 @@ const MobileSidebar = ({ isOpen, setIsOpen, darkMode, location, onLogout, userNa
                     to={link.path}
                     onClick={() => setIsOpen(false)}
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all
-                      ${isActive 
-                        ? "bg-gray-100 dark:bg-gray-800 text-dark dark:text-white" 
-                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      ${
+                        isActive
+                          ? "bg-gray-100 dark:bg-gray-800 text-dark dark:text-white"
+                          : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
                       }`}
                   >
                     <Icon size={20} />
@@ -192,7 +213,14 @@ const MobileSidebar = ({ isOpen, setIsOpen, darkMode, location, onLogout, userNa
 );
 
 // Desktop Sidebar Component
-const DesktopSidebar = ({ darkMode, location, onLogout, userName, userStats }) => {
+const DesktopSidebar = ({
+  darkMode,
+  location,
+  onLogout,
+  userName,
+  userStats,
+  user,
+}) => {
   const formatCurrency = (amount) => {
     if (amount >= 1000000) {
       return `₦${(amount / 1000000).toFixed(1)}M`;
@@ -210,35 +238,58 @@ const DesktopSidebar = ({ darkMode, location, onLogout, userName, userStats }) =
     >
       {/* Logo & Branding */}
       <div className="p-6 border-b border-gray-200 dark:border-gray-800">
-        <Link to="/user/dashboard" className="flex items-center gap-3 group mb-6">
+        <Link
+          to="/user/dashboard"
+          className="flex items-center gap-3 group mb-6"
+        >
           <div className="w-11 h-11 rounded-xl bg-gradient-premium flex items-center justify-center group-hover:scale-105 transition-transform shadow-lg shadow-primary-500/20">
             <Heart size={22} className="text-white fill-white" />
           </div>
           <div>
-            <h1 className="text-base font-bold text-dark dark:text-white leading-tight">Sabo Ibadan</h1>
-            <p className="text-[11px] text-gray-500 font-medium leading-tight">Youth Foundation</p>
+            <h1 className="text-base font-bold text-dark dark:text-white leading-tight">
+              Sabo Ibadan
+            </h1>
+            <p className="text-[11px] text-gray-500 font-medium leading-tight">
+              Youth Foundation
+            </p>
           </div>
         </Link>
 
         {/* Impact Stats Card */}
-        <div className={`p-4 rounded-xl border ${darkMode ? "bg-primary-950/20 border-primary-900/30" : "bg-primary-50 border-primary-100"}`}>
+        <div
+          className={`p-4 rounded-xl border ${darkMode ? "bg-primary-950/20 border-primary-900/30" : "bg-primary-50 border-primary-100"}`}
+        >
           <div className="flex items-center gap-2 mb-3">
             <Heart size={16} className="text-primary-600 fill-primary-600" />
-            <span className="text-xs font-bold text-primary-700 dark:text-primary-400">Your Impact</span>
+            <span className="text-xs font-bold text-primary-700 dark:text-primary-400">
+              Your Impact
+            </span>
           </div>
           <div className="space-y-3">
             <div>
-              <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Total Donated</p>
-              <p className="text-xl font-bold text-dark dark:text-white">{formatCurrency(userStats.totalDonated)}</p>
+              <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                Total Donated
+              </p>
+              <p className="text-xl font-bold text-dark dark:text-white">
+                {formatCurrency(userStats.totalDonated)}
+              </p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Campaigns</p>
-                <p className="text-sm font-bold text-dark dark:text-white">{userStats.campaignsSupported}</p>
+                <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Campaigns
+                </p>
+                <p className="text-sm font-bold text-dark dark:text-white">
+                  {userStats.campaignsSupported}
+                </p>
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Events</p>
-                <p className="text-sm font-bold text-dark dark:text-white">{userStats.eventsAttended}</p>
+                <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Events
+                </p>
+                <p className="text-sm font-bold text-dark dark:text-white">
+                  {userStats.eventsAttended}
+                </p>
               </div>
             </div>
           </div>
@@ -256,17 +307,24 @@ const DesktopSidebar = ({ darkMode, location, onLogout, userName, userStats }) =
                 key={link.path}
                 to={link.path}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all relative group
-                  ${isActive 
-                    ? "bg-primary-500 text-white shadow-lg shadow-primary-500/25" 
-                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  ${
+                    isActive
+                      ? "bg-primary-500 text-white shadow-lg shadow-primary-500/25"
+                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
                   }`}
               >
                 <Icon size={20} />
-                <span className="text-sm font-semibold flex-1">{link.name}</span>
+                <span className="text-sm font-semibold flex-1">
+                  {link.name}
+                </span>
                 {link.badge && (
-                  <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
-                    isActive ? "bg-white/20 text-white" : "bg-primary-500 text-white"
-                  }`}>
+                  <span
+                    className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
+                      isActive
+                        ? "bg-white/20 text-white"
+                        : "bg-primary-500 text-white"
+                    }`}
+                  >
                     {link.badge}
                   </span>
                 )}
@@ -287,9 +345,10 @@ const DesktopSidebar = ({ darkMode, location, onLogout, userName, userStats }) =
                 key={link.path}
                 to={link.path}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all
-                  ${isActive 
-                    ? "bg-gray-100 dark:bg-gray-800 text-dark dark:text-white" 
-                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  ${
+                    isActive
+                      ? "bg-gray-100 dark:bg-gray-800 text-dark dark:text-white"
+                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
                   }`}
               >
                 <Icon size={20} />
@@ -305,13 +364,18 @@ const DesktopSidebar = ({ darkMode, location, onLogout, userName, userStats }) =
         <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800/50">
           <div className="w-10 h-10 rounded-full bg-gradient-premium overflow-hidden">
             <img
-              src={`https://ui-avatars.com/api/?name=${userName}&background=059669&color=fff`}
-              alt="User"
+              src={
+                user?.avatar ||
+                `https://ui-avatars.com/api/?name=${userName}&background=059669&color=fff`
+              }
+              alt={`${userName}'s profile`}
               className="w-full h-full object-cover"
             />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-dark dark:text-white truncate">{userName}</p>
+            <p className="text-sm font-semibold text-dark dark:text-white truncate">
+              {userName}
+            </p>
             <p className="text-xs text-gray-500">Member</p>
           </div>
         </div>
@@ -328,7 +392,7 @@ const DesktopSidebar = ({ darkMode, location, onLogout, userName, userStats }) =
 };
 
 // Header Component
-const Header = ({ darkMode, setDarkMode, userName, setIsOpen }) => {
+const Header = ({ darkMode, setDarkMode, userName, user, setIsOpen }) => {
   const [searchFocused, setSearchFocused] = useState(false);
 
   return (
@@ -342,13 +406,16 @@ const Header = ({ darkMode, setDarkMode, userName, setIsOpen }) => {
         <div className="flex items-center gap-4">
           <button
             onClick={() => setIsOpen(true)}
+            aria-label="Open mobile menu"
             className="lg:hidden p-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:scale-95 active:scale-90 transition-transform"
           >
             <Menu size={20} className="text-gray-700 dark:text-gray-300" />
           </button>
-          
+
           <div>
-            <h2 className="text-lg lg:text-xl font-bold text-dark dark:text-white">Welcome Back</h2>
+            <h2 className="text-lg lg:text-xl font-bold text-dark dark:text-white">
+              Welcome Back
+            </h2>
             <p className="text-xs text-gray-500 font-medium hidden sm:block">
               Track your impact and manage donations
             </p>
@@ -371,9 +438,10 @@ const Header = ({ darkMode, setDarkMode, userName, setIsOpen }) => {
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setSearchFocused(false)}
               className={`pl-11 pr-4 py-2.5 w-[280px] rounded-xl text-sm font-medium outline-none border-2 transition-all
-                ${darkMode 
-                  ? "bg-gray-800 border-gray-700 text-white focus:border-primary-500" 
-                  : "bg-gray-50 border-gray-200 text-gray-900 focus:border-primary-500 focus:bg-white"
+                ${
+                  darkMode
+                    ? "bg-gray-800 border-gray-700 text-white focus:border-primary-500"
+                    : "bg-gray-50 border-gray-200 text-gray-900 focus:border-primary-500 focus:bg-white"
                 }
                 focus:w-[360px]
               `}
@@ -382,17 +450,22 @@ const Header = ({ darkMode, setDarkMode, userName, setIsOpen }) => {
 
           {/* Notification Button */}
           <button
+            aria-label="Show notifications"
             className={`relative p-2.5 rounded-xl transition-all hover:scale-105 active:scale-95
               ${darkMode ? "bg-gray-800 hover:bg-gray-700" : "bg-gray-100 hover:bg-gray-200"}
             `}
           >
-            <Bell size={20} className={darkMode ? "text-gray-300" : "text-gray-700"} />
+            <Bell
+              size={20}
+              className={darkMode ? "text-gray-300" : "text-gray-700"}
+            />
             <span className="absolute top-2 right-2 w-2 h-2 bg-primary-500 rounded-full border-2 border-white dark:border-dark animate-pulse" />
           </button>
 
           {/* Theme Toggle */}
           <button
             onClick={() => setDarkMode(!darkMode)}
+            aria-label={`Switch to ${darkMode ? "light" : "dark"} mode`}
             className={`p-2.5 rounded-xl transition-all hover:scale-105 active:scale-95
               ${darkMode ? "bg-gray-800 hover:bg-gray-700" : "bg-gray-100 hover:bg-gray-200"}
             `}
@@ -407,13 +480,18 @@ const Header = ({ darkMode, setDarkMode, userName, setIsOpen }) => {
           {/* User Avatar - Desktop Only */}
           <div className="hidden lg:flex items-center gap-3 pl-3 ml-2 border-l border-gray-200 dark:border-gray-800">
             <div className="text-right">
-              <p className="text-sm font-semibold text-dark dark:text-white">{userName}</p>
+              <p className="text-sm font-semibold text-dark dark:text-white">
+                {userName}
+              </p>
               <p className="text-xs text-gray-500">Member</p>
             </div>
             <div className="w-10 h-10 rounded-full bg-gradient-premium overflow-hidden cursor-pointer hover:ring-4 hover:ring-primary-500/20 transition-all">
               <img
-                src={`https://ui-avatars.com/api/?name=${userName}&background=059669&color=fff`}
-                alt="User"
+                src={
+                  user?.avatar ||
+                  `https://ui-avatars.com/api/?name=${userName}&background=059669&color=fff`
+                }
+                alt={`${userName}'s profile`}
                 className="w-full h-full object-cover"
               />
             </div>
@@ -485,6 +563,7 @@ const UserLayout = () => {
         onLogout={handleLogout}
         userName={userName}
         userStats={userStats}
+        user={user}
       />
 
       {/* Desktop Sidebar */}
@@ -494,6 +573,7 @@ const UserLayout = () => {
         onLogout={handleLogout}
         userName={userName}
         userStats={userStats}
+        user={user}
       />
 
       {/* Main Content */}
@@ -502,9 +582,10 @@ const UserLayout = () => {
           darkMode={darkMode}
           setDarkMode={setDarkMode}
           userName={userName}
+          user={user}
           setIsOpen={setIsMobileSidebarOpen}
         />
-        
+
         <main className="flex-1 overflow-auto">
           <div className="max-w-[1600px] mx-auto p-4 lg:p-8">
             <Outlet />

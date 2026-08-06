@@ -27,6 +27,7 @@ const createAdmin = async () => {
       // Update password just in case it changed in .env
       existingAdmin.password = adminPassword;
       existingAdmin.role = "admin";
+      existingAdmin.adminRole = "super_admin";
       existingAdmin.isEmailVerified = true;
       existingAdmin.isActive = true;
       await existingAdmin.save();
@@ -37,6 +38,7 @@ const createAdmin = async () => {
         email: adminEmail.toLowerCase(),
         password: adminPassword,
         role: "admin",
+        adminRole: "super_admin",
         isEmailVerified: true,
         isActive: true,
       });

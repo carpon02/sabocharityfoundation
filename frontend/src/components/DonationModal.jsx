@@ -322,10 +322,11 @@ const DonationModal = ({
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                    <label htmlFor="card-fullName" className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                       Full Name <span className="text-red-500">*</span>
                     </label>
                     <input
+                      id="card-fullName"
                       type="text"
                       name="fullName"
                       value={donationData.fullName}
@@ -335,10 +336,11 @@ const DonationModal = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                    <label htmlFor="card-email" className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                       Email Address <span className="text-red-500">*</span>
                     </label>
                     <input
+                      id="card-email"
                       type="email"
                       name="email"
                       value={donationData.email}
@@ -351,10 +353,11 @@ const DonationModal = ({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                    <label htmlFor="card-phone" className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                       Phone Number
                     </label>
                     <input
+                      id="card-phone"
                       type="tel"
                       name="phone"
                       value={donationData.phone}
@@ -364,14 +367,31 @@ const DonationModal = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                    <label htmlFor="card-amount" className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                       Amount (₦) <span className="text-red-500">*</span>
                     </label>
+                    <div className="grid grid-cols-3 gap-2 mb-3">
+                      {[1000, 5000, 10000].map((amt) => (
+                        <button
+                          key={amt}
+                          type="button"
+                          onClick={() => handleInputChange({ target: { name: "amount", value: amt } })}
+                          className={`py-2 rounded-xl text-sm font-bold border-2 transition-all ${
+                            Number(donationData.amount) === amt
+                              ? "border-primary-600 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
+                              : "border-gray-200 text-gray-600 hover:border-primary-300 dark:border-gray-700 dark:text-gray-400 dark:hover:border-primary-700"
+                          }`}
+                        >
+                          ₦{amt.toLocaleString()}
+                        </button>
+                      ))}
+                    </div>
                     <div className="relative">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-semibold text-gray-500 dark:text-gray-400">
                         ₦
                       </span>
                       <input
+                        id="card-amount"
                         type="number"
                         name="amount"
                         value={donationData.amount}
@@ -386,10 +406,11 @@ const DonationModal = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                  <label htmlFor="card-message" className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                     Message of Support (Optional)
                   </label>
                   <textarea
+                    id="card-message"
                     name="message"
                     value={donationData.message}
                     onChange={handleInputChange}
@@ -528,10 +549,11 @@ const DonationModal = ({
               <form onSubmit={handleTransferSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                    <label htmlFor="transfer-fullName" className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                       Full Name <span className="text-red-500">*</span>
                     </label>
                     <input
+                      id="transfer-fullName"
                       type="text"
                       name="fullName"
                       value={donationData.fullName}
@@ -541,10 +563,11 @@ const DonationModal = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                    <label htmlFor="transfer-email" className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                       Email Address <span className="text-red-500">*</span>
                     </label>
                     <input
+                      id="transfer-email"
                       type="email"
                       name="email"
                       value={donationData.email}
@@ -557,10 +580,11 @@ const DonationModal = ({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                    <label htmlFor="transfer-phone" className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                       Phone Number
                     </label>
                     <input
+                      id="transfer-phone"
                       type="tel"
                       name="phone"
                       value={donationData.phone}
@@ -570,14 +594,31 @@ const DonationModal = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                    <label htmlFor="transfer-amount" className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                       Amount Transferred <span className="text-red-500">*</span>
                     </label>
+                    <div className="grid grid-cols-3 gap-2 mb-3">
+                      {[1000, 5000, 10000].map((amt) => (
+                        <button
+                          key={amt}
+                          type="button"
+                          onClick={() => handleInputChange({ target: { name: "amount", value: amt } })}
+                          className={`py-2 rounded-xl text-sm font-bold border-2 transition-all ${
+                            Number(donationData.amount) === amt
+                              ? "border-emerald-600 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                              : "border-gray-200 text-gray-600 hover:border-emerald-300 dark:border-gray-700 dark:text-gray-400 dark:hover:border-emerald-700"
+                          }`}
+                        >
+                          ₦{amt.toLocaleString()}
+                        </button>
+                      ))}
+                    </div>
                     <div className="relative">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-semibold text-gray-500 dark:text-gray-400">
                         ₦
                       </span>
                       <input
+                        id="transfer-amount"
                         type="number"
                         name="amount"
                         value={donationData.amount}
@@ -592,10 +633,11 @@ const DonationModal = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                  <label htmlFor="transfer-message" className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                     Message of Support (Optional)
                   </label>
                   <textarea
+                    id="transfer-message"
                     name="message"
                     value={donationData.message}
                     onChange={handleInputChange}

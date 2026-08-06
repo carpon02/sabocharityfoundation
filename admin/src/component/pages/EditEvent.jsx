@@ -22,7 +22,7 @@ import {
   Save,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
-import axios from "axios";
+import apiClient from "../../config/apiConfig";
 import { toast } from "react-hot-toast";
 
 const EditEvent = () => {
@@ -74,13 +74,7 @@ const EditEvent = () => {
     const fetchEvent = async () => {
       try {
         setFetchLoading(true);
-        const token = localStorage.getItem("adminToken");
-        const response = await axios.get(
-          `${import.meta.env.VITE_API_URL}/events/${id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
+        const response = await apiClient.get(`/events/${id}`);
         const event = response.data.data.event;
         const formatDate = (date) =>
           date ? new Date(date).toISOString().split("T")[0] : "";
@@ -171,7 +165,6 @@ const EditEvent = () => {
     e.preventDefault();
     try {
       setLoading(true);
-      const token = localStorage.getItem("adminToken");
       const submitData = new FormData();
       newImages.forEach((img) => submitData.append("images", img));
       const dataToSend = { ...formData, existingImages };
@@ -182,16 +175,11 @@ const EditEvent = () => {
           submitData.append(key, dataToSend[key]);
         }
       });
-      await axios.put(
-        `${import.meta.env.VITE_API_URL}/events/${id}`,
-        submitData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
+      await apiClient.put(`/events/${id}`, submitData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
         },
-      );
+      });
       toast.success("Event Refined (Update Successful)");
       navigate(`/admin/events`);
     } catch {

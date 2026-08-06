@@ -92,7 +92,7 @@ const ContactSection = () => {
               href: "https://goo.gl/maps/example",
               icon: MapPin,
               label: "Command Center",
-              value: "No. 15, Sabo, Ibadan",
+              value: "Sabo Community Area, Ibadan",
               color: "text-amber-600",
               bg: "bg-amber-50",
               glow: "shadow-amber-500/10",

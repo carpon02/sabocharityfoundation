@@ -36,6 +36,13 @@ const LoadingSpinner = ({
     }
   };
 
+  // Map string sizes to pixels for Lucide icons
+  let resolvedSize = size;
+  if (size === "small") resolvedSize = 16;
+  else if (size === "medium") resolvedSize = 24;
+  else if (size === "large") resolvedSize = 32;
+  else if (size === "xlarge") resolvedSize = 48;
+
   const spinnerContent = (
     <div
       className={`flex flex-col items-center justify-center ${
@@ -46,7 +53,7 @@ const LoadingSpinner = ({
     >
       <Loader
         className={`animate-spin ${getSpinnerColor()}`}
-        size={size}
+        size={resolvedSize}
         aria-hidden="true"
       />
       {message && (

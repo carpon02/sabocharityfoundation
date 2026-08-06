@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { our_board, our_leadership_team } from "../assets/assets";
 import { Linkedin, Twitter, ArrowUpRight } from "lucide-react";
 import { motion as Motion } from "framer-motion";
-import { fadeIn, staggerContainer, scaleIn } from "../utils/animations";
+import { fadeIn, staggerContainer } from "../utils/animations";
 
 const TeamMemberCard = ({ id, name, avatar, role, category, index }) => (
   <Motion.div

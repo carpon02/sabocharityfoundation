@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Play, X, ZoomIn, Filter, Camera, Video, Sparkles } from "lucide-react";
+import Meta from "../../components/Meta";
 
 const mediaItems = [
   // Images
@@ -79,6 +80,10 @@ const Media = () => {
 
   return (
     <div className="bg-white min-h-screen">
+      <Meta
+        title="Media Gallery"
+        description="Explore the visual journey of impact at Sabo, Ibadan. View photos and videos of our community initiatives and community involvement."
+      />
       {/* --- HERO HEADER --- */}
       <section className="relative pt-32 pb-24 bg-dark overflow-hidden">
         <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary-900/10 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />

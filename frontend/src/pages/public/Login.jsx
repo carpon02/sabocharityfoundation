@@ -19,9 +19,11 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   loginUser,
   registerUser,
+  loginWithGoogle,
   clearError,
   logout,
 } from "../../features/auth/authSlice";
+import { GoogleLogin } from "@react-oauth/google";
 
 const Login = () => {
   const [state, setState] = useState("login"); // login or register
@@ -47,7 +49,9 @@ const Login = () => {
         return;
       }
 
-      if (state === "register") {
+      // If already verified (like Google users), go to dashboard
+      // Otherwise, if they just registered locally, go to verify
+      if (!user.isEmailVerified && state === "register") {
         navigate("/verify", { replace: true });
       } else {
         const from = location.state?.from?.pathname || "/user/dashboard";
@@ -77,7 +81,7 @@ const Login = () => {
           loginUser({
             email: data.email.toLowerCase(),
             password: data.password,
-          })
+          }),
         ).unwrap();
       } else {
         await dispatch(
@@ -86,10 +90,12 @@ const Login = () => {
             email: data.email.toLowerCase(),
             password: data.password,
             phone: data.phone,
-          })
+          }),
         ).unwrap();
       }
-    } catch {}
+    } catch (error) {
+      console.error("Auth error:", error);
+    }
   };
 
   return (
@@ -244,11 +250,33 @@ const Login = () => {
                 {loading
                   ? "Processing..."
                   : state === "login"
-                  ? "Grant Access"
-                  : "Create Identity"}
+                    ? "Grant Access"
+                    : "Create Identity"}
                 <ArrowRight size={20} />
               </button>
             </form>
+
+            <div className="relative my-8">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-100"></div>
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-4 text-gray-400 font-bold">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+
+            <div className="flex justify-center">
+              <GoogleLogin
+                onSuccess={(res) => dispatch(loginWithGoogle(res.credential))}
+                onError={() => toast.error("Google Login Failed")}
+                useOneTap
+                theme="filled_black"
+                shape="pill"
+                width="100%"
+              />
+            </div>
 
             <div className="mt-10 pt-10 border-t border-gray-100 text-center">
               <p className="text-sm font-medium text-gray-400">

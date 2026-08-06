@@ -13,6 +13,7 @@ import {
   addSpeaker,
   addAgendaItem,
   getEventStats,
+  getUserRegisteredEvents,
 } from "../controllers/eventController.js";
 import {
   protect,
@@ -38,6 +39,7 @@ router.get("/:id", getEventById);
 router.post("/:id/register", optionalAuth, registerForEvent);
 
 // ============ PROTECTED ROUTES (Authenticated Users) ============
+router.get("/user/registered", protect, getUserRegisteredEvents);
 router.delete("/:id/register", protect, cancelEventRegistration);
 
 // ============ ADMIN ROUTES ============
@@ -47,7 +49,7 @@ router.post(
   restrictTo("admin"),
   uploadMultiple("images", 3),
   validate(createEventValidation),
-  createEvent
+  createEvent,
 );
 
 router.put(
@@ -55,7 +57,7 @@ router.put(
   protect,
   restrictTo("admin"),
   uploadMultiple("images", 3),
-  updateEvent
+  updateEvent,
 );
 
 router.delete("/:id", protect, restrictTo("admin"), deleteEvent);

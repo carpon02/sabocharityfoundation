@@ -9,19 +9,26 @@ import { PersistGate } from "redux-persist/integration/react";
 import Logger from "./services/logger.js"; // Import Logger
 import * as Sentry from "@sentry/react"; // Import Sentry for ErrorBoundary
 
+import { GoogleOAuthProvider } from "@react-oauth/google";
+
 // Initialize Logger (Sentry)
 Logger.init();
 
-createRoot(document.getElementById("root")).render(
+const rootElement = document.getElementById("root");
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+createRoot(rootElement).render(
   <StrictMode>
     <Sentry.ErrorBoundary fallback={<p>An error has occurred</p>}>
-      <Provider store={store}>
-        <PersistGate loading={null} persistor={persistor}>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
-        </PersistGate>
-      </Provider>
+      <GoogleOAuthProvider clientId={googleClientId}>
+        <Provider store={store}>
+          <PersistGate loading={null} persistor={persistor}>
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
+          </PersistGate>
+        </Provider>
+      </GoogleOAuthProvider>
     </Sentry.ErrorBoundary>
   </StrictMode>,
 );

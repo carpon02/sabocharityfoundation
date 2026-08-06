@@ -213,6 +213,26 @@
     will-change: background-position;
   }
 
+  .bg-shimmer-fast {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.4),
+      transparent
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    will-change: background-position;
+  }
+
+  .glass-card-neon-primary {
+    @apply bg-white/40 backdrop-blur-xl border border-primary-500/20 shadow-[0_32px_120px_-10px_rgba(16,185,129,0.15)];
+  }
+
+  .glass-card-neon-secondary {
+    @apply bg-white/40 backdrop-blur-xl border border-secondary-500/20 shadow-[0_32px_120px_-10px_rgba(245,158,11,0.15)];
+  }
+
   /* Reduced Motion Fallback */
   @media (prefers-reduced-motion: reduce) {
     .antigravity-float,
@@ -282,6 +302,17 @@
 
   .animate-slow-drift {
     animation: slowTranslate 20s ease-in-out infinite;
+  }
+
+  .animate-marquee {
+    display: flex;
+    white-space: nowrap;
+    animation: marquee 30s linear infinite;
+  }
+
+  @keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
   }
 
   .hover-scale-subtle {

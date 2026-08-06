@@ -8,6 +8,7 @@ import mongoSanitize from "express-mongo-sanitize";
 import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 import logger from "./src/config/logger.js";
+import * as Sentry from "@sentry/node";
 import errorHandler, { notFound } from "./src/middleware/error.middleware.js";
 import { handleUploadError } from "./src/middleware/upload.middleware.js";
 
@@ -24,6 +25,7 @@ import contactRoutes from "./src/routes/contactRoutes.js";
 import paymentRoutes from "./src/routes/paymentRoutes.js";
 import settingsRoutes from "./src/routes/settingsRoutes.js";
 import analyticsRoutes from "./src/routes/analyticsRoute.js";
+import notificationRoutes from "./src/routes/notificationRoutes.js";
 
 const app = express();
 
@@ -98,12 +100,12 @@ const authLimiter = rateLimit({
   message: "Too many authentication attempts, please try again later",
 });
 
-// ✅ Health Check (consider /api/v1/health for harmony, but root suffices)
+// ✅ Health Check
 app.get("/health", (req, res) => {
   res.status(200).json({
     success: true,
     environment: process.env.NODE_ENV,
-    message: "✅ Server is running properly",
+    uptime: process.uptime(),
     timestamp: new Date().toISOString(),
   });
 });
@@ -129,12 +131,16 @@ app.use(`/api/${API_VERSION}/contact`, contactRoutes);
 app.use(`/api/${API_VERSION}/payments`, paymentRoutes);
 app.use(`/api/${API_VERSION}/settings`, settingsRoutes);
 app.use(`/api/${API_VERSION}/analytics`, analyticsRoutes);
+app.use(`/api/${API_VERSION}/notifications`, notificationRoutes);
 
 // ✅ Serve static files from uploads directory
 const uploadsPath = path.join(process.cwd(), "uploads");
 app.use("/uploads", express.static(uploadsPath));
 
 // ✅ Handle upload errors and global errors
+// ✅ Sentry Error Handler (must be added after all controllers and before any other error middleware)
+Sentry.setupExpressErrorHandler(app);
+
 app.use(handleUploadError);
 app.use(notFound);
 app.use(errorHandler);

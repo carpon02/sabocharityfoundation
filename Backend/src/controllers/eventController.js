@@ -110,7 +110,7 @@ export const getAllEvents = asyncHandler(async (req, res, next) => {
     {
       events,
       pagination: pagination.toJSON(),
-    }
+    },
   );
 });
 
@@ -133,7 +133,7 @@ export const getEventById = asyncHandler(async (req, res, next) => {
   ApiResponse.success(
     res,
     "Event fetched—underprivileged invitation extended",
-    { event }
+    { event },
   );
 });
 
@@ -156,7 +156,7 @@ export const getEventBySlug = asyncHandler(async (req, res, next) => {
   ApiResponse.success(
     res,
     "Event fetched—underprivileged invitation extended",
-    { event }
+    { event },
   );
 });
 
@@ -170,7 +170,7 @@ export const createEvent = asyncHandler(async (req, res, next) => {
   // Handle image uploads
   if (req.files && req.files.length > 0) {
     const imageUploads = await Promise.all(
-      req.files.map((file) => uploadToCloudinary(file, "events"))
+      req.files.map((file) => uploadToCloudinary(file, "events")),
     );
     req.body.images = imageUploads.map((upload, index) => ({
       url: upload.url,
@@ -196,7 +196,7 @@ export const createEvent = asyncHandler(async (req, res, next) => {
     const deadline = new Date(req.body.registrationDeadline);
     if (deadline > eventDate) {
       return next(
-        new ApiError("Registration deadline cannot be after event date", 400)
+        new ApiError("Registration deadline cannot be after event date", 400),
       );
     }
   }
@@ -233,7 +233,7 @@ export const updateEvent = asyncHandler(async (req, res, next) => {
   // Handle new image uploads
   if (req.files && req.files.length > 0) {
     const imageUploads = await Promise.all(
-      req.files.map((file) => uploadToCloudinary(file, "events"))
+      req.files.map((file) => uploadToCloudinary(file, "events")),
     );
     const newImages = imageUploads.map((upload) => ({
       url: upload.url,
@@ -274,7 +274,7 @@ export const deleteEvent = asyncHandler(async (req, res, next) => {
   // Delete images from Cloudinary
   if (event.images && event.images.length > 0) {
     await Promise.all(
-      event.images.map((img) => deleteFromCloudinary(img.publicId))
+      event.images.map((img) => deleteFromCloudinary(img.publicId)),
     );
   }
 
@@ -282,7 +282,7 @@ export const deleteEvent = asyncHandler(async (req, res, next) => {
 
   ApiResponse.success(
     res,
-    "Event removed—space cleared for underprivileged futures"
+    "Event removed—space cleared for underprivileged futures",
   );
 });
 
@@ -307,7 +307,7 @@ export const getUpcomingEvents = asyncHandler(async (req, res, next) => {
     {
       events,
       count: events.length,
-    }
+    },
   );
 });
 
@@ -332,7 +332,7 @@ export const getPastEvents = asyncHandler(async (req, res, next) => {
     {
       events,
       count: events.length,
-    }
+    },
   );
 });
 
@@ -390,7 +390,7 @@ export const registerForEvent = asyncHandler(async (req, res, next) => {
     const { name, email, phone } = req.body;
     if (!name || !email) {
       return next(
-        new ApiError("Name and email are required for registration", 400)
+        new ApiError("Name and email are required for registration", 400),
       );
     }
 
@@ -418,7 +418,7 @@ export const registerForEvent = asyncHandler(async (req, res, next) => {
   ApiResponse.success(
     res,
     "Successfully registered—underprivileged change begins with you",
-    { event }
+    { event },
   );
 });
 
@@ -434,7 +434,7 @@ export const cancelEventRegistration = asyncHandler(async (req, res, next) => {
 
   // Find and remove attendee (status check optional, as cancellation is user-driven)
   const attendeeIndex = event.attendees.findIndex(
-    (attendee) => attendee.user && attendee.user.toString() === req.user.id
+    (attendee) => attendee.user && attendee.user.toString() === req.user.id,
   );
 
   if (attendeeIndex === -1) {
@@ -448,7 +448,7 @@ export const cancelEventRegistration = asyncHandler(async (req, res, next) => {
 
   ApiResponse.success(
     res,
-    "Event registration cancelled—space opened for another underprivileged heart"
+    "Event registration cancelled—space opened for another underprivileged heart",
   );
 });
 
@@ -470,7 +470,7 @@ export const addSpeaker = asyncHandler(async (req, res, next) => {
   ApiResponse.success(
     res,
     "Speaker added—enriching underprivileged inspirations",
-    { event }
+    { event },
   );
 });
 
@@ -492,7 +492,7 @@ export const addAgendaItem = asyncHandler(async (req, res, next) => {
   ApiResponse.success(
     res,
     "Agenda item added—guiding underprivileged pathways",
-    { event }
+    { event },
   );
 });
 
@@ -525,6 +525,23 @@ export const getEventStats = asyncHandler(async (req, res, next) => {
     "Event statistics fetched—underprivileged impact measured",
     {
       stats: stats[0],
-    }
+    },
+  );
+});
+
+/**
+ * @desc Get events current user is registered for
+ * @route GET /api/v1/events/user/registered
+ * @access Private
+ */
+export const getUserRegisteredEvents = asyncHandler(async (req, res, next) => {
+  const events = await Event.find({
+    "attendees.user": req.user.id,
+  }).sort("-eventDate");
+
+  ApiResponse.success(
+    res,
+    "Registered events fetched successfully—your underprivileged impact journey",
+    events,
   );
 });

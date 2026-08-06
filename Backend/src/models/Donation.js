@@ -104,6 +104,11 @@ const donationSchema = new mongoose.Schema(
       ref: "RecurringPlan",
     },
     nextRecurringDate: Date,
+    authorizationCode: {
+      type: String,
+      select: false, // Hide from default queries for security
+    },
+    lastRecurringChargeAt: Date,
     anonymous: {
       type: Boolean,
       default: false,

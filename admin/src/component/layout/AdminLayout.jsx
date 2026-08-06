@@ -22,10 +22,13 @@ import {
   Rss,
   Calendar,
   Activity,
+  HandHeart,
+  CheckCheck,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import { useSelector, useDispatch } from "react-redux";
 import { logoutAdmin } from "../../features/auth/adminAuthSlice";
+import apiClient from "../../config/apiConfig";
 
 // Navigation Configuration
 const NAVIGATION_CONFIG = {
@@ -34,13 +37,15 @@ const NAVIGATION_CONFIG = {
       name: "Dashboard",
       path: "/admin/admin-dashboard",
       icon: LayoutDashboard,
+      roles: ["super_admin", "finance_admin", "content_editor"]
     },
-    { name: "Projects", path: "/admin/campaigns", icon: Target },
-    { name: "Events", path: "/admin/events", icon: Calendar },
-    { name: "Donors", path: "/admin/donors", icon: Users },
-    { name: "Donations", path: "/admin/payments", icon: DollarSign },
-    { name: "Analytics", path: "/admin/reports", icon: BarChart3 },
-    { name: "Stories", path: "/admin/blogs", icon: Rss },
+    { name: "Projects", path: "/admin/campaigns", icon: Target, roles: ["super_admin", "content_editor"] },
+    { name: "Events", path: "/admin/events", icon: Calendar, roles: ["super_admin", "content_editor"] },
+    { name: "Donors", path: "/admin/donors", icon: Users, roles: ["super_admin", "finance_admin"] },
+    { name: "Donations", path: "/admin/payments", icon: DollarSign, roles: ["super_admin", "finance_admin"] },
+    { name: "Analytics", path: "/admin/reports", icon: BarChart3, roles: ["super_admin", "finance_admin"] },
+    { name: "Volunteers", path: "/admin/volunteers", icon: HandHeart, roles: ["super_admin"] },
+    { name: "Stories", path: "/admin/blogs", icon: Rss, roles: ["super_admin", "content_editor"] },
   ],
   supportLinks: [
     { name: "Settings", path: "/admin/settings", icon: Settings },
@@ -49,7 +54,7 @@ const NAVIGATION_CONFIG = {
 };
 
 // Sidebar Component
-const Sidebar = ({ darkMode, location, onLogout, isOpen, setIsOpen }) => {
+const Sidebar = ({ darkMode, location, onLogout, isOpen, setIsOpen, user }) => {
   const [isLargeScreen, setIsLargeScreen] = React.useState(false);
 
   React.useEffect(() => {
@@ -115,6 +120,7 @@ const Sidebar = ({ darkMode, location, onLogout, isOpen, setIsOpen }) => {
             <button
               onClick={() => setIsOpen(false)}
               className="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"
+              aria-label="Close menu"
             >
               <X
                 size={20}
@@ -164,7 +170,10 @@ const Sidebar = ({ darkMode, location, onLogout, isOpen, setIsOpen }) => {
 
         {/* Main Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-          {NAVIGATION_CONFIG.mainLinks.map((link, index) => {
+          {NAVIGATION_CONFIG.mainLinks.filter((link) => {
+            const adminRole = user?.adminRole || "super_admin"; // fallback for testing
+            return link.roles.includes(adminRole) || adminRole === "super_admin";
+          }).map((link, index) => {
             const Icon = link.icon;
             const isActive = location.pathname === link.path;
 
@@ -239,6 +248,125 @@ const Sidebar = ({ darkMode, location, onLogout, isOpen, setIsOpen }) => {
   );
 };
 
+// Notification Bell Component
+const NotificationBell = ({ darkMode }) => {
+  const [notifications, setNotifications] = React.useState([]);
+  const [showDropdown, setShowDropdown] = React.useState(false);
+  const dropdownRef = React.useRef(null);
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    fetchNotifications();
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await apiClient.get("/notifications");
+      if (res.data.success) {
+        setNotifications(res.data.data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const markAsRead = async (id) => {
+    try {
+      await apiClient.patch(`/notifications/${id}/read`);
+      fetchNotifications();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      await apiClient.patch(`/notifications/read-all`);
+      fetchNotifications();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleNotificationClick = (notif) => {
+    markAsRead(notif._id);
+    setShowDropdown(false);
+    if (notif.link) navigate(notif.link);
+  };
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setShowDropdown(!showDropdown)}
+        className={`p-3 rounded-xl relative transition-all ${
+          darkMode ? "bg-gray-800 hover:bg-gray-700" : "bg-gray-100 hover:bg-gray-200"
+        }`}
+        aria-label="Notifications"
+      >
+        <Bell size={20} />
+        {unreadCount > 0 && (
+          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+        )}
+      </button>
+
+      <AnimatePresence>
+        {showDropdown && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className={`absolute right-0 mt-2 w-80 sm:w-96 rounded-xl shadow-2xl border overflow-hidden z-50 ${
+              darkMode ? "bg-dark-lighter border-gray-800" : "bg-white border-gray-200"
+            }`}
+          >
+            <div className={`p-4 border-b flex justify-between items-center ${darkMode ? "border-gray-800" : "border-gray-200"}`}>
+              <h3 className={`font-bold ${darkMode ? "text-white" : "text-dark"}`}>Notifications</h3>
+              {unreadCount > 0 && (
+                <button onClick={markAllAsRead} className="text-xs text-primary-500 hover:text-primary-600 font-semibold flex items-center gap-1">
+                  <CheckCheck size={14} /> Mark all read
+                </button>
+              )}
+            </div>
+            <div className="max-h-96 overflow-y-auto">
+              {notifications.length === 0 ? (
+                <div className="p-6 text-center text-sm text-gray-500">No notifications</div>
+              ) : (
+                notifications.map((notif) => (
+                  <div
+                    key={notif._id}
+                    onClick={() => handleNotificationClick(notif)}
+                    className={`p-4 border-b cursor-pointer transition-colors ${
+                      !notif.isRead ? (darkMode ? "bg-primary-950/20" : "bg-primary-50") : ""
+                    } ${darkMode ? "border-gray-800 hover:bg-gray-800" : "border-gray-100 hover:bg-gray-50"}`}
+                  >
+                    <div className="flex justify-between items-start gap-2 mb-1">
+                      <h4 className={`text-sm font-semibold ${darkMode ? "text-gray-200" : "text-gray-800"}`}>{notif.title}</h4>
+                      {!notif.isRead && <span className="w-2 h-2 bg-primary-500 rounded-full mt-1 flex-shrink-0"></span>}
+                    </div>
+                    <p className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-600"}`}>{notif.message}</p>
+                    <span className={`text-[10px] mt-2 block ${darkMode ? "text-gray-500" : "text-gray-400"}`}>
+                      {new Date(notif.createdAt).toLocaleString()}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 // Header Component
 const Header = ({
   darkMode,
@@ -296,7 +424,6 @@ const Header = ({
       } border-b backdrop-blur-md px-6 lg:px-8 py-4 sticky top-0 z-30`}
     >
       <div className="flex items-center justify-between gap-4">
-        {/* Mobile Menu Toggle */}
         <button
           className={`lg:hidden p-3 rounded-xl transition-all ${
             darkMode
@@ -304,6 +431,7 @@ const Header = ({
               : "bg-gray-100 hover:bg-gray-200"
           }`}
           onClick={() => setIsOpen(true)}
+          aria-label="Open menu"
         >
           <Menu
             size={24}
@@ -360,17 +488,7 @@ const Header = ({
             {darkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
 
-          {/* Notifications */}
-          <button
-            className={`p-3 rounded-xl relative transition-all ${
-              darkMode
-                ? "bg-gray-800 hover:bg-gray-700"
-                : "bg-gray-100 hover:bg-gray-200"
-            }`}
-          >
-            <Bell size={20} />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-          </button>
+          <NotificationBell darkMode={darkMode} />
 
           {/* Quick Action Button */}
           <Link
@@ -420,6 +538,7 @@ const AdminLayout = () => {
         onLogout={handleLogout}
         isOpen={isOpen}
         setIsOpen={setIsOpen}
+        user={user}
       />
 
       {/* Main Content */}

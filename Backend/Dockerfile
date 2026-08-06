@@ -1,39 +1,44 @@
 # Backend Dockerfile
-# Stage 1: Builder
-FROM node:20-alpine AS builder
+# ─────────────────────────────────────────────
 
+# Stage 1: Base - Install all dependencies
+FROM node:20-slim AS base
+# Install wget for healthcheck
+RUN apt-get update && apt-get install -y --no-install-recommends wget && \
+    rm -rf /var/lib/apt/lists/*
 WORKDIR /usr/src/app
-
 COPY package*.json ./
-# Install all dependencies (including devDependencies if needed for build scripts)
-RUN npm ci
+RUN npm install --legacy-peer-deps
 
+# Stage 2: Development - Source code for hot-reloading
+FROM base AS development
 COPY . .
+ENV NODE_ENV=development
+CMD ["npm", "run", "dev"]
 
-# Stage 2: Production
-FROM node:20-alpine
-
+# Stage 3: Production - Lean and secure
+FROM node:20-slim AS production
+RUN apt-get update && apt-get install -y --no-install-recommends wget && \
+    rm -rf /var/lib/apt/lists/*
 WORKDIR /usr/src/app
-
 ENV NODE_ENV=production
 
-COPY package*.json ./
-# Install only production dependencies
-RUN npm ci --only=production
+# Install only production deps
+COPY --chown=node:node package*.json ./
+RUN npm install --only=production --legacy-peer-deps && \
+    npm cache clean --force
 
-# Copy source code from builder (or local if no build step needed for JS)
-# For strictness, we copy from builder to ensure clean state, 
-# but for raw JS backend, copying src is fine. 
-# If using TypeScript or Babel, we would copy dist/build folder.
-COPY --from=builder /usr/src/app/src ./src
-COPY --from=builder /usr/src/app/server.js ./
-COPY --from=builder /usr/src/app/app.js ./
+# Copy required files
+COPY --from=base /usr/src/app/node_modules ./node_modules
+COPY . .
 
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nodejs -u 1001
-USER nodejs
-
+# Security and hygiene
+RUN mkdir -p src/logs uploads/receipts && \
+    chown -R node:node src/logs uploads
+USER node
 EXPOSE 5000
+
+HEALTHCHECK --interval=20s --timeout=10s --retries=5 --start-period=15s \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:5000/health || exit 1
 
 CMD ["node", "server.js"]

@@ -115,7 +115,16 @@ export const verifyWebhookSignature = (signature, body) => {
       .update(bodyString)
       .digest('hex');
     
-    return hash === signature;
+    // Use timingSafeEqual to prevent timing attacks
+    // Both arguments must be Buffers of equal length
+    const hashBuffer = Buffer.from(hash);
+    const signatureBuffer = Buffer.from(signature);
+
+    if (hashBuffer.length !== signatureBuffer.length) {
+      return false;
+    }
+
+    return crypto.timingSafeEqual(hashBuffer, signatureBuffer);
   } catch (error) {
     logger.error('Webhook signature verification error:', {
       error: error.message,

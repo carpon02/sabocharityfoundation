@@ -2,29 +2,14 @@
 // FILE: store/slices/settingsSlice.js
 // ============================================
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-// Create axios instance with token interceptor
-const api = axios.create({
-  baseURL: API_BASE_URL,
-});
-
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('adminToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+import apiClient from '../../config/apiConfig';
 
 // Async Thunks for Settings API Calls
 export const fetchSettings = createAsyncThunk(
   'settings/fetchSettings',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get('/settings');
+      const response = await apiClient.get('/settings');
       return response.data.data;
     } catch (error) {
       console.error('Failed to fetch settings:', error);
@@ -37,7 +22,7 @@ export const updateProfile = createAsyncThunk(
   'settings/updateProfile',
   async (profileData, { rejectWithValue }) => {
     try {
-      const response = await api.put('/settings/profile', profileData);
+      const response = await apiClient.put('/settings/profile', profileData);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update profile');
@@ -51,7 +36,7 @@ export const uploadAvatar = createAsyncThunk(
     try {
       const formData = new FormData();
       formData.append('avatar', file);
-      const response = await api.post('/settings/avatar', formData, {
+      const response = await apiClient.post('/settings/avatar', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       return response.data.data;
@@ -65,7 +50,7 @@ export const removeAvatar = createAsyncThunk(
   'settings/removeAvatar',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.delete('/settings/avatar');
+      const response = await apiClient.delete('/settings/avatar');
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to remove avatar');
@@ -77,7 +62,7 @@ export const changePassword = createAsyncThunk(
   'settings/changePassword',
   async (passwordData, { rejectWithValue }) => {
     try {
-      const response = await api.put('/settings/password', passwordData);
+      const response = await apiClient.put('/settings/password', passwordData);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to change password');
@@ -89,7 +74,7 @@ export const updateNotifications = createAsyncThunk(
   'settings/updateNotifications',
   async (notificationData, { rejectWithValue }) => {
     try {
-      const response = await api.put('/settings/notifications', notificationData);
+      const response = await apiClient.put('/settings/notifications', notificationData);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update notifications');
@@ -101,7 +86,7 @@ export const updatePrivacy = createAsyncThunk(
   'settings/updatePrivacy',
   async (privacyData, { rejectWithValue }) => {
     try {
-      const response = await api.put('/settings/privacy', privacyData);
+      const response = await apiClient.put('/settings/privacy', privacyData);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update privacy');
@@ -113,7 +98,7 @@ export const updatePreferences = createAsyncThunk(
   'settings/updatePreferences',
   async (preferencesData, { rejectWithValue }) => {
     try {
-      const response = await api.put('/settings/preferences', preferencesData);
+      const response = await apiClient.put('/settings/preferences', preferencesData);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update preferences');
@@ -125,7 +110,7 @@ export const updateSecurity = createAsyncThunk(
   'settings/updateSecurity',
   async (securityData, { rejectWithValue }) => {
     try {
-      const response = await api.put('/settings/security', securityData);
+      const response = await apiClient.put('/settings/security', securityData);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update security');
@@ -137,7 +122,7 @@ export const fetchActivityLog = createAsyncThunk(
   'settings/fetchActivityLog',
   async ({ page = 1, limit = 20 }, { rejectWithValue }) => {
     try {
-      const response = await api.get(`/settings/activity?page=${page}&limit=${limit}`);
+      const response = await apiClient.get(`/settings/activity?page=${page}&limit=${limit}`);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch activity log');
@@ -149,7 +134,7 @@ export const deleteAccount = createAsyncThunk(
   'settings/deleteAccount',
   async (deleteData, { rejectWithValue }) => {
     try {
-      const response = await api.delete('/settings/account', { data: deleteData });
+      const response = await apiClient.delete('/settings/account', { data: deleteData });
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to delete account');

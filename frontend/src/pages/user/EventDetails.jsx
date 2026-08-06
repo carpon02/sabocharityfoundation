@@ -31,6 +31,7 @@ import { toast } from "react-hot-toast";
 import { formatDate } from "../../utils/formatDate";
 import { formatCurrency } from "../../utils/formatCurrency";
 import { useTheme } from "../../context/ThemeContext";
+import Meta from "../../components/Meta";
 
 const EventDetails = () => {
   const { id } = useParams();
@@ -139,6 +140,12 @@ const EventDetails = () => {
 
   return (
     <div className={`min-h-screen ${darkMode ? "bg-gray-950" : "bg-gray-50"}`}>
+      <Meta
+        title={event.title}
+        description={event.description?.substring(0, 160)}
+        ogImage={primaryImage}
+        ogType="article"
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <nav className="text-sm text-gray-500 dark:text-gray-400 mb-6 flex items-center gap-2">

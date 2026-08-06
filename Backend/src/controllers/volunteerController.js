@@ -5,12 +5,22 @@ import ApiResponse from "../utils/ApiResponse.js";
 import Pagination from "../utils/pagination.js";
 import { sendEmail } from "../services/emailService.js";
 import mongoose from "mongoose";
+import Notification from "../models/Notification.js";
 
 // @desc    Create a new volunteer application
 // @route   POST /api/v1/volunteers
 // @access  Public
 export const createVolunteer = asyncHandler(async (req, res) => {
   const volunteer = await Volunteer.create(req.body);
+
+  // Notify admins
+  await Notification.create({
+    title: "New Volunteer Application",
+    message: `${volunteer.firstName} ${volunteer.lastName} has applied to be a volunteer.`,
+    type: "volunteer",
+    link: `/admin/volunteers`,
+    recipientRole: "super_admin", // only super_admins handle volunteers according to RBAC
+  });
 
   res.status(201).json({
     success: true,

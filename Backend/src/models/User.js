@@ -21,7 +21,9 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, "Please provide a password"],
+      required: function () {
+        return this.authMethod === "local";
+      },
       minlength: 6,
       select: false,
     },
@@ -29,6 +31,23 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["guest", "donor", "admin"],
       default: "guest",
+    },
+    adminRole: {
+      type: String,
+      enum: ["super_admin", "finance_admin", "content_editor"],
+      required: function () {
+        return this.role === "admin";
+      },
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+    authMethod: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
     },
 
     // Profile Information
@@ -193,11 +212,12 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
 // Indexes
 // userSchema.index({ email: 1 }); // Removed duplicate
+// userSchema.index({ googleId: 1 }); // Removed to prevent duplicate index warning
 userSchema.index({ role: 1 });
 userSchema.index({ isActive: 1 });
 userSchema.index({ createdAt: -1 });

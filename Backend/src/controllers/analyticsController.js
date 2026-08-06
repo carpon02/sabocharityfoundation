@@ -1,4 +1,5 @@
 // controllers/analyticsController.js - UPDATED WITH USER ANALYTICS
+import { Parser } from "json2csv";
 import User from "../models/User.js";
 import Campaign from "../models/Campaign.js";
 import Donation from "../models/Donation.js";
@@ -280,11 +281,11 @@ export const getUserAnalytics = asyncHandler(async (req, res, next) => {
   // Monthly goal (hardcoded or from user profile; assume 20000 for demo)
   const monthlyGoal = 20000;
 
-  // Recent donations (last 5)
-  const recentDonations = await Donation.aggregate([
+  // Recent activity (Combined feed: Donations + Event Registrations)
+  const recentActivities = await Donation.aggregate([
     { $match: { donor: userId } },
     { $sort: { createdAt: -1 } },
-    { $limit: 5 },
+    { $limit: 10 },
     {
       $lookup: {
         from: "campaigns",
@@ -297,7 +298,8 @@ export const getUserAnalytics = asyncHandler(async (req, res, next) => {
     {
       $project: {
         id: "$_id",
-        campaign: { $ifNull: ["$campaign.title", "Unknown Campaign"] },
+        type: { $literal: "donation" },
+        title: { $ifNull: ["$campaign.title", "Unknown Campaign"] },
         amount: 1,
         date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
         status: 1,
@@ -305,55 +307,45 @@ export const getUserAnalytics = asyncHandler(async (req, res, next) => {
     },
   ]);
 
-  // Active campaigns user donated to (top 3)
-  const activeCampaigns = await Donation.aggregate([
-    { $match: { donor: userId } },
-    {
-      $lookup: {
-        from: "campaigns",
-        localField: "campaign",
-        foreignField: "_id",
-        as: "campaign",
-      },
-    },
-    { $unwind: { path: "$campaign", preserveNullAndEmptyArrays: true } },
-    { $match: { "campaign.status": "active" } },
-    { $sort: { "campaign.raisedAmount": -1 } },
-    { $limit: 3 },
-    {
-      $project: {
-        id: "$campaign._id",
-        title: "$campaign.title",
-        raised: "$campaign.raisedAmount",
-        target: "$campaign.targetAmount",
-        donors: "$campaign.donorsCount",
-        daysLeft: {
-          $ceil: {
-            $divide: [{ $subtract: ["$campaign.endDate", "$$NOW"] }, 86400000],
-          },
-        },
-        image: "$campaign.image",
-      },
-    },
-  ]);
-
-  // Upcoming events (top 3)
-  const upcomingEvents = await Event.aggregate([
-    { $match: { date: { $gte: new Date() }, attendees: userId } },
-    { $sort: { date: 1 } },
-    { $limit: 3 },
+  // Fetch recent event registrations as activities
+  const registeredEvents = await Event.aggregate([
+    { $match: { attendees: userId } },
+    { $sort: { date: -1 } },
+    { $limit: 5 },
     {
       $project: {
         id: "$_id",
-        name: 1,
-        date: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+        type: { $literal: "event" },
+        title: "$name",
         location: 1,
-        attendees: "$attendeesCount",
+        date: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+        status: { $literal: "registered" },
       },
     },
   ]);
 
-  // Impact metrics (platform-wide, filtered for user context; demo values adjusted)
+  // Combine and sort activities
+  const allActivities = [...recentActivities, ...registeredEvents]
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, 8);
+
+  // Discovery: Top 3 Urgent Campaigns NOT supported by the user
+  const supportedCampaignIds = await Donation.distinct("campaign", {
+    donor: userId,
+  });
+  const discoveryCampaigns = await Campaign.find({
+    _id: { $nin: supportedCampaignIds },
+    status: "active",
+    approved: true,
+    endDate: { $gt: new Date() },
+  })
+    .sort({ endDate: 1, raisedAmount: -1 })
+    .limit(3)
+    .select(
+      "_id title raisedAmount targetAmount donorsCount endDate image category",
+    );
+
+  // Impact metrics (platform-wide, personalized)
   const impactMetrics = [
     { label: "People Helped", value: Math.floor(impactScore / 10), growth: 12 },
     {
@@ -364,10 +356,32 @@ export const getUserAnalytics = asyncHandler(async (req, res, next) => {
     { label: "Books Donated", value: campaignsCreated * 100, growth: 15 },
     {
       label: "Trees Planted",
-      value: eventsAttended[0]?.total * 20 || 0,
+      value: eventsAttended[0]?.total * 10 || 0,
       growth: 23,
     },
   ];
+
+  // Donor Tier
+  let tier = "Contributor";
+  if (impactScore > 5000) tier = "Hero";
+  else if (impactScore > 2000) tier = "Guardian";
+  else if (impactScore > 1000) tier = "Advocate";
+
+  // Active Campaigns (Top 3 active ones)
+  const activeCampaigns = await Campaign.find({
+    status: "active",
+    approved: true,
+  })
+    .sort({ createdAt: -1 })
+    .limit(3);
+
+  // Upcoming Events (Top 3 upcoming ones)
+  const upcomingEvents = await Event.find({
+    eventDate: { $gt: new Date() },
+    status: "published",
+  })
+    .sort({ eventDate: 1 })
+    .limit(3);
 
   const analytics = {
     user: {
@@ -377,14 +391,52 @@ export const getUserAnalytics = asyncHandler(async (req, res, next) => {
       impactScore: Math.floor(impactScore),
       monthlyGoal,
       currentMonthDonations: currentMonthDonations[0]?.total || 0,
+      donorTier: tier,
     },
-    recentDonations,
+    recentActivities: allActivities,
     activeCampaigns,
     upcomingEvents,
+    discoveryCampaigns,
     impactMetrics,
   };
 
   ApiResponse.success(res, "User analytics fetched successfully", analytics);
+});
+
+/**
+ * @desc Export donations as CSV
+ * @route GET /api/v1/analytics/export/donations
+ * @access Private/Admin
+ */
+export const exportDonationsCsv = asyncHandler(async (req, res, next) => {
+  const donations = await Donation.find()
+    .populate("donor", "firstName lastName email")
+    .sort({ createdAt: -1 });
+
+  const fields = [
+    { label: "Donation ID", value: "_id" },
+    { label: "Amount", value: "amount" },
+    { label: "Currency", value: "currency" },
+    { label: "Status", value: "status" },
+    { label: "Recurring", value: "isRecurring" },
+    { label: "Donor First Name", value: "donor.firstName" },
+    { label: "Donor Last Name", value: "donor.lastName" },
+    { label: "Donor Email", value: "donor.email" },
+    { label: "Date", value: "createdAt" },
+  ];
+  
+  const opts = { fields };
+
+  try {
+    const parser = new Parser(opts);
+    const csv = parser.parse(donations);
+    
+    res.header("Content-Type", "text/csv");
+    res.attachment("donations-export.csv");
+    return res.send(csv);
+  } catch (err) {
+    return next(new ApiError("Could not generate CSV", 500));
+  }
 });
 
 export default {
@@ -393,4 +445,5 @@ export default {
   getDonationTrends,
   getEventAnalytics,
   getUserAnalytics,
+  exportDonationsCsv,
 };

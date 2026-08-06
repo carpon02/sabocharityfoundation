@@ -174,3 +174,31 @@ export const listTransactions = async (filters = {}) => {
     throw new Error('Failed to fetch transactions');
   }
 };
+
+/**
+ * Charge a previously authorized card using Paystack Charge Authorization
+ * Used for recurring donations where the donor has already approved the initial charge.
+ * @param {Object} data - Charge authorization data
+ * @param {string} data.authorization_code - The reusable authorization code from the initial transaction
+ * @param {string} data.email - Customer email (must match the original charge)
+ * @param {number} data.amount - Amount in kobo
+ * @param {string} data.reference - Unique reference for this charge
+ * @param {Object} [data.metadata] - Additional metadata
+ * @returns {Promise<Object>} Paystack response
+ */
+export const chargeAuthorization = async (data) => {
+  try {
+    const response = await paystackClient.post('/transaction/charge_authorization', data);
+    logger.info('Paystack charge_authorization success:', {
+      reference: data.reference,
+      amount: data.amount,
+    });
+    return response.data;
+  } catch (error) {
+    logger.error('Paystack charge_authorization error:', {
+      error: error.response?.data || error.message,
+      reference: data.reference,
+    });
+    throw new Error(error.response?.data?.message || 'Charge authorization failed');
+  }
+};

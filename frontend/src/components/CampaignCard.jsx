@@ -68,7 +68,14 @@ export const CampaignCard = memo(({ campaign }) => {
             </span>
           </div>
 
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+          <div 
+            className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2"
+            role="progressbar"
+            aria-valuenow={Math.round(progress)}
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-label={`Campaign progress: ${Math.round(progress)}%`}
+          >
             <div 
               className="bg-gradient-to-r from-emerald-500 to-amber-500 h-2 rounded-full transition-all duration-1000 ease-out"
               style={{ width: `${progress}%` }}
@@ -89,17 +96,17 @@ export const CampaignCard = memo(({ campaign }) => {
             <span className="truncate">{campaign.location}</span>
           </div>
 
-          <button className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+          <span className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             status === 'completed' || status === 'ended'
-              ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+              ? 'bg-gray-100 text-gray-500'
               : status === 'funded'
               ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-200'
-              : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+              : 'bg-emerald-600 group-hover:bg-emerald-700 text-white'
           }`}>
             {status === 'completed' ? 'Completed' : 
              status === 'ended' ? 'Ended' :
              status === 'funded' ? 'Funded' : 'Donate'}
-          </button>
+          </span>
         </div>
       </div>
     </Link>

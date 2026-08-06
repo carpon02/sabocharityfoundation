@@ -46,7 +46,6 @@ const AdminLogin = () => {
           password: formData.password,
         }),
       ).unwrap();
-      toast.success("Welcome to Foundation Hub");
     } catch (err) {
       // Error handled by redux slice/toast
     }
@@ -223,7 +222,7 @@ const AdminLogin = () => {
           </p>
           <div className="flex justify-center gap-8">
             <button
-              onClick={() => navigate("/")}
+              onClick={() => window.location.href = "http://localhost:5173"}
               className="text-xs font-semibold text-gray-500 hover:text-emerald-400 transition-colors"
             >
               Return to Website

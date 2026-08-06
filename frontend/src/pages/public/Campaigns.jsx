@@ -17,7 +17,8 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { fetchAllCampaigns } from "../../features/campaign/campaignsSlice";
-import { CampaignCardModern } from "../../components/CampaignCardModern";
+import CampaignCardModern from "../../components/CampaignCardModern";
+import Meta from "../../components/Meta";
 
 const Campaigns = () => {
   const dispatch = useDispatch();
@@ -63,15 +64,15 @@ const Campaigns = () => {
       filtered = filtered.filter(
         (c) =>
           c.title?.toLowerCase().includes(query) ||
-          c.description?.toLowerCase().includes(query)
+          c.description?.toLowerCase().includes(query),
       );
     }
 
     if (selectedCategories.length > 0) {
       filtered = filtered.filter((c) =>
         selectedCategories.some(
-          (cat) => cat.toLowerCase() === c.category?.toLowerCase()
-        )
+          (cat) => cat.toLowerCase() === c.category?.toLowerCase(),
+        ),
       );
     }
 
@@ -90,6 +91,10 @@ const Campaigns = () => {
 
   return (
     <div className="min-h-screen bg-paper">
+      <Meta
+        title="Active Missions"
+        description="Browse our ongoing charity campaigns in Sabo, Ibadan. From education to healthcare, find a mission that resonates with you and make a difference today."
+      />
       {/* --- HERO HEADER --- */}
       <section className="relative pt-32 pb-20 bg-dark overflow-hidden">
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary-900/10 rounded-full blur-[100px]" />
@@ -189,7 +194,7 @@ const Campaigns = () => {
                   onClick={() => {
                     if (selectedCategories.includes(cat)) {
                       setSelectedCategories(
-                        selectedCategories.filter((c) => c !== cat)
+                        selectedCategories.filter((c) => c !== cat),
                       );
                     } else {
                       setSelectedCategories([...selectedCategories, cat]);
@@ -242,9 +247,7 @@ const Campaigns = () => {
                   : "Try adjusting your filters or search terms."}
               </p>
               {error && (
-                <p className="text-red-500 text-sm mt-2">
-                  Error: {error}
-                </p>
+                <p className="text-red-500 text-sm mt-2">Error: {error}</p>
               )}
             </div>
           ) : (

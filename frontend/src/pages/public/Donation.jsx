@@ -16,34 +16,47 @@ import {
   User,
   AlertCircle,
   TrendingUp,
+  ShieldCheck,
+  Star,
+  Loader,
 } from "lucide-react";
+import { motion as Motion } from "framer-motion";
 
 // ============= CONSTANTS =============
 const DONATION_TYPES = {
   education: {
-    label: "🎓 Education Support",
-    impact: "Sponsors a child's education for 3 months",
+    label: "🎓 Education Initiatives",
+    impact: "Providing learning resources & scholarships",
   },
   healthcare: {
-    label: "🩺 Healthcare Assistance",
-    impact: "Provides medical care for 5 families",
+    label: "🩺 Healthcare Support",
+    impact: "Medical bills & essential treatments",
   },
   "youth-empowerment": {
     label: "💡 Youth Empowerment",
-    impact: "Trains 10 youths in digital skills",
+    impact: "Skill acquisition & business grants",
   },
   "community-development": {
     label: "🌍 Community Development",
-    impact: "Supports community infrastructure",
+    impact: "Infrastructure & welfare programs",
   },
-  general: { label: "❤️ General Donation", impact: "Goes where needed most" },
+  general: { 
+    label: "❤️ General Support", 
+    impact: "Support where it's needed most" 
+  },
 };
 
-const SUGGESTED_AMOUNTS = [5000, 10000, 25000, 50000, 100000];
+const SUGGESTED_AMOUNTS = [
+  { amount: 1000, label: "Textbooks" },
+  { amount: 5000, label: "Health Check" },
+  { amount: 10000, label: "Tech Kit" },
+  { amount: 25000, label: "Business Seed" },
+  { amount: 100000, label: "Hub Solar" },
+];
 
 const BANK_DETAILS = {
   bankName: "First Bank of Nigeria",
-  accountName: "Sabo Youth Foundation",
+  accountName: "Sabo Ibadan Youth Charity Foundation",
   accountNumber: "1234567890",
 };
 
@@ -135,6 +148,8 @@ const InputField = memo((props) => {
     placeholder,
     value,
     onChange,
+    id,
+    "aria-label": ariaLabel,
     ...rest
   } = props;
   return (
@@ -143,6 +158,8 @@ const InputField = memo((props) => {
         <Icon size={18} />
       </div>
       <input
+        id={id || name}
+        aria-label={ariaLabel || placeholder || name}
         name={name}
         type={type}
         value={value}
@@ -185,10 +202,14 @@ const Donation = () => {
       !intent.firstName ||
       !intent.lastName ||
       !intent.email ||
-      !intent.phone ||
       !intent.amount
     ) {
       toast.error("Please fill all required fields");
+      return;
+    }
+
+    if (!intent.agreedToTerms) {
+      toast.error("You must accept our Terms of Service to proceed.");
       return;
     }
 
@@ -257,20 +278,20 @@ const Donation = () => {
 
         <div className="max-w-7xl mx-auto px-4 relative z-10 text-center space-y-12">
           <div className="inline-flex items-center gap-3 px-8 py-3 rounded-full glass-card-dark border-white/5 text-secondary-500 font-black text-[10px] uppercase tracking-[0.4em] shadow-2xl">
-            <Zap className="w-4 h-4 fill-secondary-500 animate-pulse" />
-            Empowerment Protocol Activated
+            <Heart className="w-4 h-4 fill-secondary-500 animate-pulse" />
+            Make an Impact Today
           </div>
 
           <h1 className="text-7xl md:text-[8rem] font-black text-white leading-[0.8] tracking-[-0.05em] animate-fade-in-up">
-            Fuel the <br />
+            Support Our <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 via-primary-500 to-primary-300 text-glow-primary">
-              Evolution.
+              Mission.
             </span>
           </h1>
 
           <p className="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto font-medium leading-relaxed">
-            We architecturalize futures for the youth of Ibadan. Your liquidity
-            is the catalyst for sustainable transformation across communities.
+            We are building a brighter future for the youth of Sabo, Ibadan. Your generous donation 
+            is the catalyst for sustainable transformation across our communities.
           </p>
         </div>
       </section>
@@ -288,10 +309,10 @@ const Donation = () => {
                 </div>
                 <div className="text-right">
                   <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                    Global Status
+                    Community Trust
                   </div>
                   <div className="text-primary-600 font-black text-sm uppercase text-glow-primary">
-                    Active
+                    Verified
                   </div>
                 </div>
               </div>
@@ -301,7 +322,7 @@ const Donation = () => {
                     15k+
                   </div>
                   <div className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">
-                    Impact Nodes
+                    Lives Touched
                   </div>
                 </div>
                 <div>
@@ -324,7 +345,7 @@ const Donation = () => {
               <div className="absolute inset-0 bg-gradient-to-t from-dark via-dark/40 to-transparent" />
               <div className="absolute bottom-10 left-10 right-10 space-y-4">
                 <div className="inline-block px-4 py-1.5 bg-primary-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest">
-                  Impact Log
+                  Success Story
                 </div>
                 <h4 className="text-3xl font-black text-white leading-tight">
                   {SUCCESS_STORIES[0].name}
@@ -333,7 +354,7 @@ const Donation = () => {
                   {SUCCESS_STORIES[0].fullDescription}
                 </p>
                 <button className="flex items-center gap-2 text-primary-400 font-black text-[10px] uppercase tracking-widest pt-4 group-hover:translate-x-2 transition-transform">
-                  View Dossier <ArrowRight size={14} />
+                  Read Full Story <ArrowRight size={14} />
                 </button>
               </div>
             </div>
@@ -350,7 +371,7 @@ const Donation = () => {
                       01
                     </div>
                     <h2 className="text-3xl font-black text-dark tracking-tight">
-                      Select Impact Vector
+                      Select Donation Cause
                     </h2>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -399,7 +420,7 @@ const Donation = () => {
                       02
                     </div>
                     <h2 className="text-3xl font-black text-dark tracking-tight">
-                      Identity Node
+                      Your Details
                     </h2>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -431,7 +452,7 @@ const Donation = () => {
                       icon={Mail}
                       name="email"
                       type="email"
-                      placeholder="Secure Email Agent"
+                      placeholder="Email Address"
                       value={intent.email}
                       onChange={(e) =>
                         dispatch({
@@ -443,7 +464,7 @@ const Donation = () => {
                     <InputField
                       icon={Phone}
                       name="phone"
-                      placeholder="Communication Node"
+                      placeholder="Phone Number"
                       value={intent.phone}
                       onChange={(e) =>
                         dispatch({
@@ -462,35 +483,48 @@ const Donation = () => {
                       03
                     </div>
                     <h2 className="text-3xl font-black text-dark tracking-tight">
-                      Liquidity Allocation
+                      Donation Amount
                     </h2>
                   </div>
                   <div className="space-y-8">
-                    <div className="flex flex-wrap gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                       {SUGGESTED_AMOUNTS.map((amt) => (
                         <button
-                          key={amt}
+                          key={amt.amount}
                           type="button"
                           onClick={() =>
                             dispatch({
                               type: "UPDATE_INTENT",
-                              payload: { amount: amt.toString() },
+                              payload: { amount: amt.amount.toString() },
                             })
                           }
-                          className={`px-10 py-5 rounded-[2rem] font-black text-sm transition-all ${
-                            intent.amount === amt.toString()
-                              ? "bg-dark text-white shadow-xl scale-105"
-                              : "bg-gray-50 text-gray-500 hover:bg-gray-100"
+                          className={`group relative p-6 rounded-[2rem] border-2 transition-all duration-500 overflow-hidden ${
+                            intent.amount === amt.amount.toString()
+                              ? "border-primary-600 bg-primary-50 text-dark scale-105 shadow-xl"
+                              : "border-gray-50 bg-gray-50/50 text-gray-500 hover:border-gray-200"
                           }`}
                         >
-                          ₦{amt.toLocaleString()}
+                          <div className="relative z-10">
+                            <div className="text-xl font-black tracking-tighter">
+                              ₦{amt.amount.toLocaleString()}
+                            </div>
+                            <div className="text-[8px] font-black uppercase tracking-widest opacity-60">
+                              {amt.label}
+                            </div>
+                          </div>
+                          {intent.amount === amt.amount.toString() && (
+                            <Motion.div 
+                              layoutId="activeAmount"
+                              className="absolute inset-0 bg-primary-600/5"
+                            />
+                          )}
                         </button>
                       ))}
                     </div>
                     <InputField
                       icon={DollarSign}
                       name="amount"
-                      placeholder="Custom Credit Amount"
+                      placeholder="Enter Custom Amount (₦)"
                       type="number"
                       value={intent.amount}
                       onChange={(e) =>
@@ -510,13 +544,13 @@ const Donation = () => {
                       04
                     </div>
                     <h2 className="text-3xl font-black text-dark tracking-tight">
-                      Transmission Mode
+                      Payment Method
                     </h2>
                   </div>
                   <div className="grid grid-cols-2 gap-6">
                     {[
-                      { id: "online", label: "Instant Card", icon: CreditCard },
-                      { id: "bank", label: "Bank Wire", icon: Zap },
+                      { id: "online", label: "Card / Transfer", icon: CreditCard },
+                      { id: "bank", label: "Direct Bank Deposit", icon: Zap },
                     ].map((mode) => (
                       <label
                         key={mode.id}
@@ -568,24 +602,46 @@ const Donation = () => {
                       }
                     />
                     <span className="text-xs font-black text-gray-400 uppercase tracking-widest leading-none">
-                      Accept Protocol Terms
+                      Accept Terms of Service
                     </span>
                   </label>
 
                   <button
                     type="submit"
                     disabled={ui.isSubmitting}
-                    className="w-full md:w-auto px-16 py-7 bg-primary-600 text-white font-black rounded-[2.5rem] hover:bg-primary-700 hover-scale-subtle shadow-2xl shadow-primary-500/30 disabled:opacity-50 transition-all flex items-center justify-center gap-4"
+                    className="w-full md:w-auto px-16 py-7 bg-primary-600 text-white font-black rounded-[2.5rem] hover:bg-primary-700 hover-scale-subtle shadow-2xl shadow-primary-500/30 disabled:opacity-50 transition-all flex items-center justify-center gap-4 group"
                   >
                     {ui.isSubmitting ? (
-                      <Zap className="animate-spin" />
+                      <Loader className="animate-spin" />
                     ) : (
-                      <CreditCard />
+                      <Zap size={20} className="group-hover:fill-white transition-colors" />
                     )}
-                    Finalize Connection
+                    Complete Donation
                   </button>
                 </div>
               </form>
+            </div>
+
+            {/* --- TRUST ARCHITECTURE BLOCK --- */}
+            <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { icon: ShieldCheck, label: "SSL SECURE", sub: "AES-256 Bit" },
+                { icon: CheckCircle2, label: "CAC REGISTERED", sub: "IT/NO/123456" },
+                { icon: Globe, label: "100% PROGRAM", sub: "Donation Direct" },
+                { icon: Star, label: "AUDITED", sub: "Financial Clarity" },
+              ].map((badge, i) => (
+                <div key={i} className="bg-white/50 backdrop-blur-sm border border-gray-100 py-6 px-4 rounded-[2rem] flex flex-col items-center text-center space-y-2">
+                  <badge.icon size={20} className="text-primary-600" />
+                  <div className="space-y-0.5">
+                    <div className="text-[9px] font-black uppercase tracking-widest text-dark">
+                      {badge.label}
+                    </div>
+                    <div className="text-[7px] font-bold uppercase tracking-widest text-gray-400">
+                      {badge.sub}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -600,18 +656,21 @@ const Donation = () => {
             </div>
             <div className="space-y-4">
               <h3 className="text-5xl font-black text-white tracking-tight">
-                Transmission Complete
+                Thank You!
               </h3>
               <p className="text-gray-400 font-medium">
-                Your donation has been verified. You have successfully
-                architecturalized a piece of the future.
+                Your donation has been verified and received successfully. Thank you for 
+                your generous support in helping us empower the youth of Sabo, Ibadan.
               </p>
             </div>
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => {
+                dispatch({ type: "RESET" });
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
               className="w-full py-6 bg-white text-dark font-black rounded-[2rem] hover-scale-subtle"
             >
-              Return to Command Center
+              Return to Home
             </button>
           </div>
         </div>
@@ -633,19 +692,19 @@ const Donation = () => {
                 <Zap size={32} />
               </div>
               <h3 className="text-4xl font-black text-dark tracking-tight">
-                Wire Protocol
+                Bank Transfer Details
               </h3>
               <p className="text-gray-500 font-medium">
-                Execute transfer to the official treasury node below.
+                Please make your donation transfer to the official account below.
               </p>
             </div>
 
             <div className="space-y-4">
               {[
-                { label: "Treasury Node", value: BANK_DETAILS.bankName },
-                { label: "Account ID", value: BANK_DETAILS.accountName },
+                { label: "Bank Name", value: BANK_DETAILS.bankName },
+                { label: "Account Name", value: BANK_DETAILS.accountName },
                 {
-                  label: "Liquidity Route",
+                  label: "Account Number",
                   value: BANK_DETAILS.accountNumber,
                   copy: true,
                 },
@@ -677,8 +736,8 @@ const Donation = () => {
             <div className="bg-primary-50 p-6 rounded-[2rem] flex items-start gap-4">
               <AlertCircle className="text-primary-600 shrink-0 mt-1" />
               <p className="text-xs font-bold text-primary-900 leading-relaxed uppercase tracking-wider">
-                Important: After transmission, please send proof of funding to
-                our official channel for verification.
+                Important: After making your transfer, please email your proof of payment or 
+                contact us via WhatsApp to acknowledge your donation.
               </p>
             </div>
 
@@ -691,7 +750,7 @@ const Donation = () => {
               }
               className="w-full py-6 bg-dark text-white font-black rounded-[2rem] shadow-2xl"
             >
-              I Have Transferred Liquidity
+              I Have Made the Transfer
             </button>
           </div>
         </div>

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 // context/ThemeContext.jsx
 import React, { createContext, useContext, useState, useEffect } from "react";
 
@@ -5,7 +6,7 @@ const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
   const [darkMode, setDarkMode] = useState(
-    localStorage.getItem("theme") === "dark"
+    localStorage.getItem("theme") === "dark",
   );
 
   useEffect(() => {

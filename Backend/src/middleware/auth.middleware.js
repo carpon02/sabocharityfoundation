@@ -163,3 +163,27 @@ export const restrictTo = (...roles) => {
     next();
   };
 };
+
+/**
+ * @desc Restrict access to specific admin roles (super_admin has universal access)
+ * @usage authorizeAdminRole('finance_admin', 'content_editor')
+ */
+export const authorizeAdminRole = (...adminRoles) => {
+  return (req, res, next) => {
+    if (!req.user || req.user.role !== 'admin') {
+      return next(new ApiError('Not authorized as an admin', 403));
+    }
+    
+    // Bypass for super_admin
+    if (req.user.adminRole === 'super_admin') {
+      return next();
+    }
+
+    if (!adminRoles.includes(req.user.adminRole)) {
+      return next(
+        new ApiError(`Access denied. Requires one of the following admin roles: ${adminRoles.join(', ')}`, 403)
+      );
+    }
+    next();
+  };
+};

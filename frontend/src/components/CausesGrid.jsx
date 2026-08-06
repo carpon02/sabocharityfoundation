@@ -150,64 +150,71 @@ const CausesGrid = () => {
                 >
                   <Link
                     to={`/campaigns/${campaign._id}`}
-                    className="relative flex h-[550px] flex-col justify-end overflow-hidden rounded-[3rem] p-10 bg-white/5 backdrop-blur-2xl transition-all duration-700 border border-white/10 hover:border-white/20 hover:shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] group-hover:-translate-y-4"
+                    className="relative flex h-[580px] flex-col justify-end overflow-hidden rounded-[3.5rem] p-10 bg-white/5 backdrop-blur-3xl transition-all duration-700 border border-white/10 hover:border-white/30 hover:shadow-[0_40px_100px_-20px_rgba(0,0,0,0.6)] group-hover:-translate-y-6"
                   >
-                    {/* Category Glow Plate */}
+                    {/* Category Glow Plate - Dynamic & High-Octane */}
                     <div
-                      className={`absolute top-0 right-0 w-32 h-32 blur-[60px] opacity-0 group-hover:opacity-40 transition-opacity duration-700 ${catData.bg}`}
+                      className={`absolute top-0 right-0 w-48 h-48 blur-[80px] opacity-0 group-hover:opacity-60 transition-all duration-1000 ${catData.bg} animate-pulse`}
                     />
 
-                    {/* Top UI Decor */}
-                    <div className="absolute top-10 right-10 flex items-center justify-center w-12 h-12 rounded-2xl bg-white/5 border border-white/10 text-white/40 group-hover:bg-secondary-500 group-hover:text-white group-hover:rotate-[360deg] transition-all duration-700">
-                      <ArrowUpRight className="w-6 h-6" />
+                    {/* Top UI Decor: Mission Metadata */}
+                    <div className="absolute top-10 right-10 flex items-center gap-3">
+                      <div className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[8px] font-black uppercase tracking-[0.2em] text-gray-500">
+                        Active Node
+                      </div>
+                      <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-white/5 border border-white/10 text-white/40 group-hover:bg-secondary-500 group-hover:text-white group-hover:rotate-[360deg] transition-all duration-700 shadow-2xl">
+                        <ArrowUpRight className="w-6 h-6" />
+                      </div>
                     </div>
 
                     <div
-                      className={`mb-10 w-20 h-20 rounded-[2.5rem] flex items-center justify-center transition-all duration-700 ${catData.bg} ${catData.glow} group-hover:scale-110 shadow-2xl`}
+                      className={`mb-12 w-24 h-24 rounded-[3rem] flex items-center justify-center transition-all duration-700 ${catData.bg} ${catData.glow} group-hover:scale-110 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.5)] border border-white/5`}
                     >
-                      <Icon className={`w-10 h-10 ${catData.color}`} />
+                      <Icon className={`w-12 h-12 ${catData.color}`} />
                     </div>
 
-                    <div className="space-y-6">
+                    <div className="space-y-6 relative z-10">
                       <div
-                        className={`text-[10px] font-black uppercase tracking-[0.5em] transition-colors duration-500 ${catData.color}`}
+                        className={`text-[10px] font-black uppercase tracking-[0.6em] transition-colors duration-500 ${catData.color} drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]`}
                       >
-                        {campaign.category || "INITIATIVE"}
+                        {campaign.category || "MISSION"}
                       </div>
-                      <h3 className="text-3xl font-black leading-tight tracking-tight group-hover:text-white transition-colors">
+                      <h3 className="text-4xl font-black leading-[0.9] tracking-tighter group-hover:text-white transition-colors">
                         {campaign.title}
                       </h3>
-                      <p className="text-gray-400 text-sm leading-relaxed group-hover:text-gray-300 transition-colors line-clamp-3 font-medium">
+                      <p className="text-gray-400 text-sm leading-relaxed group-hover:text-gray-300 transition-colors line-clamp-3 font-medium italic border-l-2 border-white/5 pl-6">
                         {campaign.shortDescription || campaign.description}
                       </p>
                     </div>
 
-                    {/* Dashboard Style Progress UI */}
-                    <div className="mt-10 pt-10 border-t border-white/5 translate-y-8 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-700 delay-100">
-                      <div className="flex justify-between items-end mb-4">
+                    {/* Dashboard Style Progress UI: Liquid Impact */}
+                    <div className="mt-12 pt-10 border-t border-white/10 translate-y-8 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-700 delay-150">
+                      <div className="flex justify-between items-end mb-5">
                         <div className="space-y-1">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">
-                            Liquidity Depth
+                          <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 italic">
+                            Mission Funding
                           </p>
-                          <p className="text-lg font-black font-mono">
+                          <p className="text-2xl font-black font-mono tracking-tighter text-white">
                             ₦{campaign.raisedAmount.toLocaleString()}
                           </p>
                         </div>
                         <div className="text-right">
                           <p
-                            className={`text-xl font-black font-mono ${catData.color}`}
+                            className={`text-2xl font-black font-mono ${catData.color} animate-pulse`}
                           >
                             {progress}%
                           </p>
                         </div>
                       </div>
-                      <div className="h-2 bg-white/5 rounded-full overflow-hidden p-0.5 border border-white/5 shadow-inner">
+                      <div className="h-3 bg-white/5 rounded-full overflow-hidden p-0.5 border border-white/10 shadow-2xl">
                         <Motion.div
                           initial={{ width: 0 }}
                           whileInView={{ width: `${progress}%` }}
-                          transition={{ duration: 2, delay: 0.5 }}
-                          className={`h-full rounded-full shadow-[0_0_15px_rgba(255,255,255,0.2)] bg-gradient-to-r from-transparent to-current ${catData.color} bg-current`}
-                        />
+                          transition={{ duration: 2.5, ease: "easeOut" }}
+                          className={`h-full rounded-full shadow-[0_0_25px_rgba(255,255,255,0.4)] bg-gradient-to-r from-transparent via-white/20 to-current ${catData.color} bg-current relative overflow-hidden`}
+                        >
+                           <div className="absolute inset-0 bg-shimmer-fast opacity-30" />
+                        </Motion.div>
                       </div>
                     </div>
                   </Link>

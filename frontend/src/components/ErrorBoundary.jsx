@@ -1,6 +1,7 @@
-import React from 'react';
-import { AlertCircle, RefreshCw, Home } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import React from "react";
+import * as Sentry from "@sentry/react";
+import { AlertCircle, RefreshCw, Home } from "lucide-react";
+import { Link } from "react-router-dom";
 
 /**
  * Error Boundary Component
@@ -12,23 +13,23 @@ class ErrorBoundary extends React.Component {
     this.state = { hasError: false, error: null, errorInfo: null };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(_error) {
     return { hasError: true };
   }
 
   componentDidCatch(error, errorInfo) {
     this.setState({
       error,
-      errorInfo
+      errorInfo,
     });
-    
+
     // Log error to console in development
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error caught by boundary:', error, errorInfo);
+    if (import.meta.env.DEV) {
+      console.error("Error caught by boundary:", error, errorInfo);
     }
-    
-    // In production, you could log to an error reporting service
-    // e.g., Sentry, LogRocket, etc.
+
+    // Log to Sentry
+    Sentry.captureException(error, { extra: errorInfo });
   }
 
   handleReset = () => {
@@ -55,7 +56,7 @@ class ErrorBoundary extends React.Component {
               </p>
             </div>
 
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {import.meta.env.DEV && this.state.error && (
               <div className="mb-8 p-4 bg-red-50 rounded-xl border border-red-200 text-left">
                 <p className="text-sm font-semibold text-red-800 mb-2">
                   Error Details (Development Only):
@@ -86,8 +87,11 @@ class ErrorBoundary extends React.Component {
 
             <div className="mt-8 pt-8 border-t border-gray-200">
               <p className="text-sm text-gray-500">
-                If this problem persists, please{' '}
-                <Link to="/contact" className="text-emerald-600 hover:text-emerald-700 font-semibold">
+                If this problem persists, please{" "}
+                <Link
+                  to="/contact"
+                  className="text-emerald-600 hover:text-emerald-700 font-semibold"
+                >
                   contact our support team
                 </Link>
               </p>
@@ -102,7 +106,3 @@ class ErrorBoundary extends React.Component {
 }
 
 export default ErrorBoundary;
-
-
-
-

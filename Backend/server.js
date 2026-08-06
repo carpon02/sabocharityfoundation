@@ -8,16 +8,10 @@ import * as Sentry from "@sentry/node";
 import mongoose from "mongoose";
 import app from "./app.js";
 import connectDB from "./src/config/database.js";
-import logger from "./src/utils/logger.js"; // Updated import - removed SentryLogger
+import logger from "./src/config/logger.js";
+import initRecurringDonationCron from "./src/jobs/donationCron.js";
 
-// Health Check Endpoint
-app.get("/health", (req, res) => {
-  res.status(200).json({
-    status: "ok",
-    uptime: process.uptime(),
-    timestamp: new Date().toISOString(),
-  });
-});
+// Health check is now managed in app.js
 
 // --------------------
 // Environment Variables
@@ -93,6 +87,9 @@ const startServer = async () => {
     logger.info("✅ MongoDB connected successfully");
     console.log("✅ MongoDB connected successfully");
 
+    // Initialize background cron jobs
+    initRecurringDonationCron();
+
     // Start Express server
     server = app.listen(PORT, () => {
       console.log("\n-----------------------------------------");
@@ -129,8 +126,7 @@ const gracefulShutdown = async (signal) => {
   }
 };
 
-// Sentry Error Handler (must be added after all controllers and before any other error middleware)
-Sentry.setupExpressErrorHandler(app);
+// Sentry Error Handler is now managed in app.js
 
 // --------------------
 // Event Listeners

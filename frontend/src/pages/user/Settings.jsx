@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useTheme } from "../../context/ThemeContext";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import {
-  SettingsIcon,
+  Settings as SettingsIcon,
   User,
   Bell,
   Shield,
-  LockIcon,
+  Lock as LockIcon,
   Camera,
   RefreshCw,
   Zap,
@@ -19,6 +19,7 @@ import {
   Smartphone,
   ChevronRight,
   Sparkles,
+  Info,
 } from "lucide-react";
 import apiClient from "../../config/apiConfig";
 
@@ -202,7 +203,10 @@ const ProfileSection = ({ user, onUpdate, isLoading, onRefresh }) => {
               }`}
             >
               <img
-                src={user.avatar || "https://via.placeholder.com/150"}
+                src={
+                  user.avatar ||
+                  `https://ui-avatars.com/api/?name=${user.name}&background=059669&color=fff`
+                }
                 alt={user.name}
                 className="w-full h-full object-cover rounded-2xl transition-transform duration-700 group-hover:scale-110"
               />
@@ -450,7 +454,7 @@ const NotificationSection = ({ preferences, onUpdate, isLoading }) => {
     [settings, onUpdate],
   );
 
-  const SectionHeader = ({ icon: IconComponent, title, subtitle }) => (
+  const SectionHeader = ({ icon: Icon, title, subtitle }) => (
     <div className="flex items-center gap-4 mb-8">
       <div
         className={`p-4 rounded-xl ${
@@ -459,7 +463,7 @@ const NotificationSection = ({ preferences, onUpdate, isLoading }) => {
             : "bg-emerald-50 text-emerald-600"
         }`}
       >
-        <IconComponent size={18} />
+        <Icon size={18} />
       </div>
       <div>
         <h3
@@ -882,21 +886,38 @@ const SecuritySection = ({ user, onUpdate, isLoading }) => {
                     darkMode ? "text-gray-500" : "text-gray-400"
                   }`}
                 >
-                  Standard cryptographic authentication
+                  {user.authMethod === "google"
+                    ? "Your security is managed by Google"
+                    : "Standard cryptographic authentication"}
                 </p>
               </div>
-              <button
-                onClick={() => setShowChangePassword(!showChangePassword)}
-                className={`px-6 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all
-                  ${
-                    darkMode
-                      ? "bg-gray-800 text-emerald-400 hover:bg-emerald-600 hover:text-white"
-                      : "bg-white text-emerald-600 hover:bg-emerald-600 hover:text-white shadow-sm"
-                  }`}
-              >
-                {showChangePassword ? "Close Settings" : "Change Password"}
-              </button>
+              {user.authMethod !== "google" && (
+                <button
+                  onClick={() => setShowChangePassword(!showChangePassword)}
+                  className={`px-6 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all
+                    ${
+                      darkMode
+                        ? "bg-gray-800 text-emerald-400 hover:bg-emerald-600 hover:text-white"
+                        : "bg-white text-emerald-600 hover:bg-emerald-600 hover:text-white shadow-sm"
+                    }`}
+                >
+                  {showChangePassword ? "Close Settings" : "Change Password"}
+                </button>
+              )}
             </div>
+
+            {user.authMethod === "google" && (
+              <div
+                className={`p-4 rounded-xl text-[10px] font-bold uppercase tracking-widest border ${
+                  darkMode
+                    ? "bg-emerald-500/5 border-emerald-500/10 text-emerald-400"
+                    : "bg-emerald-50 border-emerald-100 text-emerald-700"
+                }`}
+              >
+                You are signed in with Google. Password management is handled
+                through your Google Account security settings.
+              </div>
+            )}
 
             <AnimatePresence>
               {showChangePassword && (
@@ -1038,7 +1059,7 @@ const PreferencesSection = ({ preferences, onUpdate }) => {
     [settings, onUpdate],
   );
 
-  const SelectItem = ({ label, icon: IconComponent, id, options }) => (
+  const SelectItem = ({ label, icon: Icon, id, options }) => (
     <div
       className={`p-6 rounded-2xl border transition-all duration-500
       ${
@@ -1055,7 +1076,7 @@ const PreferencesSection = ({ preferences, onUpdate }) => {
               : "bg-white text-emerald-600 shadow-sm"
           }`}
         >
-          <IconComponent size={18} />
+          <Icon size={18} />
         </div>
         <h4
           className={`text-xs font-bold uppercase tracking-widest ${

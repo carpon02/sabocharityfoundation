@@ -143,14 +143,14 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Intelligence Briefing */}
+          {/* Intelligent Briefing */}
           <div className="space-y-6">
-            <h4 className="text-sm font-black text-white uppercase tracking-[0.2em]">
-              Intelligence Briefing
+            <h4 className="text-sm font-black text-white uppercase tracking-[0.2em] font-outfit">
+              Stay Informed
             </h4>
             <p className="text-sm text-gray-400 font-medium leading-relaxed">
-              Subscribe for strategic updates, impact metrics, and
-              mission-critical announcements.
+              Subscribe for impact stories, mission updates, and
+              transparent financial reporting.
             </p>
             <form onSubmit={handleNewsletterSubmit} className="relative">
               <input
@@ -159,7 +159,7 @@ const Footer = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading || subscribed}
                 className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-gray-500 text-sm font-medium outline-none focus:border-primary-600 focus:ring-4 focus:ring-primary-600/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                placeholder="agent@domain.com"
+                placeholder="your@email.com"
                 required
               />
               <button
@@ -176,27 +176,25 @@ const Footer = () => {
                 )}
               </button>
             </form>
-            {subscribed && (
-              <p className="text-xs text-primary-400 flex items-center gap-2">
-                <CheckCircle size={14} />
-                Successfully subscribed!
-              </p>
-            )}
 
             {/* Contact Intelligence */}
-            <div className="space-y-3 pt-4">
+            <div className="space-y-4 pt-4">
               {[
                 { icon: Mail, text: "info@saboibadanyouth.org", href: "mailto:info@saboibadanyouth.org" },
-                { icon: Phone, text: "+234 810 000 0000", href: "tel:+2348100000000" },
-                { icon: MapPin, text: "Sabo, Ibadan, Nigeria", href: "https://maps.google.com/?q=Sabo+Ibadan+Nigeria" },
+                { icon: Phone, text: "+234 810 000 0000 (Call/WhatsApp)", href: "https://wa.me/2348100000000" },
+                { icon: MapPin, text: "Sabo Community, Ibadan, Oyo State, Nigeria", href: "https://maps.google.com/?q=Sabo+Ibadan+Nigeria" },
               ].map((contact, i) => (
                 <a
                   key={i}
                   href={contact.href}
-                  className="flex items-center gap-3 text-xs text-gray-400 hover:text-primary-400 transition-colors"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-start gap-4 text-xs text-gray-400 hover:text-primary-400 transition-colors group"
                 >
-                  <contact.icon size={14} className="text-primary-500 flex-shrink-0" />
-                  <span className="font-medium">{contact.text}</span>
+                  <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-primary-600/20 transition-colors">
+                    <contact.icon size={14} className="text-primary-500 flex-shrink-0" />
+                  </div>
+                  <span className="font-semibold leading-tight pt-1">{contact.text}</span>
                 </a>
               ))}
             </div>
@@ -205,14 +203,19 @@ const Footer = () => {
 
         {/* Institutional Signature */}
         <div className="border-t border-white/10 pt-10">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <p className="text-xs text-gray-500 font-medium">
-              © {new Date().getFullYear()}{" "}
-              <span className="text-white font-black">
-                Sabo Ibadan Youth Charity Foundation
-              </span>
-              . All protocols reserved.
-            </p>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="space-y-2 text-center md:text-left">
+              <p className="text-xs font-bold uppercase tracking-widest text-primary-500">
+                CAC Registration No: IT/NO/123456 • Registered Nigerian NGO
+              </p>
+              <p className="text-xs text-gray-400 font-medium">
+                © {new Date().getFullYear()}{" "}
+                <span className="text-white font-black font-outfit">
+                  Sabo Ibadan Youth Charity Foundation
+                </span>
+                . Transparency is our protocol.
+              </p>
+            </div>
             <ul className="flex items-center gap-6 flex-wrap justify-center">
               {[
                 { name: "Privacy Policy", path: "/privacy-policy" },

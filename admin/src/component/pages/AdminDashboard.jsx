@@ -13,7 +13,18 @@ import {
   Heart,
   Calendar,
   RefreshCw,
+  Download,
 } from "lucide-react";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import toast from "react-hot-toast";
 import { useTheme } from "../../context/ThemeContext";
 import { useSelector, useDispatch } from "react-redux";
 import { StatsCard, LoadingSpinner } from "../shared";
@@ -53,6 +64,28 @@ const AdminDashboard = () => {
       fetchAllPayments({ limit: 5, sortBy: "createdAt", order: "desc" }),
     );
     dispatch(fetchDonationTrends());
+  };
+
+  const handleExportCSV = async () => {
+    try {
+      const token = localStorage.getItem("adminToken");
+      const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
+      const res = await fetch(`${baseUrl}/analytics/export/donations`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error("Failed to export data");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "donations-export.csv";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast.success("Export downloaded successfully");
+    } catch (error) {
+      toast.error("Failed to export donations");
+    }
   };
 
   const stats = useMemo(() => {
@@ -150,6 +183,18 @@ const AdminDashboard = () => {
               Status: <span className="text-primary-500">Active</span>
             </span>
           </div>
+          <button
+            onClick={handleExportCSV}
+            className={`px-4 py-3 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 ${
+              darkMode
+                ? "bg-primary-600 hover:bg-primary-700 text-white"
+                : "bg-primary-500 hover:bg-primary-600 text-white shadow-lg shadow-primary-500/30"
+            }`}
+            title="Export Donations CSV"
+          >
+            <Download size={18} />
+            <span className="hidden sm:inline">Export CSV</span>
+          </button>
           <button
             onClick={handleRefresh}
             disabled={analyticsLoading}
@@ -592,48 +637,54 @@ const AdminDashboard = () => {
           <Calendar size={20} className="text-gray-400" />
         </div>
         {donationTrends && donationTrends.length > 0 ? (
-          <div className="flex items-end justify-between h-48 gap-3 px-2">
-            {donationTrends.map((d, i) => (
-              <div
-                key={i}
-                className="flex-1 flex flex-col items-center gap-3 group relative"
+          <div className="h-72 w-full mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={donationTrends}
+                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
               >
-                <motion.div
-                  initial={{ height: 0 }}
-                  animate={{
-                    height: `${
-                      (d.amount /
-                        Math.max(...donationTrends.map((x) => x.amount))) *
-                      100
-                    }%`,
-                  }}
-                  transition={{
-                    duration: 1.5,
-                    ease: "backOut",
-                    delay: i * 0.1,
-                  }}
-                  className="w-full rounded-lg bg-gradient-to-t from-primary-600 to-primary-400 group-hover:shadow-lg group-hover:shadow-primary-500/30 transition-all cursor-pointer"
+                <defs>
+                  <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={darkMode ? "#374151" : "#e5e7eb"} />
+                <XAxis 
+                  dataKey="month" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: darkMode ? "#9ca3af" : "#6b7280", fontSize: 12 }}
+                  dy={10}
                 />
-                <span
-                  className={`text-xs font-semibold ${
-                    darkMode
-                      ? "text-gray-500 group-hover:text-white"
-                      : "text-gray-500 group-hover:text-dark"
-                  } transition-colors`}
-                >
-                  {d.month}
-                </span>
-                <div
-                  className={`absolute -top-12 left-1/2 -translate-x-1/2 px-3 py-2 rounded-lg text-xs font-bold opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-20 border whitespace-nowrap ${
-                    darkMode
-                      ? "bg-gray-900 text-white border-gray-800"
-                      : "bg-white text-dark border-gray-200 shadow-lg"
-                  }`}
-                >
-                  {formatCurrency(d.amount)}
-                </div>
-              </div>
-            ))}
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: darkMode ? "#9ca3af" : "#6b7280", fontSize: 12 }}
+                  tickFormatter={(value) => `₦${(value / 1000).toFixed(0)}k`}
+                />
+                <Tooltip
+                  contentStyle={{ 
+                    backgroundColor: darkMode ? "#111827" : "#ffffff",
+                    borderColor: darkMode ? "#374151" : "#e5e7eb",
+                    borderRadius: "0.5rem",
+                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
+                  }}
+                  itemStyle={{ color: "#10b981", fontWeight: "bold" }}
+                  formatter={(value) => [formatCurrency(value), "Amount"]}
+                  labelStyle={{ color: darkMode ? "#9ca3af" : "#6b7280", marginBottom: "0.25rem" }}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="amount" 
+                  stroke="#10b981" 
+                  strokeWidth={3}
+                  fillOpacity={1} 
+                  fill="url(#colorAmount)" 
+                  activeDot={{ r: 6, strokeWidth: 0, fill: "#10b981" }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         ) : (
           <div className="h-48 flex items-center justify-center">

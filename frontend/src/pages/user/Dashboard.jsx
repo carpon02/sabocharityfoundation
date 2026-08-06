@@ -25,6 +25,7 @@ import {
 import { useTheme } from "../../context/ThemeContext";
 import { fetchUserAnalytics } from "../../features/analytics/analyticsSlice";
 import { getUserRegisteredEvents } from "../../features/event/eventSlice";
+import Meta from "../../components/Meta";
 
 // Utility function for number formatting
 const formatNumber = (num) => {
@@ -394,9 +395,26 @@ const CampaignCard = ({ campaign }) => {
   );
 };
 
-// Component: Operational Pulse (Donation Heartbeat)
-const ActivityTimeline = ({ donations }) => {
+// Component: Operational Pulse (Impact Heartbeat)
+const ActivityTimeline = ({ activities }) => {
   const { darkMode } = useTheme();
+
+  const getActivityConfig = (type) => {
+    switch (type) {
+      case "donation":
+        return {
+          icon: Heart,
+          color: "text-emerald-500",
+          bg: "bg-emerald-500/10",
+        };
+      case "event":
+        return { icon: Calendar, color: "text-blue-500", bg: "bg-blue-500/10" };
+      case "milestone":
+        return { icon: Star, color: "text-amber-500", bg: "bg-amber-500/10" };
+      default:
+        return { icon: Zap, color: "text-gray-500", bg: "bg-gray-500/10" };
+    }
+  };
 
   return (
     <div className="space-y-6 relative ml-1.5 pt-2">
@@ -405,86 +423,84 @@ const ActivityTimeline = ({ donations }) => {
           darkMode ? "bg-gray-800" : "bg-gray-100"
         }`}
       />
-      {donations.map((donation, index) => (
-        <motion.div
-          key={donation.id}
-          initial={{ opacity: 0, x: -10 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: index * 0.05 }}
-          className="flex items-start gap-5 relative"
-        >
-          <div
-            className={`absolute -left-1.5 w-3.5 h-3.5 rounded-full border-2 ${
-              donation.status === "completed"
-                ? "bg-emerald-500 border-white dark:border-gray-950"
-                : "bg-amber-500 border-white dark:border-gray-950"
-            } z-10 mt-1 shadow-md`}
-          />
+      {activities.map((activity, index) => {
+        const config = getActivityConfig(activity.type);
+        const Icon = config.icon;
 
-          <div
-            className={`flex-1 p-5 rounded-2xl border transition-all duration-300 group ${
-              darkMode
-                ? "bg-gray-900/40 border-gray-800/80 hover:bg-gray-900 shadow-xl"
-                : "bg-white border-gray-100 hover:bg-gray-50 shadow-lg shadow-gray-200/10"
-            }`}
+        return (
+          <motion.div
+            key={activity.id}
+            initial={{ opacity: 0, x: -10 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: index * 0.05 }}
+            className="flex items-start gap-5 relative"
           >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <div
-                  className={`p-2 rounded-lg ${
-                    darkMode ? "bg-gray-800" : "bg-gray-50"
-                  }`}
-                >
-                  <Zap
-                    size={14}
-                    className={
-                      donation.status === "completed"
-                        ? "text-emerald-500"
-                        : "text-amber-500"
-                    }
-                  />
+            <div
+              className={`absolute -left-1.5 w-3.5 h-3.5 rounded-full border-2 ${
+                activity.status === "completed" ||
+                activity.status === "registered"
+                  ? "bg-emerald-500 border-white dark:border-gray-950"
+                  : "bg-amber-500 border-white dark:border-gray-950"
+              } z-10 mt-1 shadow-md`}
+            />
+
+            <div
+              className={`flex-1 p-5 rounded-2xl border transition-all duration-300 group ${
+                darkMode
+                  ? "bg-gray-950 border-gray-800 hover:border-emerald-500/30 hover:bg-gray-900"
+                  : "bg-white border-gray-100 hover:bg-gray-50 shadow-lg shadow-gray-200/10"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${config.bg}`}>
+                    <Icon size={14} className={config.color} />
+                  </div>
+                  <p
+                    className={`text-sm font-bold tracking-tight ${
+                      darkMode ? "text-white" : "text-gray-900"
+                    }`}
+                  >
+                    {activity.title}
+                  </p>
                 </div>
-                <p
-                  className={`text-sm font-semibold tracking-tight ${
-                    darkMode ? "text-white" : "text-gray-900"
+                {activity.amount && (
+                  <span className="text-sm font-bold text-emerald-600">
+                    +{formatNumber(activity.amount)}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center justify-between">
+                <div
+                  className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider ${
+                    darkMode ? "text-gray-600" : "text-gray-400"
                   }`}
                 >
-                  {donation.campaign}
-                </p>
+                  <Clock size={12} />
+                  {new Date(activity.date).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </div>
+                <span
+                  className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-lg border ${
+                    activity.status === "completed" ||
+                    activity.status === "registered"
+                      ? "border-emerald-500/20 text-emerald-500 bg-emerald-500/5"
+                      : "border-amber-500/20 text-amber-500 bg-amber-500/5"
+                  }`}
+                >
+                  {activity.status}
+                </span>
               </div>
-              <span className="text-sm font-bold text-emerald-600">
-                +{formatNumber(donation.amount)}
-              </span>
             </div>
-            <div className="flex items-center justify-between">
-              <div
-                className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider ${
-                  darkMode ? "text-gray-600" : "text-gray-400"
-                }`}
-              >
-                <Clock size={12} />
-                {new Date(donation.date).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                })}
-              </div>
-              <span
-                className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-lg border ${
-                  donation.status === "completed"
-                    ? "border-emerald-500/20 text-emerald-500 bg-emerald-500/5"
-                    : "border-amber-500/20 text-amber-500 bg-amber-500/5"
-                }`}
-              >
-                {donation.status}
-              </span>
-            </div>
-          </div>
-        </motion.div>
-      ))}
+          </motion.div>
+        );
+      })}
 
       <AnimatePresence>
-        {(!donations || donations.length === 0) && (
+        {(!activities || activities.length === 0) && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -507,6 +523,52 @@ const ActivityTimeline = ({ donations }) => {
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+};
+
+// Component: Discovery Section (New Missions Forge)
+const DiscoverySection = ({ campaigns }) => {
+  const { darkMode } = useTheme();
+
+  if (!campaigns || campaigns.length === 0) return null;
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2
+            className={`text-xl font-bold ${darkMode ? "text-white" : "text-gray-950"}`}
+          >
+            New Missions
+          </h2>
+          <p
+            className={`text-xs font-semibold mt-1 ${darkMode ? "text-gray-600" : "text-gray-400"}`}
+          >
+            Discover urgent initiatives waiting for your support
+          </p>
+        </div>
+        <div
+          className={`p-4 rounded-xl ${darkMode ? "bg-amber-500/10 text-amber-500" : "bg-amber-50 text-amber-600"}`}
+        >
+          <Zap size={20} className="animate-pulse" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {campaigns.map((campaign) => (
+          <CampaignCard
+            key={campaign._id}
+            campaign={{
+              id: campaign._id,
+              title: campaign.title,
+              raised: campaign.raisedAmount,
+              target: campaign.targetAmount,
+              image: campaign.image,
+            }}
+          />
+        ))}
+      </div>
     </div>
   );
 };
@@ -650,6 +712,10 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-8 sm:space-y-12 pb-12 max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8">
+      <Meta
+        title={`Dashboard | ${authUser?.firstName || "User"}`}
+        description="Your personal impact dashboard at Sabo Ibadan Youth Charity Foundation. Track your donations, event registrations, and see the change you're making in the community."
+      />
       {/* Foundation Impact Center (Header) */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -681,11 +747,21 @@ const Dashboard = () => {
               Sabo Ibadan Youth <br />
               <span className="text-emerald-500">Charity Foundation</span>
             </h1>
-            <p className="text-gray-400 text-sm md:text-base max-w-2xl mb-12 font-medium leading-relaxed">
-              Empowering the youth and community of{" "}
-              <span className="text-emerald-400">Sabo Ibadan</span>. Your
-              strategic commitment drives our shared mission forward.
-            </p>
+            <div className="flex items-center gap-2 mb-12">
+              <span
+                className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border ${
+                  darkMode
+                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                    : "bg-emerald-50 border-emerald-100 text-emerald-700"
+                }`}
+              >
+                {data.user?.donorTier || "Contributor"} Level
+              </span>
+              <p className="text-gray-400 text-sm font-medium">
+                Empowering the youth and community of{" "}
+                <span className="text-emerald-400">Sabo Ibadan</span>.
+              </p>
+            </div>
           </motion.div>
 
           <div className="flex flex-wrap gap-5">
@@ -868,7 +944,7 @@ const Dashboard = () => {
           </div>
 
           <div className="max-h-[550px] overflow-y-auto custom-scrollbar pr-3">
-            <ActivityTimeline donations={data.recentDonations || []} />
+            <ActivityTimeline activities={data.recentActivities || []} />
           </div>
         </motion.div>
 
@@ -1017,6 +1093,22 @@ const Dashboard = () => {
           )}
         </div>
       </div>
+
+      {/* Discovery Section (New Missions) */}
+      {userAnalytics?.discoveryCampaigns?.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          className={`mb-12 p-8 sm:p-12 rounded-[2.5rem] border transition-all ${
+            darkMode
+              ? "bg-gray-950/40 border-gray-800/50 shadow-2xl"
+              : "bg-amber-50/10 border-amber-100/30 shadow-xl shadow-amber-500/5 text-amber-900"
+          }`}
+        >
+          <DiscoverySection campaigns={userAnalytics.discoveryCampaigns} />
+        </motion.div>
+      )}
 
       {/* Foundation Events Showcase */}
       <motion.div

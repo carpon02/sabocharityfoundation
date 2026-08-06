@@ -11,6 +11,7 @@ import {
   resetPassword,
   verifyEmail,
   resendVerification,
+  googleLogin,
 } from "../controllers/authController.js";
 
 import { protect } from "../middleware/auth.middleware.js";
@@ -35,20 +36,21 @@ router.post(
   "/register",
   sanitizeInputs,
   validate(registerValidation),
-  register
+  register,
 );
 router.post("/login", sanitizeInputs, validate(loginValidation), login);
+router.post("/google", googleLogin);
 router.post(
   "/forgot-password",
   sanitizeInputs,
   validate(emailValidation),
-  forgotPassword
+  forgotPassword,
 );
 router.put(
   "/reset-password/:resetToken",
   sanitizeInputs,
   validate(passwordResetValidation),
-  resetPassword
+  resetPassword,
 );
 
 // ✅ Email Verification Routes
@@ -70,7 +72,7 @@ router.put(
   upload.single("avatar"),
   sanitizeInputs,
   validate(updateDetailsValidation),
-  updateDetails
+  updateDetails,
 );
 
 // Change user password
@@ -78,7 +80,7 @@ router.put(
   "/change-password",
   sanitizeInputs,
   validate(changePasswordValidation),
-  changePassword
+  changePassword,
 );
 
 export default router;

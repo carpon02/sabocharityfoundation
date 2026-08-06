@@ -25,7 +25,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
-import axios from "axios";
+import apiClient from "../../config/apiConfig";
 import { toast } from "react-hot-toast";
 import { StatsCard } from "../shared";
 
@@ -49,7 +49,6 @@ const Events = () => {
   const fetchEvents = useCallback(async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("adminToken");
       const params = new URLSearchParams({
         page: pagination.page,
         limit: pagination.limit,
@@ -58,12 +57,7 @@ const Events = () => {
       if (searchTerm) params.append("search", searchTerm);
       if (filterStatus !== "all") params.append("status", filterStatus);
 
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_URL}/events?${params}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await apiClient.get(`/events?${params}`);
 
       setEvents(response.data.data.events);
       setPagination(response.data.data.pagination);
@@ -153,14 +147,7 @@ const Events = () => {
   const handleDeleteEvent = async () => {
     try {
       setDeleting(true);
-      await axios.delete(
-        `${import.meta.env.VITE_API_URL}/events/${eventToDelete}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
-          },
-        }
-      );
+      await apiClient.delete(`/events/${eventToDelete}`);
       toast.success("Event deleted successfully");
       setShowDeleteModal(false);
       setEventToDelete(null);

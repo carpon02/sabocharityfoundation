@@ -41,6 +41,9 @@ import CampaignDetail from "./components/CampaignDetail";
 import ProtectedRoute from "./components/routes/ProtectedRoute";
 import { ThemeProvider } from "./context/ThemeContext";
 
+import { HelmetProvider, Helmet } from "react-helmet-async";
+import WhatsAppButton from "./components/WhatsAppButton";
+
 const App = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
@@ -51,93 +54,101 @@ const App = () => {
   }, [dispatch]);
 
   return (
-    <ThemeProvider>
-      <ScrollToTop />
-      <ScrollToTopButton />
-      <ErrorBoundary>
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: "#1f2937",
-              color: "#fff",
-              borderRadius: "12px",
-              padding: "16px",
-              fontSize: "14px",
-              boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1)",
-            },
-            success: {
-              iconTheme: {
-                primary: "#10b981",
-                secondary: "#fff",
+    <HelmetProvider>
+      <Helmet>
+        <html lang="en" />
+      </Helmet>
+      <ThemeProvider>
+        <ScrollToTop />
+        <ScrollToTopButton />
+        <WhatsAppButton />
+        <ErrorBoundary>
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: "#1f2937",
+                color: "#fff",
+                borderRadius: "12px",
+                padding: "16px",
+                fontSize: "14px",
+                boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1)",
               },
-            },
-            error: {
-              iconTheme: {
-                primary: "#ef4444",
-                secondary: "#fff",
+              success: {
+                iconTheme: {
+                  primary: "#10b981",
+                  secondary: "#fff",
+                },
               },
-            },
-          }}
-        />
+              error: {
+                iconTheme: {
+                  primary: "#ef4444",
+                  secondary: "#fff",
+                },
+              },
+            }}
+          />
 
-        <Suspense fallback={<LoadingSpinner fullScreen message="Loading..." />}>
-          <Routes>
-            {/* 🌍 Public Pages with Navbar/Footer */}
-            <Route element={<PublicLayout />}>
-              <Route path="/" element={<Home />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/blogs" element={<Blogs />} />
-              <Route path="/blogs/:id" element={<ProgramDetail />} />
-              <Route path="/campaigns" element={<Campaigns />} />
-              <Route path="/campaigns/:id" element={<CampaignDetail />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/get-involved" element={<GetInvolved />} />
-              <Route path="/media" element={<Media />} />
-              <Route path="/make-donation" element={<Donation />} />
-              <Route path="/updates/:id" element={<ProgramDetail />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="/terms-of-service" element={<TermsOfService />} />
-              <Route path="/sitemap" element={<Sitemap />} />
-              <Route path="/faq" element={<FAQ />} />
-            </Route>
-
-            {/* 📝 Auth Pages WITHOUT Navbar/Footer */}
-            <Route
-              path="/login"
-              element={
-                user ? <Navigate to="/user/dashboard" replace /> : <Login />
-              }
-            />
-
-            {/* Verification page - accessible if logged in but not verified */}
-            {/* Verification page - accessible via registration redirect or email link */}
-            <Route path="/verify" element={<Verify />} />
-
-            {/* Verification with token in URL */}
-            <Route path="/verify/:token" element={<Verify />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-
-            {/* 🔒 Protected User Pages WITHOUT Navbar/Footer */}
-            <Route element={<ProtectedRoute />}>
-              <Route element={<UserLayout />}>
-                <Route path="/user/dashboard" element={<Dashboard />} />
-                <Route path="/user/events" element={<Events />} />
-                <Route path="/user/events/:id" element={<EventDetails />} />
-                <Route path="/user/settings" element={<Settings />} />
-                <Route path="/user/my-donations" element={<MyDonation />} />
-                <Route path="/user/my-campaigns" element={<MyCampaigns />} />
-                <Route path="/user/help" element={<Help />} />
+          <Suspense
+            fallback={<LoadingSpinner fullScreen message="Loading..." />}
+          >
+            <Routes>
+              {/* 🌍 Public Pages with Navbar/Footer */}
+              <Route element={<PublicLayout />}>
+                <Route path="/" element={<Home />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/blogs" element={<Blogs />} />
+                <Route path="/blogs/:id" element={<ProgramDetail />} />
+                <Route path="/campaigns" element={<Campaigns />} />
+                <Route path="/campaigns/:id" element={<CampaignDetail />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/get-involved" element={<GetInvolved />} />
+                <Route path="/media" element={<Media />} />
+                <Route path="/make-donation" element={<Donation />} />
+                <Route path="/updates/:id" element={<ProgramDetail />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/terms-of-service" element={<TermsOfService />} />
+                <Route path="/sitemap" element={<Sitemap />} />
+                <Route path="/faq" element={<FAQ />} />
               </Route>
-            </Route>
 
-            {/* ⚠️ Catch-all 404 Page WITHOUT Navbar/Footer */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-      </ErrorBoundary>
-    </ThemeProvider>
+              {/* 📝 Auth Pages WITHOUT Navbar/Footer */}
+              <Route
+                path="/login"
+                element={
+                  user ? <Navigate to="/user/dashboard" replace /> : <Login />
+                }
+              />
+
+              {/* Verification page - accessible if logged in but not verified */}
+              {/* Verification page - accessible via registration redirect or email link */}
+              <Route path="/verify" element={<Verify />} />
+
+              {/* Verification with token in URL */}
+              <Route path="/verify/:token" element={<Verify />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+
+              {/* 🔒 Protected User Pages WITHOUT Navbar/Footer */}
+              <Route element={<ProtectedRoute />}>
+                <Route element={<UserLayout />}>
+                  <Route path="/user/dashboard" element={<Dashboard />} />
+                  <Route path="/user/events" element={<Events />} />
+                  <Route path="/user/events/:id" element={<EventDetails />} />
+                  <Route path="/user/settings" element={<Settings />} />
+                  <Route path="/user/my-donations" element={<MyDonation />} />
+                  <Route path="/user/my-campaigns" element={<MyCampaigns />} />
+                  <Route path="/user/help" element={<Help />} />
+                </Route>
+              </Route>
+
+              {/* ⚠️ Catch-all 404 Page WITHOUT Navbar/Footer */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+        </ErrorBoundary>
+      </ThemeProvider>
+    </HelmetProvider>
   );
 };
 

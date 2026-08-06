@@ -20,7 +20,7 @@ import {
   Info,
   CheckCircle,
 } from "lucide-react";
-import axios from "axios";
+import apiClient from "../../config/apiConfig";
 import { toast } from "react-hot-toast";
 import { useTheme } from "../../context/ThemeContext";
 
@@ -104,7 +104,6 @@ const CreateEvent = () => {
     e.preventDefault();
     try {
       setLoading(true);
-      const token = localStorage.getItem("adminToken");
       const submitData = new FormData();
       images.forEach((img) => submitData.append("images", img));
       Object.keys(formData).forEach((key) => {
@@ -114,16 +113,11 @@ const CreateEvent = () => {
           submitData.append(key, formData[key]);
         }
       });
-      await axios.post(
-        `${import.meta.env.VITE_API_URL}/events/create-event`,
-        submitData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
+      await apiClient.post("/events/create-event", submitData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
         },
-      );
+      });
       toast.success("Outreach Launched (Event Created)");
       navigate("/admin/events");
     } catch {

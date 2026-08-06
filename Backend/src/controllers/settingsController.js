@@ -1,23 +1,26 @@
 // ============================================
 // FILE: controllers/settingsController.js
 // ============================================
-import User from '../models/User.js';
-import bcrypt from 'bcryptjs';
-import { sendEmail } from '../services/emailService.js';
-import { uploadToCloudinary, deleteFromCloudinary } from '../services/uploadService.js';
-import logger from '../config/logger.js';
+import User from "../models/User.js";
+import bcrypt from "bcryptjs";
+import { sendEmail } from "../services/emailService.js";
+import {
+  uploadToCloudinary,
+  deleteFromCloudinary,
+} from "../services/uploadService.js";
+import logger from "../config/logger.js";
 
 // @desc    Get user settings
 // @route   GET /api/settings
 // @access  Private
 export const getSettings = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('-password');
+    const user = await User.findById(req.user._id).select("-password");
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: "User not found",
       });
     }
 
@@ -26,15 +29,15 @@ export const getSettings = async (req, res) => {
       id: user._id,
       name: user.fullName,
       email: user.email,
-      phone: user.phone || '',
-      avatar: user.avatar || '',
+      phone: user.phone || "",
+      avatar: user.avatar || "",
       location: {
-        address: user.location?.address || '',
-        city: user.location?.city || '',
-        state: user.location?.state || '',
-        country: user.location?.country || 'Nigeria'
+        address: user.location?.address || "",
+        city: user.location?.city || "",
+        state: user.location?.state || "",
+        country: user.location?.country || "Nigeria",
       },
-      bio: user.bio || '',
+      bio: user.bio || "",
       dateJoined: user.createdAt,
       verified: user.isEmailVerified || false,
       preferences: {
@@ -43,43 +46,43 @@ export const getSettings = async (req, res) => {
           donationReceipts: user.notifications?.donationReceipts ?? true,
           eventReminders: user.notifications?.eventReminders ?? true,
           weeklyDigest: user.notifications?.weeklyDigest ?? true,
-          marketingEmails: user.notifications?.marketingEmails ?? false
+          marketingEmails: user.notifications?.marketingEmails ?? false,
         },
         smsNotifications: {
           urgentAlerts: user.notifications?.urgentAlerts ?? true,
           eventReminders: user.notifications?.smsEventReminders ?? false,
-          campaignMilestones: user.notifications?.campaignMilestones ?? true
+          campaignMilestones: user.notifications?.campaignMilestones ?? true,
         },
         privacy: {
-          profileVisibility: user.privacy?.profileVisibility || 'public',
+          profileVisibility: user.privacy?.profileVisibility || "public",
           showDonations: user.privacy?.showDonations ?? true,
           showLocation: user.privacy?.showLocation ?? true,
-          allowContact: user.privacy?.allowContact ?? true
+          allowContact: user.privacy?.allowContact ?? true,
         },
-        language: user.preferences?.language || 'en',
-        currency: user.preferences?.currency || 'NGN',
-        timezone: user.preferences?.timezone || 'Africa/Lagos',
-        theme: user.preferences?.theme || 'system'
+        language: user.preferences?.language || "en",
+        currency: user.preferences?.currency || "NGN",
+        timezone: user.preferences?.timezone || "Africa/Lagos",
+        theme: user.preferences?.theme || "system",
       },
       twoFactorEnabled: user.twoFactorEnabled || false,
-      lastLogin: user.lastLogin || null
+      lastLogin: user.lastLogin || null,
+      authMethod: user.authMethod || "local",
     };
 
     res.status(200).json({
       success: true,
-      data: settings
+      data: settings,
     });
-
   } catch (error) {
-    logger.error('Get settings error:', {
+    logger.error("Get settings error:", {
       error: error.message,
       stack: error.stack,
-      userId: req.user?._id
+      userId: req.user?._id,
     });
     res.status(500).json({
       success: false,
-      message: 'Error fetching settings',
-      error: error.message
+      message: "Error fetching settings",
+      error: error.message,
     });
   }
 };
@@ -96,7 +99,7 @@ export const updateProfile = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: "User not found",
       });
     }
 
@@ -104,14 +107,16 @@ export const updateProfile = async (req, res) => {
     if (fullName) user.fullName = fullName;
     if (phone) user.phone = phone;
     if (bio !== undefined) user.bio = bio;
-    
+
     // Update location object
     if (location) {
       if (!user.location) user.location = {};
-      if (location.address !== undefined) user.location.address = location.address;
+      if (location.address !== undefined)
+        user.location.address = location.address;
       if (location.city !== undefined) user.location.city = location.city;
       if (location.state !== undefined) user.location.state = location.state;
-      if (location.country !== undefined) user.location.country = location.country;
+      if (location.country !== undefined)
+        user.location.country = location.country;
     }
 
     user.updatedAt = Date.now();
@@ -119,7 +124,7 @@ export const updateProfile = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Profile updated successfully',
+      message: "Profile updated successfully",
       data: {
         id: user._id,
         name: user.fullName,
@@ -127,20 +132,19 @@ export const updateProfile = async (req, res) => {
         phone: user.phone,
         bio: user.bio,
         location: user.location,
-        avatar: user.avatar
-      }
+        avatar: user.avatar,
+      },
     });
-
   } catch (error) {
-    logger.error('Update profile error:', {
+    logger.error("Update profile error:", {
       error: error.message,
       stack: error.stack,
-      userId: req.user?._id
+      userId: req.user?._id,
     });
     res.status(500).json({
       success: false,
-      message: 'Error updating profile',
-      error: error.message
+      message: "Error updating profile",
+      error: error.message,
     });
   }
 };
@@ -153,22 +157,22 @@ export const updateAvatar = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: 'Please upload an image file'
+        message: "Please upload an image file",
       });
     }
 
     // Validate file type and size (2MB max, images only)
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif"];
     if (!allowedTypes.includes(req.file.mimetype)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid file type. Please upload JPG, PNG, or GIF.'
+        message: "Invalid file type. Please upload JPG, PNG, or GIF.",
       });
     }
     if (req.file.size > 2 * 1024 * 1024) {
       return res.status(400).json({
         success: false,
-        message: 'File size must be less than 2MB'
+        message: "File size must be less than 2MB",
       });
     }
 
@@ -177,7 +181,7 @@ export const updateAvatar = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: "User not found",
       });
     }
 
@@ -186,17 +190,17 @@ export const updateAvatar = async (req, res) => {
       try {
         await deleteFromCloudinary(user.avatarPublicId);
       } catch (deleteError) {
-        logger.warn('Error deleting old avatar:', {
+        logger.warn("Error deleting old avatar:", {
           error: deleteError.message,
           userId: req.user?._id,
-          avatarPublicId: user.avatarPublicId
+          avatarPublicId: user.avatarPublicId,
         });
         // Don't fail upload on delete error—log and continue
       }
     }
 
     // Upload new avatar (pass full req.file; service handles path/buffer)
-    const result = await uploadToCloudinary(req.file, 'avatars');
+    const result = await uploadToCloudinary(req.file, "avatars");
 
     user.avatar = result.secure_url;
     user.avatarPublicId = result.public_id;
@@ -206,22 +210,22 @@ export const updateAvatar = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Avatar updated successfully—your profile now shines brighter for our shared cause!',
+      message:
+        "Avatar updated successfully—your profile now shines brighter for our shared cause!",
       data: {
-        avatar: user.avatar
-      }
+        avatar: user.avatar,
+      },
     });
-
   } catch (error) {
-    logger.error('Update avatar error:', {
+    logger.error("Update avatar error:", {
       error: error.message,
       stack: error.stack,
-      userId: req.user?._id
+      userId: req.user?._id,
     });
     res.status(500).json({
       success: false,
-      message: 'Error uploading avatar. Please try again or contact support.',
-      error: error.message // Include for debugging; remove in prod if sensitive
+      message: "Error uploading avatar. Please try again or contact support.",
+      error: error.message, // Include for debugging; remove in prod if sensitive
     });
   }
 };
@@ -236,7 +240,7 @@ export const removeAvatar = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: "User not found",
       });
     }
 
@@ -245,36 +249,35 @@ export const removeAvatar = async (req, res) => {
       try {
         await deleteFromCloudinary(user.avatarPublicId);
       } catch (deleteError) {
-        logger.warn('Error deleting avatar:', {
+        logger.warn("Error deleting avatar:", {
           error: deleteError.message,
           userId: req.user?._id,
-          avatarPublicId: user.avatarPublicId
+          avatarPublicId: user.avatarPublicId,
         });
         // Log but don't fail—proceed to clear fields
       }
     }
 
-    user.avatar = '';
-    user.avatarPublicId = '';
+    user.avatar = "";
+    user.avatarPublicId = "";
     user.updatedAt = Date.now();
 
     await user.save();
 
     res.status(200).json({
       success: true,
-      message: 'Avatar removed successfully'
+      message: "Avatar removed successfully",
     });
-
   } catch (error) {
-    logger.error('Remove avatar error:', {
+    logger.error("Remove avatar error:", {
       error: error.message,
       stack: error.stack,
-      userId: req.user?._id
+      userId: req.user?._id,
     });
     res.status(500).json({
       success: false,
-      message: 'Error removing avatar',
-      error: error.message
+      message: "Error removing avatar",
+      error: error.message,
     });
   }
 };
@@ -290,31 +293,39 @@ export const changePassword = async (req, res) => {
     if (!currentPassword || !newPassword || !confirmPassword) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide all password fields'
+        message: "Please provide all password fields",
       });
     }
 
     if (newPassword !== confirmPassword) {
       return res.status(400).json({
         success: false,
-        message: 'New password and confirmation do not match'
+        message: "New password and confirmation do not match",
       });
     }
 
     if (newPassword.length < 6) {
       return res.status(400).json({
         success: false,
-        message: 'Password must be at least 6 characters'
+        message: "Password must be at least 6 characters",
       });
     }
 
     // Get user with password
-    const user = await User.findById(req.user._id).select('+password');
+    const user = await User.findById(req.user._id).select("+password");
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: "User not found",
+      });
+    }
+
+    // DISALLOW password change for Google users
+    if (user.authMethod === "google") {
+      return res.status(400).json({
+        success: false,
+        message: "Password changes are managed by Google for your account.",
       });
     }
 
@@ -324,7 +335,7 @@ export const changePassword = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: 'Current password is incorrect'
+        message: "Current password is incorrect",
       });
     }
 
@@ -339,30 +350,29 @@ export const changePassword = async (req, res) => {
     // Send email notification
     await sendEmail({
       to: user.email,
-      subject: 'Password Changed Successfully',
-      template: 'password-changed',
+      subject: "Password Changed Successfully",
+      template: "password-changed",
       data: {
         fullName: user.fullName,
         date: new Date().toLocaleString(),
-        ipAddress: req.ip
-      }
-    }).catch(err => console.error('Email error:', err));
+        ipAddress: req.ip,
+      },
+    }).catch((err) => console.error("Email error:", err));
 
     res.status(200).json({
       success: true,
-      message: 'Password changed successfully'
+      message: "Password changed successfully",
     });
-
   } catch (error) {
-    logger.error('Change password error:', {
+    logger.error("Change password error:", {
       error: error.message,
       stack: error.stack,
-      userId: req.user?._id
+      userId: req.user?._id,
     });
     res.status(500).json({
       success: false,
-      message: 'Error changing password',
-      error: error.message
+      message: "Error changing password",
+      error: error.message,
     });
   }
 };
@@ -379,7 +389,7 @@ export const updateNotifications = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: "User not found",
       });
     }
 
@@ -390,33 +400,35 @@ export const updateNotifications = async (req, res) => {
 
     // Update email notification preferences
     if (emailNotifications) {
-      if (typeof emailNotifications.campaignUpdates === 'boolean') {
+      if (typeof emailNotifications.campaignUpdates === "boolean") {
         user.notifications.campaignUpdates = emailNotifications.campaignUpdates;
       }
-      if (typeof emailNotifications.donationReceipts === 'boolean') {
-        user.notifications.donationReceipts = emailNotifications.donationReceipts;
+      if (typeof emailNotifications.donationReceipts === "boolean") {
+        user.notifications.donationReceipts =
+          emailNotifications.donationReceipts;
       }
-      if (typeof emailNotifications.eventReminders === 'boolean') {
+      if (typeof emailNotifications.eventReminders === "boolean") {
         user.notifications.eventReminders = emailNotifications.eventReminders;
       }
-      if (typeof emailNotifications.weeklyDigest === 'boolean') {
+      if (typeof emailNotifications.weeklyDigest === "boolean") {
         user.notifications.weeklyDigest = emailNotifications.weeklyDigest;
       }
-      if (typeof emailNotifications.marketingEmails === 'boolean') {
+      if (typeof emailNotifications.marketingEmails === "boolean") {
         user.notifications.marketingEmails = emailNotifications.marketingEmails;
       }
     }
 
     // Update SMS notification preferences
     if (smsNotifications) {
-      if (typeof smsNotifications.urgentAlerts === 'boolean') {
+      if (typeof smsNotifications.urgentAlerts === "boolean") {
         user.notifications.urgentAlerts = smsNotifications.urgentAlerts;
       }
-      if (typeof smsNotifications.eventReminders === 'boolean') {
+      if (typeof smsNotifications.eventReminders === "boolean") {
         user.notifications.smsEventReminders = smsNotifications.eventReminders;
       }
-      if (typeof smsNotifications.campaignMilestones === 'boolean') {
-        user.notifications.campaignMilestones = smsNotifications.campaignMilestones;
+      if (typeof smsNotifications.campaignMilestones === "boolean") {
+        user.notifications.campaignMilestones =
+          smsNotifications.campaignMilestones;
       }
     }
 
@@ -425,33 +437,32 @@ export const updateNotifications = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Notification preferences updated successfully',
+      message: "Notification preferences updated successfully",
       data: {
         emailNotifications: {
           campaignUpdates: user.notifications.campaignUpdates,
           donationReceipts: user.notifications.donationReceipts,
           eventReminders: user.notifications.eventReminders,
           weeklyDigest: user.notifications.weeklyDigest,
-          marketingEmails: user.notifications.marketingEmails
+          marketingEmails: user.notifications.marketingEmails,
         },
         smsNotifications: {
           urgentAlerts: user.notifications.urgentAlerts,
           eventReminders: user.notifications.smsEventReminders,
-          campaignMilestones: user.notifications.campaignMilestones
-        }
-      }
+          campaignMilestones: user.notifications.campaignMilestones,
+        },
+      },
     });
-
   } catch (error) {
-    logger.error('Update notifications error:', {
+    logger.error("Update notifications error:", {
       error: error.message,
       stack: error.stack,
-      userId: req.user?._id
+      userId: req.user?._id,
     });
     res.status(500).json({
       success: false,
-      message: 'Error updating notification preferences',
-      error: error.message
+      message: "Error updating notification preferences",
+      error: error.message,
     });
   }
 };
@@ -461,14 +472,15 @@ export const updateNotifications = async (req, res) => {
 // @access  Private
 export const updatePrivacy = async (req, res) => {
   try {
-    const { profileVisibility, showDonations, showLocation, allowContact } = req.body;
+    const { profileVisibility, showDonations, showLocation, allowContact } =
+      req.body;
 
     const user = await User.findById(req.user._id);
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: "User not found",
       });
     }
 
@@ -479,29 +491,31 @@ export const updatePrivacy = async (req, res) => {
 
     // Update privacy settings
     if (profileVisibility) user.privacy.profileVisibility = profileVisibility;
-    if (typeof showDonations === 'boolean') user.privacy.showDonations = showDonations;
-    if (typeof showLocation === 'boolean') user.privacy.showLocation = showLocation;
-    if (typeof allowContact === 'boolean') user.privacy.allowContact = allowContact;
+    if (typeof showDonations === "boolean")
+      user.privacy.showDonations = showDonations;
+    if (typeof showLocation === "boolean")
+      user.privacy.showLocation = showLocation;
+    if (typeof allowContact === "boolean")
+      user.privacy.allowContact = allowContact;
 
     user.updatedAt = Date.now();
     await user.save();
 
     res.status(200).json({
       success: true,
-      message: 'Privacy settings updated successfully',
-      data: user.privacy
+      message: "Privacy settings updated successfully",
+      data: user.privacy,
     });
-
   } catch (error) {
-    logger.error('Update privacy error:', {
+    logger.error("Update privacy error:", {
       error: error.message,
       stack: error.stack,
-      userId: req.user?._id
+      userId: req.user?._id,
     });
     res.status(500).json({
       success: false,
-      message: 'Error updating privacy settings',
-      error: error.message
+      message: "Error updating privacy settings",
+      error: error.message,
     });
   }
 };
@@ -518,7 +532,7 @@ export const updatePreferences = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: "User not found",
       });
     }
 
@@ -538,25 +552,24 @@ export const updatePreferences = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Preferences updated successfully',
+      message: "Preferences updated successfully",
       data: {
         language: user.preferences.language,
         currency: user.preferences.currency,
         timezone: user.preferences.timezone,
-        theme: user.preferences.theme
-      }
+        theme: user.preferences.theme,
+      },
     });
-
   } catch (error) {
-    logger.error('Update preferences error:', {
+    logger.error("Update preferences error:", {
       error: error.message,
       stack: error.stack,
-      userId: req.user?._id
+      userId: req.user?._id,
     });
     res.status(500).json({
       success: false,
-      message: 'Error updating preferences',
-      error: error.message
+      message: "Error updating preferences",
+      error: error.message,
     });
   }
 };
@@ -573,12 +586,12 @@ export const updateSecurity = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: "User not found",
       });
     }
 
     // Update security settings
-    if (typeof twoFactorEnabled === 'boolean') {
+    if (typeof twoFactorEnabled === "boolean") {
       user.twoFactorEnabled = twoFactorEnabled;
     }
 
@@ -586,40 +599,41 @@ export const updateSecurity = async (req, res) => {
     await user.save();
 
     // Send notification if 2FA was enabled/disabled
-    if (typeof twoFactorEnabled === 'boolean') {
+    if (typeof twoFactorEnabled === "boolean") {
       await sendEmail({
         to: user.email,
-        subject: `Two-Factor Authentication ${twoFactorEnabled ? 'Enabled' : 'Disabled'}`,
-        template: '2fa-status-change',
+        subject: `Two-Factor Authentication ${twoFactorEnabled ? "Enabled" : "Disabled"}`,
+        template: "2fa-status-change",
         data: {
           fullName: user.fullName,
           enabled: twoFactorEnabled,
-          date: new Date().toLocaleString()
-        }
-      }).catch(err => logger.error('Email error during 2FA update:', {
-        error: err.message,
-        userId: req.user?._id
-      }));
+          date: new Date().toLocaleString(),
+        },
+      }).catch((err) =>
+        logger.error("Email error during 2FA update:", {
+          error: err.message,
+          userId: req.user?._id,
+        }),
+      );
     }
 
     res.status(200).json({
       success: true,
-      message: 'Security settings updated successfully',
+      message: "Security settings updated successfully",
       data: {
-        twoFactorEnabled: user.twoFactorEnabled
-      }
+        twoFactorEnabled: user.twoFactorEnabled,
+      },
     });
-
   } catch (error) {
-    logger.error('Update security error:', {
+    logger.error("Update security error:", {
       error: error.message,
       stack: error.stack,
-      userId: req.user?._id
+      userId: req.user?._id,
     });
     res.status(500).json({
       success: false,
-      message: 'Error updating security settings',
-      error: error.message
+      message: "Error updating security settings",
+      error: error.message,
     });
   }
 };
@@ -636,13 +650,13 @@ export const getActivityLog = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: "User not found",
       });
     }
 
     // Get activity logs
     const activities = user.activityLog || [];
-    
+
     const skip = (page - 1) * limit;
     const paginatedActivities = activities.slice(skip, skip + parseInt(limit));
 
@@ -654,21 +668,20 @@ export const getActivityLog = async (req, res) => {
           page: parseInt(page),
           limit: parseInt(limit),
           total: activities.length,
-          pages: Math.ceil(activities.length / limit)
-        }
-      }
+          pages: Math.ceil(activities.length / limit),
+        },
+      },
     });
-
   } catch (error) {
-    logger.error('Get activity log error:', {
+    logger.error("Get activity log error:", {
       error: error.message,
       stack: error.stack,
-      userId: req.user?._id
+      userId: req.user?._id,
     });
     res.status(500).json({
       success: false,
-      message: 'Error fetching activity log',
-      error: error.message
+      message: "Error fetching activity log",
+      error: error.message,
     });
   }
 };
@@ -680,20 +693,20 @@ export const deleteAccount = async (req, res) => {
   try {
     const { password, confirmation } = req.body;
 
-    if (!password || confirmation !== 'DELETE') {
+    if (!password || confirmation !== "DELETE") {
       return res.status(400).json({
         success: false,
-        message: 'Please provide password and type DELETE to confirm'
+        message: "Please provide password and type DELETE to confirm",
       });
     }
 
     // Get user with password
-    const user = await User.findById(req.user._id).select('+password');
+    const user = await User.findById(req.user._id).select("+password");
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: "User not found",
       });
     }
 
@@ -703,7 +716,7 @@ export const deleteAccount = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: 'Incorrect password'
+        message: "Incorrect password",
       });
     }
 
@@ -712,10 +725,10 @@ export const deleteAccount = async (req, res) => {
       try {
         await deleteFromCloudinary(user.avatarPublicId);
       } catch (deleteError) {
-        logger.warn('Error deleting avatar during account deletion:', {
+        logger.warn("Error deleting avatar during account deletion:", {
           error: deleteError.message,
           userId: req.user?._id,
-          avatarPublicId: user.avatarPublicId
+          avatarPublicId: user.avatarPublicId,
         });
       }
     }
@@ -723,13 +736,13 @@ export const deleteAccount = async (req, res) => {
     // Send goodbye email
     await sendEmail({
       to: user.email,
-      subject: 'Account Deleted',
-      template: 'account-deleted',
+      subject: "Account Deleted",
+      template: "account-deleted",
       data: {
         fullName: user.fullName,
-        date: new Date().toLocaleString()
-      }
-    }).catch(err => console.error('Email error:', err));
+        date: new Date().toLocaleString(),
+      },
+    }).catch((err) => console.error("Email error:", err));
 
     // Soft delete - mark as inactive instead of deleting
     user.isActive = false;
@@ -741,19 +754,18 @@ export const deleteAccount = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Account deleted successfully'
+      message: "Account deleted successfully",
     });
-
   } catch (error) {
-    logger.error('Delete account error:', {
+    logger.error("Delete account error:", {
       error: error.message,
       stack: error.stack,
-      userId: req.user?._id
+      userId: req.user?._id,
     });
     res.status(500).json({
       success: false,
-      message: 'Error deleting account',
-      error: error.message
+      message: "Error deleting account",
+      error: error.message,
     });
   }
 };

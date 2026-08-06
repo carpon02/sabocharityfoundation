@@ -5,6 +5,8 @@ export const initializeDonationValidation = [
     const num = parseFloat(val);
     if (isNaN(num) || num < 100)
       throw new Error("Minimum donation amount is ₦100");
+    if (num > 10000000)
+      throw new Error("Maximum donation amount is ₦10,000,000");
     return true;
   }),
   body("email").optional().isEmail().withMessage("Invalid email"),

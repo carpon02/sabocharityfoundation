@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Mail,
   Phone,
@@ -12,6 +13,7 @@ import {
   Twitter,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import Meta from "../../components/Meta";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -36,26 +38,40 @@ const Contact = () => {
   const contactInfo = [
     {
       icon: Mail,
-      title: "Emails Us",
-      value: "hello@saboyouth.org",
-      sub: "Strategic inquiries",
+      title: "Tactical Email",
+      value: "info@saboibadanyouth.org",
+      sub: "Official Inquiries Only",
+      href: "mailto:info@saboibadanyouth.org"
     },
     {
       icon: Phone,
-      title: "Quick Call",
-      value: "+234 800 123 4567",
-      sub: "Available Mon-Fri",
+      title: "Direct Response",
+      value: "+234 810 000 0000",
+      sub: "Call or WhatsApp",
+      href: "tel:+2348100000000"
+    },
+    {
+      icon: MessageSquare,
+      title: "WhatsApp Node",
+      value: "Chat with Us",
+      sub: "Instant Community Support",
+      href: "https://wa.me/2348100000000"
     },
     {
       icon: MapPin,
-      title: "Our HQ",
-      value: "Sabo Community",
-      sub: "Ibadan, Nigeria",
+      title: "Tactical HQ",
+      value: "Sabo Community Area",
+      sub: "Ibadan, Oyo State, Nigeria",
+      href: "https://maps.google.com/?q=Sabo+Ibadan+Nigeria"
     },
   ];
 
   return (
     <div className="bg-white min-h-screen">
+      <Meta
+        title="Contact Us"
+        description="Get in touch with the Sabo Ibadan Youth Charity Foundation. We're here to answer your questions and explore ways to collaborate for community impact."
+      />
       {/* --- HERO HEADER --- */}
       <section className="relative pt-32 pb-40 bg-dark overflow-hidden">
         <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary-900/10 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
@@ -85,12 +101,15 @@ const Contact = () => {
             {/* Contact Details Column */}
             <div className="lg:col-span-1 space-y-6">
               {contactInfo.map((info, i) => (
-                <div
+                <a
                   key={i}
-                  className="glass-card p-10 rounded-[2.5rem] border border-gray-100 hover:shadow-2xl transition-all duration-500 animate-fade-in-up"
+                  href={info.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block glass-card p-10 rounded-[2.5rem] border border-gray-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 animate-fade-in-up group"
                 >
                   <div className="flex items-center gap-6">
-                    <div className="w-14 h-14 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center">
+                    <div className="w-14 h-14 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center group-hover:bg-primary-600 group-hover:text-white transition-all duration-500">
                       <info.icon size={24} />
                     </div>
                     <div>
@@ -105,7 +124,7 @@ const Contact = () => {
                       </p>
                     </div>
                   </div>
-                </div>
+                </a>
               ))}
 
               {/* Social Stack */}
@@ -231,14 +250,29 @@ const Contact = () => {
             <span className="text-secondary-600">immediate</span> impact?
           </h3>
           <div className="flex flex-wrap justify-center gap-6">
-            <button className="px-12 py-6 bg-white border-4 border-primary-100 text-primary-900 font-black rounded-3xl hover:border-primary-300 transition-all flex items-center gap-3">
+            <Link
+              to="/get-involved"
+              className="px-12 py-6 bg-white border-4 border-primary-100 text-primary-900 font-black rounded-3xl hover:border-primary-300 transition-all flex items-center gap-3"
+            >
               Explore Opportunities
               <Sparkles size={20} className="text-secondary-500" />
-            </button>
-            <button className="px-12 py-6 bg-secondary-600 text-white font-black rounded-3xl hover:bg-secondary-700 shadow-xl transition-all flex items-center gap-3">
+            </Link>
+            <a
+              href="https://wa.me/2348100000000"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-12 py-6 bg-[#25D366] text-white font-black rounded-3xl hover:bg-[#128C7E] shadow-xl transition-all flex items-center gap-3"
+            >
+              Chat on WhatsApp
+              <MessageSquare size={20} className="fill-white" />
+            </a>
+            <Link
+              to="/make-donation"
+              className="px-12 py-6 bg-primary-600 text-white font-black rounded-3xl hover:bg-primary-700 shadow-xl transition-all flex items-center gap-3"
+            >
               Make a Donation
               <Heart size={20} className="fill-white" />
-            </button>
+            </Link>
           </div>
         </div>
       </section>

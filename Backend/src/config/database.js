@@ -1,8 +1,11 @@
 import mongoose from 'mongoose';
+import dns from 'dns';
 import logger from './logger.js';
 
 const connectDB = async () => {
   try {
+    // Use Google DNS to resolve SRV records (fixes Starlink DNS issues)
+    dns.setServers(['8.8.8.8', '8.8.4.4']);
     // Connection pool configuration for production-ready setup
     const conn = await mongoose.connect(`${process.env.MONGODB_URI}/saboFoundation`, {
       maxPoolSize: parseInt(process.env.MONGODB_MAX_POOL_SIZE) || 10, // Maximum connections

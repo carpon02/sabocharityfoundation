@@ -5,6 +5,7 @@ import { Users, School, HeartHandshake, TrendingUp, Star } from "lucide-react";
 import { motion as Motion } from "framer-motion";
 import { fadeIn, staggerContainer, scaleIn } from "../utils/animations";
 import { fetchOverviewAnalytics } from "../features/analytics/analyticsSlice";
+import AnimatedCounter from "./AnimatedCounter";
 
 const ImpactSection = () => {
   const dispatch = useDispatch();
@@ -17,29 +18,30 @@ const ImpactSection = () => {
   const stats = [
     {
       icon: Users,
-      title: overviewStats
-        ? `${Math.floor(overviewStats.livesImpacted).toLocaleString()}+`
-        : "5,000+",
+      value: overviewStats ? Math.floor(overviewStats.livesImpacted) : 5000,
+      suffix: "+",
       label: "Lives Impacted",
       pills: "bg-primary-100 text-primary-700",
     },
     {
       icon: School,
-      title: overviewStats ? `${overviewStats.totalCampaigns}+` : "50+",
+      value: overviewStats ? overviewStats.totalCampaigns : 50,
+      suffix: "+",
       label: "Active Campaigns",
       pills: "bg-secondary-100 text-secondary-700",
     },
     {
       icon: HeartHandshake,
-      title: overviewStats ? `${overviewStats.activeVolunteers}+` : "2,000+",
+      value: overviewStats ? overviewStats.activeVolunteers : 2000,
+      suffix: "+",
       label: "Active Volunteers",
       pills: "bg-primary-100 text-primary-700",
     },
     {
       icon: TrendingUp,
-      title: overviewStats
-        ? `₦${(overviewStats.totalRaised / 1000000).toFixed(1)}M+`
-        : "₦50M+",
+      value: overviewStats ? Math.floor(overviewStats.totalRaised / 1000000) : 50,
+      prefix: "₦",
+      suffix: "M+",
       label: "Direct Funding",
       pills: "bg-secondary-100 text-secondary-700",
     },
@@ -96,7 +98,7 @@ const ImpactSection = () => {
                   key={i}
                   variants={fadeIn("up", 0.5 + i * 0.1)}
                   whileHover={{ scale: 1.05, y: -5 }}
-                  className="space-y-4 p-6 sm:p-8 rounded-[2rem] sm:rounded-[3rem] glass-card-premium border-gray-100 shadow-xl"
+                  className={`space-y-4 p-6 sm:p-8 rounded-[2rem] sm:rounded-[3rem] border-gray-100 shadow-xl transition-all duration-500 ${i % 2 === 0 ? 'glass-card-neon-primary' : 'glass-card-neon-secondary'}`}
                 >
                   <div
                     className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg transition-transform group-hover:rotate-12 ${stat.pills}`}
@@ -105,7 +107,11 @@ const ImpactSection = () => {
                   </div>
                   <div className="space-y-1">
                     <div className="text-3xl sm:text-4xl font-black text-dark tracking-tighter">
-                      {stat.title}
+                      <AnimatedCounter
+                        end={stat.value}
+                        prefix={stat.prefix}
+                        suffix={stat.suffix}
+                      />
                     </div>
                     <div className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest">
                       {stat.label}
@@ -136,7 +142,7 @@ const ImpactSection = () => {
 
             {/* Premium Trust Badge */}
             <Motion.div
-              className="absolute -bottom-6 sm:-bottom-12 -left-4 sm:-left-12 glass-card-premium p-6 sm:p-12 rounded-[2rem] sm:rounded-[4rem] shadow-2xl max-w-[280px] sm:max-w-sm border-white"
+              className="absolute -bottom-6 sm:-bottom-12 -left-4 sm:-left-12 glass-card-premium p-6 sm:p-12 rounded-[2rem] sm:rounded-[4rem] shadow-2xl max-w-[280px] sm:max-w-sm border-white/50 backdrop-blur-3xl"
               variants={scaleIn(0.6)}
               whileInView={{ y: [0, -10, 0] }}
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
@@ -145,8 +151,8 @@ const ImpactSection = () => {
                 {[1, 2, 3, 4, 5].map((s) => (
                   <Star
                     key={s}
-                    size={12}
-                    className="fill-secondary-500 text-secondary-500"
+                    size={14}
+                    className="fill-secondary-500 text-secondary-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]"
                   />
                 ))}
               </div>
