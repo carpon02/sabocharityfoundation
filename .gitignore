@@ -10,6 +10,8 @@ pnpm-lock.yaml
 .env.development.local
 .env.test.local
 .env.production.local
+.env.production
+*.env.production
 
 # Build outputs
 dist/
@@ -57,7 +59,13 @@ Thumbs.db
 # Docker
 .dockerignore
 
+# Debug / build logs (never commit these)
+**/integration_debug*.txt
+**/test_output.txt
+**/frontend_test_error.txt
+**/lint_results.txt
+build_log*.txt
+
 # Misc
 .vercel
 .turbo
-k8s/secrets.yaml

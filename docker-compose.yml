@@ -1,42 +1,80 @@
-version: "3.8"
+# ============================================================
+# docker-compose.yml — Sabo Foundation (Local Dev + Testing)
+# ============================================================
+# Using MongoDB Atlas — no local mongo container needed
+#
+# Usage:
+#   1. cp .env.example .env  (already done — .env has real values)
+#   2. docker compose up --build -d
+#   3. docker compose ps  (check all healthy)
+# ============================================================
+
+name: sabo-foundation
+
+networks:
+  sabo-net:
+    driver: bridge
 
 services:
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    ports:
-      - "5173:80"
-    volumes:
-      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf
-    depends_on:
-      backend:
-        condition: service_healthy
-
-  admin:
-    build:
-      context: ./admin
-      dockerfile: Dockerfile
-    ports:
-      - "5174:80"
-    volumes:
-      - ./admin/nginx.conf:/etc/nginx/conf.d/default.conf
-    depends_on:
-      backend:
-        condition: service_healthy
-
+  # ─────────────────────────────────
+  # Backend (Node.js + Express)
+  # Connects to MongoDB Atlas directly
+  # ─────────────────────────────────
   backend:
+    image: carpon02/sabo-backend:latest
+    container_name: sabo-backend
     build:
       context: ./Backend
       dockerfile: Dockerfile
+      target: development
+    restart: unless-stopped
+    networks:
+      - sabo-net
     ports:
-      - "5000:5000"
+      - "${BACKEND_PORT:-5000}:5000"
     environment:
-      - NODE_ENV=production
-      - PORT=5000
-      - MONGO_URI=mongodb://mongo:27017/charity_db
-    depends_on:
-      - mongo
+      PORT: 5000
+      # MongoDB Atlas URI
+      MONGODB_URI: ${MONGODB_URI}
+      # JWT
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRE: ${JWT_EXPIRE:-7d}
+      JWT_COOKIE_EXPIRE: ${JWT_COOKIE_EXPIRE:-7}
+      # CORS
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:5173}
+      CLIENT_URL_PROD: ${CLIENT_URL_PROD:-http://localhost:5173}
+      # Cloudinary
+      CLOUDINARY_URL: ${CLOUDINARY_URL}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+      # Email
+      EMAIL_HOST: ${EMAIL_HOST:-smtp.gmail.com}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_USER: ${EMAIL_USER}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+      EMAIL_FROM: ${EMAIL_FROM}
+      # Admin seed
+      ADMIN_NAME: ${ADMIN_NAME:-Admin}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      # Rate limiting
+      RATE_LIMIT_WINDOW: ${RATE_LIMIT_WINDOW:-15}
+      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-100}
+      # File upload
+      MAX_FILE_SIZE: ${MAX_FILE_SIZE:-5242880}
+      ALLOWED_FILE_TYPES: ${ALLOWED_FILE_TYPES:-image/jpeg,image/png,image/webp}
+      # Paystack
+      PAYSTACK_SECRET_KEY: ${PAYSTACK_SECRET_KEY}
+      PAYSTACK_PUBLIC_KEY: ${PAYSTACK_PUBLIC_KEY}
+      PAYSTACK_BASE_URL: ${PAYSTACK_BASE_URL:-https://api.paystack.co}
+      SENTRY_DSN: ${SENTRY_DSN}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      NODE_ENV: development
+    volumes:
+      - ./Backend:/usr/src/app
+      - /usr/src/app/node_modules
+    command: npm run dev
     healthcheck:
       test:
         [
@@ -45,19 +83,93 @@ services:
           "--no-verbose",
           "--tries=1",
           "--spider",
-          "http://localhost:5000/health",
+          "http://127.0.0.1:5000/health",
         ]
-      interval: 30s
+      interval: 20s
       timeout: 10s
       retries: 5
-      start_period: 5s
+      start_period: 15s
 
-  mongo:
-    image: mongo:latest
+  # ─────────────────────────────────
+  # Frontend (React — Customer-facing)
+  # ─────────────────────────────────
+  frontend:
+    image: carpon02/sabo-frontend:latest
+    container_name: sabo-frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+      args:
+        # VITE vars are baked at build time
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5000/api/v1}
+        VITE_SENTRY_DSN: ${VITE_FRONTEND_SENTRY_DSN:-}
+        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+        VITE_PAYSTACK_PUBLIC_KEY: ${PAYSTACK_PUBLIC_KEY}
+    restart: unless-stopped
+    networks:
+      - sabo-net
     ports:
-      - "27017:27017"
+      - "${FRONTEND_PORT:-5173}:5173"
     volumes:
-      - mongo-data:/data/db
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_PROXY_TARGET=http://backend:5000
+    command: npm run dev -- --host 0.0.0.0
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://127.0.0.1:5173/",
+        ]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
-volumes:
-  mongo-data:
+  # ─────────────────────────────────
+  # Admin (React — Dashboard)
+  # ─────────────────────────────────
+  admin:
+    image: carpon02/sabo-admin:latest
+    container_name: sabo-admin
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+      target: development
+    restart: unless-stopped
+    networks:
+      - sabo-net
+    ports:
+      - "${ADMIN_PORT:-5174}:5174"
+    volumes:
+      - ./admin:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_PROXY_TARGET=http://backend:5000
+    command: npm run dev -- --host 0.0.0.0
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://127.0.0.1:5174/",
+        ]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
