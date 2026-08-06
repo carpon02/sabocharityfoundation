@@ -96,38 +96,6 @@ start-local.bat
 
 ---
 
-## Docker (Optional)
-
-If you prefer running everything in containers:
-
-```bash
-# 1. Set up .env (see above)
-
-# 2. Build & start all services
-docker compose up --build -d
-
-# 3. Check status
-docker compose ps
-
-# 4. View logs
-docker compose logs -f
-
-# 5. Stop
-docker compose down
-```
-
-**Makefile shortcuts:**
-
-```bash
-make up        # Start all services
-make down      # Stop all services
-make build     # Rebuild all images
-make logs      # Stream all logs
-make health    # Check backend health
-```
-
----
-
 ## Available Scripts
 
 ### Backend (`cd Backend`)
@@ -160,27 +128,6 @@ make health    # Check backend health
 | `npm run build` | Production build |
 | `npm test` | Run Vitest |
 | `npm run lint` | Run ESLint |
-
----
-
-## CI/CD
-
-On every push to `main`, GitHub Actions builds and pushes Docker images to Docker Hub:
-- `carpon02/sabo-backend`
-- `carpon02/sabo-frontend`
-- `carpon02/sabo-admin`
-
-### Required GitHub Secrets
-
-Set these in **Settings → Secrets and variables → Actions**:
-
-| Secret | Description |
-|--------|-------------|
-| `DOCKER_HUB_USERNAME` | Docker Hub username |
-| `DOCKER_HUB_TOKEN` | Docker Hub access token |
-| `VITE_API_URL` | Production API URL |
-| `VITE_SENTRY_DSN_FRONTEND` | Frontend Sentry DSN |
-| `VITE_SENTRY_DSN_ADMIN` | Admin Sentry DSN |
 
 ---
 
