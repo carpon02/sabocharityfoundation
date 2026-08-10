@@ -1,7 +1,7 @@
 @echo off
 echo Starting ArtNaija local development servers...
 
-start "ArtNaija - Backend" cmd /k "cd Backend && npm run dev"
+start "ArtNaija - Backend" cmd /k "cd Backend && npm run start"
 timeout /t 2 /nobreak >nul
 
 start "ArtNaija - Frontend" cmd /k "cd frontend && npm run dev"
