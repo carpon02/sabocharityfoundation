@@ -2,6 +2,12 @@ import mongoose from "mongoose";
 
 const volunteerSchema = new mongoose.Schema(
   {
+    applicationType: {
+      type: String,
+      enum: ["volunteer", "ambassador"],
+      default: "volunteer",
+    },
+
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -221,7 +227,7 @@ const volunteerSchema = new mongoose.Schema(
     ],
 
     consentGiven: {
-      dataProcessing: { type: Boolean, required: true },
+      dataProcessing: { type: Boolean, default: false },
       backgroundCheck: Boolean,
       photoRelease: Boolean,
     },
