@@ -7,7 +7,6 @@ import {
   ArrowRight,
   ShieldCheck,
   Users,
-  Globe,
   Sparkles,
 } from "lucide-react";
 import { motion as Motion } from "framer-motion";
@@ -46,7 +45,7 @@ const HeroModern = () => {
       onMouseMove={handleMouseMove}
       className="relative min-h-[110vh] flex items-center bg-paper overflow-hidden"
     >
-      {/* Cinematic Background Polish */}
+      {/* Background Polish */}
       <Motion.div
         className="absolute top-0 right-0 w-full lg:w-3/4 h-full bg-gradient-to-l from-primary-50/60 via-transparent to-transparent pointer-events-none"
         animate={{ 
@@ -57,7 +56,7 @@ const HeroModern = () => {
         transition={{ duration: 5, repeat: Infinity }}
       />
 
-      {/* Floating Sparkles/Particles */}
+      {/* Floating Particles */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {[...Array(6)].map((_, i) => (
           <Motion.div
@@ -101,12 +100,12 @@ const HeroModern = () => {
         transition={{ duration: 12, repeat: Infinity }}
       />
 
-      {/* Futuristic Grid Overlay */}
+      {/* Grid Overlay */}
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.02] pointer-events-none" />
       <div className="scan-line opacity-[0.02]" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32 relative z-10 w-full min-h-[90vh] flex flex-col items-center justify-center text-center">
-        {/* CENTRAL HUB: The Narrative focal point */}
+        {/* CENTRAL HUB: Narrative focal point */}
         <Motion.div
           className="relative z-20 space-y-12 max-w-4xl mx-auto"
           variants={staggerContainer(0.1, 0)}
@@ -122,12 +121,12 @@ const HeroModern = () => {
               size={14}
               className="text-primary-600 animate-pulse relative z-10"
             />
-            <span className="relative z-10">Sabo Impact Protocol v4.0</span>
+            <span className="relative z-10">Empowering Sabo Youth</span>
           </Motion.div>
 
           <div className="space-y-6">
             <Motion.h1
-              className="text-6xl sm:text-7xl md:text-8xl xl:text-[11rem] font-black tracking-[-0.05em] text-dark leading-[0.8] text-balance"
+              className="text-5xl sm:text-7xl md:text-8xl xl:text-[9rem] font-black tracking-[-0.05em] text-dark leading-[0.85] text-balance"
               variants={textVariant(0.3)}
             >
               Spark <br />
@@ -144,8 +143,8 @@ const HeroModern = () => {
               className="text-lg sm:text-xl lg:text-2xl text-gray-500 max-w-2xl mx-auto leading-relaxed font-semibold italic border-y-2 border-primary-500/20 py-6"
               variants={fadeIn("up", 0.4)}
             >
-              "We don't just provide aid; we architecturalize independence.
-              Bridging global compassion with sovereign local implementation."
+              "We don't just give aid — we build lasting independence.
+               Connecting hearts worldwide to transform lives in Sabo, Ibadan."
             </Motion.p>
           </div>
 
@@ -155,51 +154,62 @@ const HeroModern = () => {
           >
             <Link
               to="/make-donation"
-              className="group relative w-full sm:w-auto overflow-hidden px-14 py-8 bg-dark text-white font-black rounded-[2.5rem] hover:scale-110 active:scale-95 transition-all duration-500 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.4)]"
+              className="group relative w-full sm:w-auto overflow-hidden px-12 py-6 bg-dark text-white font-black rounded-[2.5rem] hover:scale-105 active:scale-95 transition-all duration-500 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.4)]"
             >
               <div className="absolute inset-0 bg-shimmer-fast opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <span className="relative z-10 flex items-center justify-center gap-4 text-xl">
+              <span className="relative z-10 flex items-center justify-center gap-3 text-lg sm:text-xl">
                 Empower Sabo Youth{" "}
-                <Heart className="w-6 h-6 fill-primary-500 text-primary-500 group-hover:scale-125 transition-transform" />
+                <Heart className="w-5 h-5 fill-primary-500 text-primary-500 group-hover:scale-125 transition-transform" />
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-primary-600 via-primary-800 to-dark opacity-0 group-hover:opacity-50 transition-opacity duration-700" />
             </Link>
 
             <Link
               to="/about"
-              className="group relative w-full sm:w-auto px-14 py-8 bg-white text-dark font-black rounded-[2.5rem] border-4 border-gray-100 hover:border-dark transition-all duration-500 text-center text-xl overflow-hidden"
+              className="group relative w-full sm:w-auto px-12 py-6 bg-white text-dark font-black rounded-[2.5rem] border-4 border-gray-100 hover:border-dark transition-all duration-500 text-center text-lg sm:text-xl overflow-hidden"
             >
               <div className="absolute inset-0 bg-shimmer-fast opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <span className="relative z-10">
                 Our Strategic Vision
-                <ArrowRight className="inline-flex ml-3 w-6 h-6 group-hover:translate-x-3 transition-transform" />
+                <ArrowRight className="inline-flex ml-3 w-5 h-5 group-hover:translate-x-3 transition-transform" />
               </span>
             </Link>
           </Motion.div>
+
+          {/* Mobile & Tablet Inline Stats Bar */}
+          <div className="grid grid-cols-2 gap-4 pt-8 xl:hidden w-full max-w-xl mx-auto">
+            <div className="p-4 rounded-2xl bg-white/80 border border-gray-100 shadow-lg text-center">
+              <div className="text-2xl font-black text-dark tracking-tight">{livesImpacted}</div>
+              <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5">Lives Impacted</div>
+            </div>
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-primary-600 to-primary-800 text-white shadow-lg text-center">
+              <div className="text-2xl font-black tracking-tight">{annualGoal}</div>
+              <div className="text-[9px] font-black text-primary-200 uppercase tracking-widest mt-0.5">Annual Target</div>
+            </div>
+          </div>
         </Motion.div>
 
-        {/* DATA NODES: Symmetrical Tactical Interface */}
-        <div className="absolute inset-0 pointer-events-none">
+        {/* DATA NODES: Symmetrical Floating Interface (Desktop XL only) */}
+        <div className="hidden xl:block absolute inset-0 pointer-events-none">
           {/* Top Left: Lives Impacted */}
           <Motion.div
-            className="absolute left-[5%] top-[20%] pointer-events-auto"
+            className="absolute left-[3%] top-[22%] pointer-events-auto"
             animate={{ 
-              x: mousePos.x * -1.5,
-              y: mousePos.y * -1.5,
+              x: mousePos.x * -1.2,
+              y: mousePos.y * -1.2,
             }}
           >
-            <div className="glass-card-premium p-8 rounded-[3rem] shadow-2xl border-white group/widget overflow-hidden relative">
-              {!overviewStats && <div className="absolute inset-0 bg-shimmer-fast opacity-10" />}
-              <div className="flex flex-col items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-primary-600 text-white flex items-center justify-center shadow-lg shadow-primary-500/30">
-                  <Users size={28} />
+            <div className="glass-card-premium p-6 rounded-[2.5rem] shadow-2xl border-white group/widget overflow-hidden relative">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-primary-600 text-white flex items-center justify-center shadow-lg shadow-primary-500/30">
+                  <Users size={24} />
                 </div>
                 <div>
-                  <div className="text-3xl font-black text-dark tracking-tighter">
-                    {overviewStats ? livesImpacted : <div className="w-20 h-8 bg-gray-200 animate-pulse rounded-md" />}
+                  <div className="text-2xl font-black text-dark tracking-tighter">
+                    {livesImpacted}
                   </div>
                   <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
-                    Impact Nodes
+                    Lives Impacted
                   </div>
                 </div>
               </div>
@@ -208,17 +218,16 @@ const HeroModern = () => {
 
           {/* Top Right: Annual Goal */}
           <Motion.div
-            className="absolute right-[5%] top-[20%] pointer-events-auto"
+            className="absolute right-[3%] top-[22%] pointer-events-auto"
             animate={{ 
-              x: mousePos.x * 1.5,
-              y: mousePos.y * -1.5,
+              x: mousePos.x * 1.2,
+              y: mousePos.y * -1.2,
             }}
           >
-            <div className="glass-card-neon-secondary p-8 rounded-[3rem] shadow-2xl overflow-hidden relative min-w-[200px]">
-              {!overviewStats && <div className="absolute inset-0 bg-shimmer-fast opacity-10" />}
-              <div className="space-y-4">
-                <div className="text-3xl font-black text-white text-glow-secondary leading-none">
-                  {overviewStats ? annualGoal : <div className="w-20 h-8 bg-white/20 animate-pulse rounded-md mx-auto" />}
+            <div className="glass-card-neon-secondary p-6 rounded-[2.5rem] shadow-2xl overflow-hidden relative min-w-[180px]">
+              <div className="space-y-3">
+                <div className="text-2xl font-black text-white text-glow-secondary leading-none">
+                  {annualGoal}
                 </div>
                 <div className="text-[9px] font-black text-secondary-400 uppercase tracking-widest">
                   Annual Target
@@ -232,56 +241,50 @@ const HeroModern = () => {
 
           {/* Bottom Left: Transparency */}
           <Motion.div
-            className="absolute left-[5%] bottom-[20%] pointer-events-auto"
+            className="absolute left-[3%] bottom-[22%] pointer-events-auto"
             animate={{ 
-              x: mousePos.x * -1.2,
-              y: mousePos.y * 1.2,
+              x: mousePos.x * -1,
+              y: mousePos.y * 1,
             }}
           >
-            <div className="glass-card-premium p-6 rounded-[2.5rem] shadow-xl border-white flex items-center gap-4">
-              <div className="p-3 bg-gray-50 rounded-xl text-primary-600">
-                <ShieldCheck size={20} />
+            <div className="glass-card-premium p-5 rounded-[2rem] shadow-xl border-white flex items-center gap-3">
+              <div className="p-2.5 bg-gray-50 rounded-xl text-primary-600">
+                <ShieldCheck size={18} />
               </div>
               <div className="text-left">
-                <div className="text-[8px] font-black text-gray-400 uppercase tracking-[0.3em]">Protocol Log</div>
-                <div className="text-[10px] font-black text-dark uppercase tracking-widest">Transparency</div>
+                <div className="text-[8px] font-black text-gray-400 uppercase tracking-[0.3em]">Transparency</div>
+                <div className="text-[10px] font-black text-dark uppercase tracking-widest">100% Audited</div>
               </div>
             </div>
           </Motion.div>
 
           {/* Bottom Right: Community */}
           <Motion.div
-            className="absolute right-[5%] bottom-[20%] pointer-events-auto"
+            className="absolute right-[3%] bottom-[22%] pointer-events-auto"
             animate={{ 
-              x: mousePos.x * 1.2,
-              y: mousePos.y * 1.2,
+              x: mousePos.x * 1,
+              y: mousePos.y * 1,
             }}
           >
-            <div className="glass-card-premium p-6 rounded-[2.5rem] shadow-xl border-white flex items-center gap-4">
-              <div className="p-3 bg-gray-50 rounded-xl text-secondary-500">
-                <Users size={20} />
+            <div className="glass-card-premium p-5 rounded-[2rem] shadow-xl border-white flex items-center gap-3">
+              <div className="p-2.5 bg-gray-50 rounded-xl text-secondary-500">
+                <Users size={18} />
               </div>
               <div className="text-left">
-                <div className="text-[8px] font-black text-gray-400 uppercase tracking-[0.3em]">Network Active</div>
-                <div className="text-[10px] font-black text-dark uppercase tracking-widest">Community</div>
+                <div className="text-[8px] font-black text-gray-400 uppercase tracking-[0.3em]">Community</div>
+                <div className="text-[10px] font-black text-dark uppercase tracking-widest">Sabo Community</div>
               </div>
             </div>
           </Motion.div>
 
-          {/* CENTER IMAGE: "Aurelius" Hub v3.0 */}
+          {/* CENTER IMAGE Backdrop */}
           <div className="absolute inset-0 -z-10 flex items-center justify-center opacity-30 select-none pointer-events-none">
              <div className="relative w-[600px] h-[600px] lg:w-[800px] lg:h-[800px] rounded-full overflow-hidden grayscale contrast-125 border-[20px] border-white/40 shadow-inner">
                 <img src={heroImg} alt="Backdrop" className="w-full h-full object-cover scale-150" />
                 <div className="absolute inset-0 bg-gradient-to-b from-paper/80 via-transparent to-paper/80" />
                 <div className="absolute inset-0 bg-paper/20 backdrop-blur-3xl" />
-                
-                {/* Tactical Scope Overlays */}
-                <div className="absolute inset-0 border-[2px] border-primary-500/10 rounded-full animate-ping delay-700" />
-                <div className="absolute inset-0 border-[1px] border-primary-500/5 rounded-full scale-110" />
-                
-                {/* Community Sovereignty Label */}
                 <div className="absolute bottom-1/4 left-1/2 -translate-x-1/2 text-primary-900/40 text-[10px] font-black uppercase tracking-[0.8em]">
-                  Community Sovereignty
+                  Community Empowerment
                 </div>
              </div>
           </div>

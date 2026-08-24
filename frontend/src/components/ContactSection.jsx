@@ -38,16 +38,16 @@ const ContactSection = () => {
             variants={fadeIn("down", 0.2)}
           >
             <Send size={14} className="text-secondary-500 animate-pulse" />
-            Sabo Liaison Protocol v4.0
+            Get In Touch
           </Motion.div>
 
           <Motion.h2
             className="text-5xl sm:text-6xl md:text-8xl font-black text-dark tracking-tighter leading-[0.8]"
             variants={fadeIn("up", 0.3)}
           >
-            Access the <br />
+            Contact <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 via-primary-900 to-secondary-600">
-              Intelligence Hub.
+              Us Today.
             </span>
           </Motion.h2>
 
@@ -55,8 +55,8 @@ const ContactSection = () => {
             className="text-lg sm:text-xl text-gray-400 font-medium max-w-2xl mx-auto leading-relaxed border-l-2 border-primary-50 pl-8 italic"
             variants={fadeIn("up", 0.4)}
           >
-            "Information is the foundation of action. Initialize a direct link
-            to the Sabo Ibadan Youth Charity Foundation headquarters."
+            "Have a question, want to partner with us, or just want to say hello?
+            We'd love to hear from you. Reach out to the Sabo Ibadan Youth Charity Foundation."
           </Motion.p>
         </Motion.div>
 
@@ -71,33 +71,33 @@ const ContactSection = () => {
             {
               href: "mailto:info@saboibadanyouth.org",
               icon: Mail,
-              label: "Information Exchange",
+              label: "Email Us",
               value: "info@saboibadanyouth.org",
               color: "text-primary-600",
               bg: "bg-primary-50",
               glow: "shadow-primary-500/10",
-              desc: "For general inquiries, project proposals, and global partnerships.",
+              desc: "For general inquiries, project proposals, and partnership opportunities.",
             },
             {
               href: "tel:+2348100000000",
               icon: Phone,
-              label: "Tactical Operations",
+              label: "Call Us",
               value: "+234 810 000 0000",
               color: "text-secondary-600",
               bg: "bg-secondary-50",
               glow: "shadow-secondary-500/10",
-              desc: "Direct hotline for urgent humanitarian coordination and on-ground logistics.",
+              desc: "Direct hotline for urgent coordination and on-ground support.",
             },
             {
               href: "https://goo.gl/maps/example",
               icon: MapPin,
-              label: "Command Center",
+              label: "Visit Us",
               value: "Sabo Community Area, Ibadan",
               color: "text-amber-600",
               bg: "bg-amber-50",
               glow: "shadow-amber-500/10",
               isExternal: true,
-              desc: "Visit our physical node for strategic meetings and community workshops.",
+              desc: "Visit us for meetings, workshops, and community events.",
             },
           ].map((node, i) => (
             <Motion.a
@@ -136,7 +136,7 @@ const ContactSection = () => {
               </div>
 
               <div className="mt-12 flex items-center gap-3 text-[10px] font-black text-dark uppercase tracking-[0.5em] opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500">
-                Initialize{" "}
+                Connect{" "}
                 <ArrowUpRight size={14} className="text-secondary-500" />
               </div>
             </Motion.a>
@@ -153,15 +153,15 @@ const ContactSection = () => {
         >
           <div className="space-y-8">
             <h4 className="text-3xl sm:text-4xl font-black text-dark tracking-tighter">
-              Synchronize with our <br />
-              <span className="text-primary-600">Global Stream.</span>
+              Follow Us on <br />
+              <span className="text-primary-600">Social Media.</span>
             </h4>
             <div className="flex flex-wrap gap-4">
               {[
                 "Twitter / X",
                 "LinkedIn",
                 "Instagram",
-                "Intelligence Feed",
+                "Blog",
               ].map((link) => (
                 <button
                   key={link}
@@ -180,10 +180,10 @@ const ContactSection = () => {
             </div>
             <div className="relative z-10 flex-grow text-center sm:text-left">
               <p className="text-[10px] font-black text-primary-500 uppercase tracking-[0.3em] mb-2">
-                Internal Comms
+                Get Started
               </p>
               <h5 className="text-xl font-black tracking-tight mb-4">
-                Request Mission Credentials?
+                Create an Account?
               </h5>
               <button className="text-[10px] font-black uppercase tracking-[0.4em] px-8 py-3 bg-white text-black rounded-xl hover:bg-primary-500 hover:text-white transition-all duration-500">
                 Access Portal

@@ -39,9 +39,11 @@ const seedData = async () => {
         email: adminEmail.toLowerCase(),
         password: adminPassword, // Will be hashed by pre-save hook
         role: "admin",
+        adminRole: "super_admin",
         isEmailVerified: true,
         isActive: true,
         bio: "Leading the mission for sustainable development in Ibadan.",
+        authMethod: "local",
       },
       {
         fullName: "Abubakar Mukhtar",
@@ -51,6 +53,7 @@ const seedData = async () => {
         isEmailVerified: true,
         isActive: true,
         bio: "Tech enthusiast and community advocate.",
+        authMethod: "local",
       },
       {
         fullName: "Sarah Johnson",
@@ -60,6 +63,7 @@ const seedData = async () => {
         isEmailVerified: true,
         isActive: true,
         bio: "Passionate about structural education and healthcare.",
+        authMethod: "local",
       },
       {
         fullName: "David Adeleke",
@@ -68,6 +72,7 @@ const seedData = async () => {
         role: "donor",
         isEmailVerified: true,
         isActive: true,
+        authMethod: "local",
       },
     ]);
 

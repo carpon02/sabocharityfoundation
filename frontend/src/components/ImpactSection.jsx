@@ -72,7 +72,7 @@ const ImpactSection = () => {
                 variants={fadeIn("down", 0.2)}
               >
                 <TrendingUp size={14} />
-                Audited Performance Metrics
+                Our Impact in Numbers
               </Motion.div>
               <Motion.h3
                 className="text-4xl sm:text-5xl md:text-7xl font-black text-dark tracking-tighter leading-[0.9]"
@@ -80,15 +80,16 @@ const ImpactSection = () => {
               >
                 Real Numbers. <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-primary-800">
-                  Real Sovereignty.
+                  Real Change.
                 </span>
               </Motion.h3>
               <Motion.p
                 className="text-lg sm:text-xl text-gray-500 font-medium leading-[1.6] max-w-xl"
                 variants={fadeIn("up", 0.4)}
               >
-                We don't just provide aid; we architecturalize independence. Our
-                initiatives are data-driven catalysts for community evolution.
+                We don't just provide aid — we help people build lasting
+                independence. Our work is driven by data and powered by
+                compassion for the community.
               </Motion.p>
             </div>
 
@@ -157,8 +158,8 @@ const ImpactSection = () => {
                 ))}
               </div>
               <p className="text-base sm:text-lg font-bold text-dark leading-tight italic">
-                "The sovereign educational support protocols have
-                architecturalized a brighter trajectory for our youth clusters."
+                "The educational support programmes have
+                created a brighter future for our youth."
               </p>
               <div className="mt-6 sm:mt-8 flex items-center gap-3 sm:gap-4 border-t border-gray-100 pt-4 sm:pt-6">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-black text-sm">
@@ -169,7 +170,7 @@ const ImpactSection = () => {
                     Amina Maikori
                   </div>
                   <div className="text-[8px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                    Community Sovereign Lead
+                    Community Leader
                   </div>
                 </div>
               </div>

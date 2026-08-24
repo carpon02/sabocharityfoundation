@@ -65,7 +65,7 @@ const HowItHelps = () => {
             variants={fadeIn("down", 0.1)}
           >
             <Heart size={14} className="fill-primary-600 animate-pulse" />
-            Impact Architecture v2.0
+            Your Donation at Work
           </Motion.div>
           <Motion.h2 
             className="text-4xl sm:text-6xl font-black text-dark tracking-tighter leading-tight"
@@ -80,8 +80,8 @@ const HowItHelps = () => {
             className="text-lg text-gray-500 font-medium max-w-2xl mx-auto"
             variants={fadeIn("up", 0.3)}
           >
-            We maintain a 100% transparency protocol. Every Naira donated is a 
-            precision-guided investment in the future of Sabo Ibadan.
+            We maintain full transparency. Every Naira donated is a 
+            direct investment in the future of Sabo, Ibadan.
           </Motion.p>
         </Motion.div>
 
@@ -112,7 +112,7 @@ const HowItHelps = () => {
                 </p>
                 <div className="pt-6 border-t border-gray-50 flex items-center justify-between group-hover:text-primary-600 transition-colors">
                   <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 group-hover:text-primary-600">
-                    Sovereign Impact
+                    Real Impact
                   </span>
                   <ArrowRight size={16} />
                 </div>
@@ -132,8 +132,8 @@ const HowItHelps = () => {
           {/* Abstract Glow */}
           <div className="absolute top-0 right-0 w-[500px] h-full bg-primary-600/10 blur-[100px] pointer-events-none group-hover:scale-150 transition-transform duration-[3s]" />
           <p className="relative z-10 text-base font-medium text-gray-400 max-w-4xl mx-auto italic leading-relaxed">
-            "Sabo Impact Architecture: Your contribution is managed through a multi-sig transparency protocol. 
-            Detailed impact reports are published quarterly for all stakeholders, ensuring 100% sovereign accountability."
+            "Your contribution is managed with complete transparency. 
+            Detailed impact reports are published quarterly for all stakeholders, ensuring 100% accountability."
           </p>
         </Motion.div>
       </div>

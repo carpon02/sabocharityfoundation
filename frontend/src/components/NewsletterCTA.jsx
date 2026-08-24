@@ -78,8 +78,8 @@ const NewsletterCTA = () => {
             className="text-lg sm:text-xl text-dark/70 font-medium leading-relaxed max-w-2xl mx-auto mb-12 italic border-l-4 border-primary-500 pl-8 py-2"
             variants={fadeIn("up", 0.3)}
           >
-            "Information is the catalyst for coordinated action. Join the Sabo 
-            Intelligence Briefing for real-time mission updates and impact stories."
+            "Stay connected with the Sabo community. Get real-time updates 
+            on our programmes, events, and the impact your support creates."
           </Motion.p>
 
           {/* Feature Pills */}
@@ -121,11 +121,11 @@ const NewsletterCTA = () => {
               <div className="absolute inset-0 bg-shimmer-fast opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               {loading ? (
                 <>
-                  <Loader size={16} className="animate-spin relative z-10" /> <span className="relative z-10">Initializing...</span>
+                  <Loader size={16} className="animate-spin relative z-10" /> <span className="relative z-10">Subscribing...</span>
                 </>
               ) : subscribed ? (
                 <>
-                  <CheckCircle size={16} className="relative z-10 text-primary-400" /> <span className="relative z-10">Authenticated</span>
+                  <CheckCircle size={16} className="relative z-10 text-primary-400" /> <span className="relative z-10">Subscribed!</span>
                 </>
               ) : (
                 <>

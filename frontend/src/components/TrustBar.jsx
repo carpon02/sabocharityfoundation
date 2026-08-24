@@ -13,41 +13,41 @@ const partners = [
     border: "border-primary-100",
   },
   {
-    icon: Globe,
-    name: "UNICEF Partner",
-    sub: "UN Children's Fund Nigeria",
-    color: "text-blue-600",
-    bg: "bg-blue-50",
-    border: "border-blue-100",
-  },
-  {
     icon: Building2,
-    name: "Oyo State Govt.",
-    sub: "Official State Partner",
+    name: "Oyo State Recognised",
+    sub: "State Youth Development Partner",
     color: "text-secondary-600",
     bg: "bg-secondary-50",
     border: "border-secondary-100",
   },
   {
     icon: Users,
-    name: "NYC Affiliate",
-    sub: "Nigerian Youth Council",
+    name: "Youth-Led Initiative",
+    sub: "Community-Driven Organisation",
     color: "text-purple-600",
     bg: "bg-purple-50",
     border: "border-purple-100",
   },
   {
+    icon: Globe,
+    name: "Local Impact",
+    sub: "Serving Sabo, Ibadan Since 2020",
+    color: "text-blue-600",
+    bg: "bg-blue-50",
+    border: "border-blue-100",
+  },
+  {
     icon: Award,
-    name: "ISO Certified",
-    sub: "Quality Management Certified",
+    name: "Trusted by Donors",
+    sub: "Transparent & Accountable",
     color: "text-rose-600",
     bg: "bg-rose-50",
     border: "border-rose-100",
   },
   {
     icon: BadgeCheck,
-    name: "Transparent NGO",
-    sub: "100% Audited Annually",
+    name: "Annually Audited",
+    sub: "100% Financial Transparency",
     color: "text-emerald-600",
     bg: "bg-emerald-50",
     border: "border-emerald-100",
@@ -68,10 +68,10 @@ const TrustBar = () => {
         >
           <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-primary-50 border border-primary-100 text-primary-700 text-[10px] font-black uppercase tracking-[0.3em]">
             <ShieldCheck size={12} />
-            Verified Trust Signals
+            Why People Trust Us
           </div>
           <p className="text-sm text-gray-400 font-medium">
-            Registered, certified, and partnered with leading global institutions
+            Registered, transparent, and committed to community development
           </p>
         </Motion.div>
 

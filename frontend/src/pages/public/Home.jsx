@@ -11,6 +11,7 @@ import UpcomingEvents from "../../components/UpcomingEvents";
 import VolunteerSpotlight from "../../components/VolunteerSpotlight";
 import Testimonials from "../../components/Testimonials";
 import Support from "../../components/Support";
+import NewsletterCTA from "../../components/NewsletterCTA";
 import ContactSection from "../../components/ContactSection";
 
 const Home = () => {
@@ -51,10 +52,13 @@ const Home = () => {
       {/* 10. VERIFICATION: Peer-Reviewed Impact & Testimonials */}
       <Testimonials />
 
-      {/* 11. STRATEGIC ALLIANCES: Corporate & NGO Endorsements */}
+      {/* 11. STAY INFORMED: Newsletter Subscription */}
+      <NewsletterCTA />
+
+      {/* 12. STRATEGIC ALLIANCES: Corporate & NGO Endorsements */}
       <Support />
 
-      {/* 12. COMMUNICATION: Final Tactical Access Point */}
+      {/* 13. CONTACT: Get In Touch */}
       <ContactSection />
     </main>
   );

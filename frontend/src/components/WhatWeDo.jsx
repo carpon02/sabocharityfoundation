@@ -51,7 +51,7 @@ const WhatWeDo = () => {
                 variants={fadeIn("down", 0.2)}
               >
                 <ShieldCheck size={14} className="text-secondary-500" />
-                Strategic Mission Protocol
+                Our Mission
               </Motion.div>
 
               <Motion.h2
@@ -68,9 +68,9 @@ const WhatWeDo = () => {
                 className="text-lg sm:text-xl text-gray-500 leading-relaxed font-medium max-w-xl"
                 variants={fadeIn("up", 0.4)}
               >
-                We architecturalize community sovereignty. Our programs are
-                audited catalysts for long-term sustainable evolution and
-                resilience.
+                We build strong, self-sufficient communities. Our programs
+                are carefully designed to create lasting change and
+                resilience across Sabo, Ibadan.
               </Motion.p>
             </div>
 
@@ -105,7 +105,7 @@ const WhatWeDo = () => {
             >
               <div className="absolute inset-0 bg-gradient-to-r from-primary-400/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <span className="relative flex items-center gap-3 text-sm sm:text-base">
-                Deploy Our Programs
+                Explore Our Programs
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
               </span>
             </Link>
@@ -139,14 +139,14 @@ const WhatWeDo = () => {
               <div className="flex items-center gap-3 sm:gap-4 mb-2 sm:mb-4">
                 <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
                 <span className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                  Efficiency Audit
+                  Our Promise
                 </span>
               </div>
               <div className="text-4xl sm:text-6xl font-black text-dark tracking-tighter">
                 100%
               </div>
               <p className="text-gray-600 font-black text-[8px] sm:text-xs mt-2 sm:mt-3 leading-relaxed uppercase tracking-widest">
-                Direct deployment of proceeds to community nodes.
+                Every donation goes directly to community programmes.
               </p>
               <div className="w-full h-1 bg-gray-100 rounded-full mt-4 sm:mt-6 relative overflow-hidden">
                 <Motion.div

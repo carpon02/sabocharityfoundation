@@ -65,8 +65,8 @@ const Footer = () => {
               Sabo Ibadan Youth Charity Foundation
             </h3>
             <p className="text-sm text-gray-400 font-medium leading-relaxed">
-              Architecturalizing futures through strategic education,
-              healthcare, and youth empowerment protocols.
+              Building brighter futures through education,
+              healthcare, and youth empowerment in Sabo, Ibadan.
             </p>
 
             {/* Social Intelligence Nodes */}
@@ -94,7 +94,7 @@ const Footer = () => {
           {/* Navigation Nodes */}
           <div className="space-y-6">
             <h4 className="text-sm font-black text-white uppercase tracking-[0.2em]">
-              Mission Nodes
+              Quick Links
             </h4>
             <ul className="space-y-3">
               {[
@@ -120,7 +120,7 @@ const Footer = () => {
           {/* Support Protocols */}
           <div className="space-y-6">
             <h4 className="text-sm font-black text-white uppercase tracking-[0.2em]">
-              Support Protocols
+              Get Involved
             </h4>
             <ul className="space-y-3">
               {[

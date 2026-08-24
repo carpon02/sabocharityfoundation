@@ -1,7 +1,8 @@
 // admin/src/component/pages/Reports.jsx - Foundation Analytics Hub
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
+import { toast } from "react-hot-toast";
 
 import {
   Download,
@@ -11,11 +12,9 @@ import {
   Users,
   TrendingUp,
   Activity,
-  Calendar,
   PieChart,
-  BarChart3,
-  ArrowUpRight,
-  TrendingDown,
+  Calendar,
+  Sparkles,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import {
@@ -35,51 +34,102 @@ import {
 import { StatsCard } from "../shared";
 import RevenueTrendChart from "../reports/RevenueTrendChart";
 import CategoryDistributionChart from "../reports/CategoryDistributionChart";
+import TopCampaignsTable from "../reports/TopCampaignsTable";
+import TopDonorsTable from "../reports/TopDonorsTable";
+import apiClient from "../../config/apiConfig";
 
 const Reports = () => {
   const { darkMode } = useTheme();
   const dispatch = useDispatch();
 
-  const [dateRange, setDateRange] = useState("this-month");
+  const [dateRange, setDateRange] = useState("1M"); // "7D" | "1M" | "1Y"
+  const [isExporting, setIsExporting] = useState(false);
 
   const {
     platformAnalytics,
     donationTrends,
     loading: analyticsLoading,
   } = useSelector((state) => state.analytics);
-  const { stats: campaignStats, loading: campaignsLoading } = useSelector(
-    (state) => state.adminCampaigns,
-  );
+
+  const {
+    campaigns = [],
+    stats: campaignStats,
+    loading: campaignsLoading,
+  } = useSelector((state) => state.adminCampaigns);
+
   const { stats: paymentStats, loading: paymentsLoading } = useSelector(
     (state) => state.adminPayments,
   );
-  const { stats: donorStats, loading: donorsLoading } = useSelector(
-    (state) => state.adminDonors,
-  );
+
+  const {
+    donors = [],
+    stats: donorStats,
+    loading: donorsLoading,
+  } = useSelector((state) => state.adminDonors);
 
   const loading =
     analyticsLoading || campaignsLoading || paymentsLoading || donorsLoading;
 
-  const fetchData = useCallback(async () => {
-    await Promise.all([
-      dispatch(fetchPlatformAnalytics()),
-      dispatch(fetchCampaignAnalytics()),
-      dispatch(fetchDonationTrends()),
-      dispatch(fetchCampaigns({ limit: 50 })),
-      dispatch(fetchCampaignStats({})),
-      dispatch(fetchPaymentStats({ period: dateRange.replace("-", "") })),
-      dispatch(fetchDonorStats({})),
-      dispatch(fetchAllDonors({ limit: 50 })),
-    ]);
-  }, [dispatch, dateRange]);
+  const fetchData = useCallback(async (isManualResync = false) => {
+    try {
+      if (isManualResync) toast.loading("Resyncing analytics data...", { id: "resync" });
+      await Promise.all([
+        dispatch(fetchPlatformAnalytics()),
+        dispatch(fetchCampaignAnalytics()),
+        dispatch(fetchDonationTrends()),
+        dispatch(fetchCampaigns({ limit: 50 })),
+        dispatch(fetchCampaignStats({})),
+        dispatch(fetchPaymentStats({})),
+        dispatch(fetchDonorStats({})),
+        dispatch(fetchAllDonors({ limit: 50 })),
+      ]);
+      if (isManualResync) toast.success("Analytics up to date", { id: "resync" });
+    } catch {
+      if (isManualResync) toast.error("Failed to refresh analytics", { id: "resync" });
+    }
+  }, [dispatch]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
+  // Handle Export CSV
+  const handleExportCsv = async () => {
+    if (isExporting) return;
+    try {
+      setIsExporting(true);
+      toast.loading("Generating CSV report...", { id: "export-csv" });
+
+      const response = await apiClient.get("/analytics/export/donations", {
+        responseType: "blob",
+      });
+
+      const blob = new Blob([response.data], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `sabo-donations-report-${new Date().toISOString().split("T")[0]}.csv`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success("CSV Report downloaded!", { id: "export-csv" });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to export report CSV", { id: "export-csv" });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const internalStats = useMemo(() => {
     const totalRevenue =
       platformAnalytics?.totalAmount ||
+      platformAnalytics?.totalRaised ||
       paymentStats?.overview?.totalAmount ||
       0;
     const totalDonations =
@@ -87,6 +137,7 @@ const Reports = () => {
       paymentStats?.overview?.totalTransactions ||
       0;
     const avgDonation = totalDonations > 0 ? totalRevenue / totalDonations : 0;
+    const totalDonorCount = donorStats?.totalCount || platformAnalytics?.totalDonors || 0;
 
     return [
       {
@@ -113,7 +164,7 @@ const Reports = () => {
       },
       {
         label: "Donor Growth",
-        value: (donorStats?.totalCount || 0).toLocaleString(),
+        value: totalDonorCount.toLocaleString(),
         change: "+12.8%",
         trend: "up",
         icon: Users,
@@ -126,11 +177,11 @@ const Reports = () => {
           style: "currency",
           currency: "NGN",
         }).format(avgDonation),
-        change: "-5.3%",
-        trend: "down",
+        change: "+5.3%",
+        trend: "up",
         icon: TrendingUp,
         bgColor: "from-emerald-700 to-teal-800",
-        trendUp: false,
+        trendUp: true,
       },
     ];
   }, [platformAnalytics, paymentStats, donorStats]);
@@ -142,15 +193,15 @@ const Reports = () => {
 
     const totalAmount = entries.reduce(
       (sum, [, data]) => sum + (data.totalRaised || 0),
-      0,
+      0
     );
+
     const colors = [
       "from-emerald-500 to-emerald-600",
       "from-teal-500 to-teal-600",
       "from-amber-500 to-amber-600",
       "from-rose-500 to-rose-600",
-      "from-emerald-400 to-emerald-500",
-      "from-teal-400 to-teal-500",
+      "from-indigo-500 to-indigo-600",
     ];
 
     return entries
@@ -160,33 +211,41 @@ const Reports = () => {
         count: data.count || 0,
         percentage:
           totalAmount > 0
-            ? Math.round((data.totalRaised / totalAmount) * 100)
+            ? Math.round(((data.totalRaised || 0) / totalAmount) * 100)
             : 0,
         color: colors[index % colors.length],
       }))
       .sort((a, b) => b.amount - a.amount);
   }, [campaignStats]);
 
+  // Derived Top Donors & Campaigns
+  const topDonors = useMemo(() => {
+    return [...donors]
+      .sort((a, b) => (b.totalDonated || 0) - (a.totalDonated || 0))
+      .slice(0, 5);
+  }, [donors]);
+
+  const topCampaigns = useMemo(() => {
+    return [...campaigns]
+      .sort((a, b) => (b.raisedAmount || 0) - (a.raisedAmount || 0))
+      .slice(0, 5);
+  }, [campaigns]);
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
+      transition: { staggerChildren: 0.1 },
     },
   };
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-    },
+    visible: { opacity: 1, y: 0 },
   };
 
   return (
-    <div className="space-y-8 relative pb-20">
+    <div className="space-y-8 relative pb-20 px-4 sm:px-0">
       {/* Decorative Background Blob */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-3xl -z-10 pointer-events-none" />
 
@@ -226,18 +285,23 @@ const Reports = () => {
           className="flex flex-wrap gap-3"
         >
           <button
-            onClick={() => fetchData()}
-            className={`px-6 py-4 rounded-2xl font-bold uppercase tracking-widest text-xs flex items-center gap-2 transition-all ${
+            onClick={() => fetchData(true)}
+            className={`px-6 py-3.5 rounded-2xl font-bold uppercase tracking-widest text-xs flex items-center gap-2 transition-all ${
               darkMode
-                ? "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
-                : "bg-white border border-gray-100 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50"
+                ? "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 border border-gray-700"
+                : "bg-white border border-gray-200 text-gray-600 hover:text-emerald-600 hover:bg-emerald-50"
             }`}
           >
-            <RefreshCw size={16} className={loading ? "animate-spin" : ""} />{" "}
-            Resync Data
+            <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+            <span>Resync Data</span>
           </button>
-          <button className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white px-8 py-4 rounded-2xl font-bold uppercase tracking-widest text-xs flex items-center gap-2 shadow-xl shadow-emerald-600/30 active:scale-95 transition-all">
-            <Download size={18} /> Export Report
+          <button
+            onClick={handleExportCsv}
+            disabled={isExporting}
+            className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white px-7 py-3.5 rounded-2xl font-bold uppercase tracking-widest text-xs flex items-center gap-2 shadow-xl shadow-emerald-600/30 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+          >
+            <Download size={18} />
+            <span>{isExporting ? "Exporting..." : "Export Report CSV"}</span>
           </button>
         </motion.div>
       </div>
@@ -253,7 +317,7 @@ const Reports = () => {
           <motion.div
             key={i}
             variants={itemVariants}
-            whileHover={{ y: -5, transition: { duration: 0.2 } }}
+            whileHover={{ y: -4, transition: { duration: 0.2 } }}
           >
             <StatsCard {...stat} index={i} />
           </motion.div>
@@ -264,48 +328,22 @@ const Reports = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
+        transition={{ delay: 0.3 }}
         className="grid grid-cols-1 xl:grid-cols-3 gap-8"
       >
         {/* Revenue Trend */}
-        <div
-          className={`xl:col-span-2 p-8 rounded-[2.5rem] border backdrop-blur-sm ${
-            darkMode
-              ? "bg-dark-lighter/80 border-gray-800"
-              : "bg-white/80 border-gray-100 shadow-xl shadow-gray-100/50"
-          }`}
-        >
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-4">
-              <div
-                className={`p-3 rounded-2xl ${darkMode ? "bg-emerald-900/20" : "bg-emerald-50"}`}
-              >
-                <TrendingUp className="text-emerald-500" size={24} />
-              </div>
-              <div>
-                <h3
-                  className={`text-xl font-bold tracking-tight ${
-                    darkMode ? "text-white" : "text-dark"
-                  }`}
-                >
-                  Donation Trends
-                </h3>
-                <p
-                  className={`text-sm mt-1 ${darkMode ? "text-gray-500" : "text-gray-500"}`}
-                >
-                  Monthly Giving Analysis
-                </p>
-              </div>
-            </div>
-
-            <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
+        <div className="xl:col-span-2">
+          {/* Range Selector Header overlay */}
+          <div className="flex justify-end mb-2">
+            <div className="flex bg-gray-100 dark:bg-gray-900 p-1 rounded-xl gap-1">
               {["7D", "1M", "1Y"].map((range) => (
                 <button
                   key={range}
-                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-                    range === "1M" // hardcoded active state for now
-                      ? "bg-white dark:bg-gray-700 shadow-sm text-emerald-600 dark:text-emerald-400"
-                      : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                  onClick={() => setDateRange(range)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    dateRange === range
+                      ? "bg-emerald-500 text-white shadow-md"
+                      : "text-gray-500 hover:text-gray-800 dark:hover:text-gray-200"
                   }`}
                 >
                   {range}
@@ -313,77 +351,56 @@ const Reports = () => {
               ))}
             </div>
           </div>
-          <div className="h-[350px] w-full">
-            <RevenueTrendChart monthlyData={donationTrends} />
-          </div>
+          <RevenueTrendChart
+            monthlyData={donationTrends}
+            isRefreshing={loading}
+            timeRange={dateRange}
+            onTimeRangeChange={setDateRange}
+          />
         </div>
 
         {/* Category Distribution */}
-        <div
-          className={`p-8 rounded-[2.5rem] border backdrop-blur-sm flex flex-col ${
-            darkMode
-              ? "bg-dark-lighter/80 border-gray-800"
-              : "bg-white/80 border-gray-100 shadow-xl shadow-gray-100/50"
-          }`}
-        >
-          <div className="mb-8 flex items-center gap-4">
-            <div
-              className={`p-3 rounded-2xl ${darkMode ? "bg-teal-900/20" : "bg-teal-50"}`}
-            >
-              <PieChart className="text-teal-500" size={24} />
-            </div>
-            <div>
-              <h3
-                className={`text-xl font-bold tracking-tight ${
-                  darkMode ? "text-white" : "text-dark"
-                }`}
-              >
-                Impact Sectors
-              </h3>
-              <p
-                className={`text-sm mt-1 ${darkMode ? "text-gray-500" : "text-gray-500"}`}
-              >
-                Donations by Category
-              </p>
-            </div>
-          </div>
-          <div className="flex-1 min-h-[300px] flex items-center justify-center">
-            {categoryData.length > 0 ? (
-              <div className="w-full h-full">
-                <CategoryDistributionChart categoryData={categoryData} />
-              </div>
-            ) : (
-              <div className="text-center text-gray-400">
-                <PieChart size={48} className="mx-auto mb-2 opacity-50" />
-                <p>No category data available</p>
-              </div>
-            )}
-          </div>
+        <div>
+          <CategoryDistributionChart
+            categoryData={categoryData}
+            isRefreshing={loading}
+          />
         </div>
       </motion.div>
 
-      {/* Foundation Insights */}
+      {/* Top Campaigns & Top Donors Tables */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-        className={`p-10 rounded-3xl border relative overflow-hidden transition-all duration-500 ${
+        transition={{ delay: 0.4 }}
+        className="grid grid-cols-1 lg:grid-cols-2 gap-8"
+      >
+        <TopCampaignsTable campaigns={topCampaigns} isRefreshing={loading} />
+        <TopDonorsTable donors={topDonors} isRefreshing={loading} />
+      </motion.div>
+
+      {/* Strategic Impact & Action */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className={`p-8 sm:p-10 rounded-3xl border relative overflow-hidden transition-all duration-500 ${
           darkMode
             ? "bg-gradient-to-br from-emerald-950/30 to-dark-lighter border-emerald-900/30"
-            : "bg-gradient-to-br from-emerald-50 to-white border-emerald-100"
+            : "bg-gradient-to-br from-emerald-50 to-white border-emerald-100 shadow-xl shadow-emerald-500/5"
         }`}
       >
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-[100px] rounded-full -mr-20 -mt-20" />
-        <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
-          <div className="flex-1 space-y-4">
-            <div className="flex items-center gap-3 mb-2">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 relative z-10">
+          <div className="flex-1 space-y-3">
+            <div className="flex items-center gap-2">
               <div
                 className={`p-2 rounded-lg ${darkMode ? "bg-emerald-900/50" : "bg-emerald-100"}`}
               >
-                <Activity size={24} className="text-emerald-500" />
+                <Sparkles size={20} className="text-emerald-500" />
               </div>
               <span className="text-xs font-bold text-emerald-500 uppercase tracking-wider">
-                Strategic Insight
+                Foundation Data Hub
               </span>
             </div>
             <h2
@@ -391,26 +408,24 @@ const Reports = () => {
                 darkMode ? "text-white" : "text-dark"
               }`}
             >
-              Community Impact Goals
+              Real-Time Community Impact Analysis
             </h2>
             <p
-              className={`text-base font-medium leading-relaxed max-w-2xl ${
+              className={`text-sm sm:text-base font-medium leading-relaxed max-w-2xl ${
                 darkMode ? "text-gray-400" : "text-gray-600"
               }`}
             >
-              Our analytics hub utilizes real-time donation data to track
-              community empowerment progress. Every data point here informs our
-              next community projects in the Sabo youth ecosystem.
+              Every donation recorded here reflects direct community support in the Sabo youth ecosystem. Generate and export data reports to share with stakeholders and partners.
             </p>
           </div>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="bg-white text-emerald-700 border-2 border-emerald-100 hover:border-emerald-200 px-8 py-4 rounded-2xl font-bold shadow-xl shadow-gray-200/50 hover:shadow-2xl transition-all flex items-center gap-3"
+          <button
+            onClick={handleExportCsv}
+            disabled={isExporting}
+            className="bg-white text-emerald-700 border-2 border-emerald-100 hover:border-emerald-200 px-8 py-4 rounded-2xl font-bold shadow-xl shadow-gray-200/50 hover:shadow-2xl transition-all flex items-center gap-3 shrink-0 active:scale-95 cursor-pointer disabled:opacity-50"
           >
             <Download size={20} />
-            <span>Download Strategy Report</span>
-          </motion.button>
+            <span>Download CSV Report</span>
+          </button>
         </div>
       </motion.div>
     </div>

@@ -4,18 +4,23 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchUpcomingEvents } from "../features/event/eventsSlice";
 import { motion as Motion } from "framer-motion";
 import { fadeIn, staggerContainer } from "../utils/animations";
-import { Calendar, MapPin, Clock, ArrowRight, Loader } from "lucide-react";
+import { Calendar, MapPin, Clock, ArrowRight, Loader, CalendarX } from "lucide-react";
 
 const categoryColors = {
   education: "bg-primary-100 text-primary-700 border-primary-200",
   health: "bg-rose-100 text-rose-700 border-rose-200",
   community: "bg-secondary-100 text-secondary-700 border-secondary-200",
+  community_outreach: "bg-secondary-100 text-secondary-700 border-secondary-200",
   fundraiser: "bg-purple-100 text-purple-700 border-purple-200",
   volunteer: "bg-blue-100 text-blue-700 border-blue-200",
+  volunteer_drive: "bg-blue-100 text-blue-700 border-blue-200",
+  workshop: "bg-teal-100 text-teal-700 border-teal-200",
+  conference: "bg-indigo-100 text-indigo-700 border-indigo-200",
+  charity_run: "bg-orange-100 text-orange-700 border-orange-200",
 };
 
 const formatDate = (dateStr) => {
-  if (!dateStr) return { day: "TBD", month: "", year: "" };
+  if (!dateStr) return { day: "TBD", month: "", year: "", time: "" };
   const d = new Date(dateStr);
   return {
     day: d.getDate(),
@@ -23,6 +28,17 @@ const formatDate = (dateStr) => {
     year: d.getFullYear(),
     time: d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
   };
+};
+
+// Resolve the event date from either eventDate or date field
+const getEventDate = (event) => event.eventDate || event.date || event.startDate;
+
+// Resolve the event location from object or string
+const getEventLocation = (event) => {
+  if (!event.location) return null;
+  if (typeof event.location === "string") return event.location;
+  const { venue, city, state } = event.location;
+  return [venue, city, state].filter(Boolean).join(", ");
 };
 
 const UpcomingEvents = () => {
@@ -33,48 +49,7 @@ const UpcomingEvents = () => {
     dispatch(fetchUpcomingEvents());
   }, [dispatch]);
 
-  // Fallback events for display when API not available
-  const fallbackEvents = [
-    {
-      _id: "1",
-      title: "Youth Education Summit 2025",
-      description:
-        "Join us for a transformative summit focused on empowering Sabo's youth through education and skill development workshops.",
-      startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      location: "Sabo Community Hall, Ibadan",
-      category: "education",
-      image:
-        "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=600&h=400&fit=crop",
-    },
-    {
-      _id: "2",
-      title: "Free Health Screening Drive",
-      description:
-        "Free medical check-ups and health consultations for underprivileged community members in Sabo and surrounding areas.",
-      startDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-      location: "Sabo Primary Health Centre",
-      category: "health",
-      image:
-        "https://images.unsplash.com/photo-1584515933487-779824d29309?w=600&h=400&fit=crop",
-    },
-    {
-      _id: "3",
-      title: "Annual Fundraising Gala",
-      description:
-        "Our flagship annual gala bringing together partners, donors, and supporters to celebrate our impact and raise vital funds.",
-      startDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
-      location: "Kakanfo Inn & Conference Centre, Ibadan",
-      category: "fundraiser",
-      image:
-        "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&h=400&fit=crop",
-    },
-  ];
-
-  const displayEvents = (
-    upcomingEvents && upcomingEvents.length > 0
-      ? upcomingEvents
-      : fallbackEvents
-  ).slice(0, 3);
+  const displayEvents = (upcomingEvents || []).slice(0, 3);
 
   return (
     <section className="py-20 sm:py-32 bg-paper relative overflow-hidden">
@@ -100,7 +75,7 @@ const UpcomingEvents = () => {
               variants={fadeIn("down", 0.1)}
             >
               <Calendar size={14} className="text-secondary-600 animate-pulse" />
-              Upcoming Missions v2.0
+              Upcoming Events
             </Motion.div>
             <Motion.h2
               className="text-4xl sm:text-5xl lg:text-6xl font-black text-dark tracking-tighter leading-[0.9]"
@@ -115,7 +90,7 @@ const UpcomingEvents = () => {
           </div>
           <Motion.div variants={fadeIn("left", 0.3)}>
             <Link
-              to="/user/events"
+              to="/get-involved"
               className="group inline-flex items-center gap-2 px-8 py-4 bg-dark text-white font-bold text-sm rounded-2xl hover:bg-primary-700 transition-all duration-300"
             >
               All Events
@@ -132,10 +107,31 @@ const UpcomingEvents = () => {
           <div className="flex items-center justify-center py-20">
             <Loader className="animate-spin text-primary-600" size={40} />
           </div>
+        ) : displayEvents.length === 0 ? (
+          <Motion.div
+            variants={fadeIn("up", 0.2)}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+            className="flex flex-col items-center justify-center py-24 gap-4 text-center"
+          >
+            <CalendarX size={56} className="text-primary-300" />
+            <h3 className="text-2xl font-bold text-dark">No Upcoming Events</h3>
+            <p className="text-gray-500 max-w-sm">
+              Check back soon — exciting events are being planned for the community.
+            </p>
+            <Link
+              to="/get-involved"
+              className="mt-4 inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white font-bold text-sm rounded-2xl hover:bg-primary-700 transition-all"
+            >
+              Get Involved <ArrowRight size={14} />
+            </Link>
+          </Motion.div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {displayEvents.map((event, i) => {
-              const date = formatDate(event.startDate);
+              const date = formatDate(getEventDate(event));
+              const location = getEventLocation(event);
               const colorClass =
                 categoryColors[event.category?.toLowerCase()] ||
                 categoryColors.community;
@@ -155,6 +151,7 @@ const UpcomingEvents = () => {
                       src={
                         event.image ||
                         event.imageUrl ||
+                        event.featuredImage?.url ||
                         `https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=600&h=400&fit=crop`
                       }
                       alt={event.title}
@@ -176,7 +173,7 @@ const UpcomingEvents = () => {
                       <div
                         className={`absolute top-4 right-4 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${colorClass}`}
                       >
-                        {event.category}
+                        {event.category.replace(/_/g, " ")}
                       </div>
                     )}
                   </div>
@@ -190,34 +187,35 @@ const UpcomingEvents = () => {
                       {event.description}
                     </p>
                     <div className="space-y-2 pt-2">
-                      {event.location && (
+                      {location && (
                         <div className="flex items-center gap-2 text-sm text-gray-400">
                           <MapPin
                             size={14}
                             className="text-primary-500 flex-shrink-0"
                           />
-                          <span className="truncate font-medium">
-                            {event.location}
-                          </span>
+                          <span className="truncate font-medium">{location}</span>
                         </div>
                       )}
-                      {date.time && (
+                      {event.eventTime?.start && (
                         <div className="flex items-center gap-2 text-sm text-gray-400">
                           <Clock
                             size={14}
                             className="text-secondary-500 flex-shrink-0"
                           />
-                          <span className="font-medium">{date.time}</span>
+                          <span className="font-medium">
+                            {event.eventTime.start}
+                            {event.eventTime.end ? ` – ${event.eventTime.end}` : ""}
+                          </span>
                         </div>
                       )}
                     </div>
                     <Link
-                      to={`/user/events/${event._id}`}
+                      to={`/events/${event.slug || event._id}`}
                       className="group/btn relative mt-6 w-full inline-flex items-center justify-center gap-3 py-4 bg-dark text-white font-black uppercase tracking-[0.2em] text-[10px] rounded-2xl overflow-hidden shadow-2xl transition-all duration-500 hover:scale-105 active:scale-95"
                     >
                       <div className="absolute inset-0 bg-shimmer-fast opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       <span className="relative z-10 flex items-center gap-2">
-                        View Mission Brief <ArrowRight size={14} className="group-hover/btn:translate-x-2 transition-transform" />
+                        Learn More <ArrowRight size={14} className="group-hover/btn:translate-x-2 transition-transform" />
                       </span>
                     </Link>
                   </div>

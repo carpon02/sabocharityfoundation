@@ -18,7 +18,7 @@ const Support = () => {
       icon: Heart,
       title: "Direct Humanitarian Aid",
       description:
-        "Inject liquidity directly into verified community projects for immediate relief and sustainable infrastructure development.",
+        "Contribute directly to verified community projects for immediate relief and sustainable development in Sabo.",
       color: "text-red-500",
       bg: "bg-red-500/10",
       count: "8.4k",
@@ -28,7 +28,7 @@ const Support = () => {
       icon: Users,
       title: "Community Personnel",
       description:
-        "Join our network of dedicated volunteers to lead local transformation and engineering projects in the heart of Sabo.",
+        "Join our dedicated volunteer team to lead local programmes and community projects in the heart of Sabo.",
       color: "text-blue-500",
       bg: "bg-blue-500/10",
       count: "1.2k",
@@ -38,7 +38,7 @@ const Support = () => {
       icon: HandHeart,
       title: "Strategic Alliance",
       description:
-        "Scale impact through corporate partnership. Architect sustainable systems for regional growth and long-term prosperity.",
+        "Amplify your impact through corporate partnership. Help us build sustainable systems for community growth and prosperity.",
       color: "text-amber-500",
       bg: "bg-amber-500/10",
       count: "45+",
@@ -69,7 +69,7 @@ const Support = () => {
             variants={fadeIn("down", 0.2)}
           >
             <Globe className="w-4 h-4 animate-spin-slow" />
-            Sabo Community Relief Protocol
+            How You Can Help
           </Motion.div>
           <Motion.h2
             className="text-5xl sm:text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter leading-[0.8]"
@@ -84,8 +84,8 @@ const Support = () => {
             className="text-lg sm:text-xl text-gray-400 font-medium max-w-2xl mx-auto leading-relaxed"
             variants={fadeIn("up", 0.4)}
           >
-            "Collective action is the catalyst for local transformation. Join us
-            in architecturalizing a new era of communal prosperity."
+            "Together, we can make real change happen. Join us
+            in building a brighter future for the youth of Sabo."
           </Motion.p>
         </Motion.div>
 
@@ -175,7 +175,7 @@ const Support = () => {
 
             <div className="flex flex-col sm:flex-row items-center gap-6">
               <Link
-                to="/register"
+                to="/login"
                 className="group relative px-12 py-6 bg-white text-black rounded-3xl font-black uppercase tracking-[0.2em] text-sm overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_20px_50px_-10px_rgba(255,255,255,0.3)]"
               >
                 <div className="absolute inset-0 bg-primary-500 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />

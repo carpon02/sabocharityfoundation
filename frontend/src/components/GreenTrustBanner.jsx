@@ -40,15 +40,15 @@ const GreenTrustBanner = () => {
               <div className="space-y-3">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-white text-[10px] font-black uppercase tracking-[0.4em]">
                   <span className="w-2 h-2 rounded-full bg-secondary-400 animate-pulse" />
-                  Verified Mission Protocol
+                  Trusted & Verified
                 </div>
                 <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter leading-none">
                   Institutional Trust. <br />
-                  <span className="text-primary-100">Sovereign Impact.</span>
+                  <span className="text-primary-100">Real Impact.</span>
                 </h2>
                 <p className="text-sm font-medium text-primary-50/80 max-w-md leading-relaxed">
-                  "Registered with CAC (No: IT/NO/123456) and verified by global 
-                  transparency protocols. Your support is precision-managed."
+                  "Registered with CAC and committed to full transparency. 
+                  Your support is carefully managed and fully accounted for."
                 </p>
               </div>
             </div>
@@ -77,7 +77,7 @@ const GreenTrustBanner = () => {
               >
                 <div className="absolute inset-0 bg-primary-50 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
                 <Heart size={18} className="fill-primary-600 transition-transform group-hover:scale-125 relative z-10" />
-                <span className="relative z-10">Initiate Aid</span>
+                <span className="relative z-10">Donate Now</span>
                 <ArrowRight size={18} className="group-hover:translate-x-3 transition-transform relative z-10" />
               </Link>
             </div>
