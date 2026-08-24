@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   Star,
   Loader,
+  Heart
 } from "lucide-react";
 import { motion as Motion } from "framer-motion";
 
