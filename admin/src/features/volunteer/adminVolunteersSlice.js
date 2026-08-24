@@ -10,8 +10,9 @@ export const fetchAllVolunteers = createAsyncThunk(
     try {
       const queryParams = new URLSearchParams({
         limit: 1000,
-        ...(filters.status && { status: filters.status }),
-        ...(filters.search && { search: filters.search }),
+        ...(filters.status        && { status:        filters.status }),
+        ...(filters.search        && { search:        filters.search }),
+        ...(filters.applicationType && { applicationType: filters.applicationType }),
       });
 
       const response = await apiClient.get(`/volunteers?${queryParams}`);
@@ -64,9 +65,9 @@ export const approveVolunteer = createAsyncThunk(
 
 export const rejectVolunteer = createAsyncThunk(
   "adminVolunteers/reject",
-  async ({ id, rejectionReason }, { rejectWithValue }) => {
+  async ({ id, reason }, { rejectWithValue }) => {
     try {
-      const response = await apiClient.post(`/volunteers/${id}/reject`, { rejectionReason });
+      const response = await apiClient.post(`/volunteers/${id}/reject`, { reason });
       toast.success("Volunteer rejected successfully");
       return response.data.data.volunteer || response.data.data;
     } catch (error) {
@@ -91,6 +92,7 @@ const initialState = {
   filters: {
     search: "",
     status: "",
+    applicationType: "",
     page: 1,
     limit: 20,
     sortBy: "createdAt",

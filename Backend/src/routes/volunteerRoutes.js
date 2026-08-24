@@ -1,5 +1,6 @@
-// src/routes/volunteer.routes.js
 import express from "express";
+import { protect, authorize } from "../middleware/auth.middleware.js";
+import { uploadDocument, handleUploadError } from "../middleware/upload.middleware.js";
 import {
   createVolunteer,
   getAllVolunteers,
@@ -11,49 +12,38 @@ import {
   logVolunteerActivity,
 } from "../controllers/volunteerController.js";
 
-import { protect, authorize } from "../middleware/auth.middleware.js";
-import {
-  uploadDocument,
-  handleUploadError,
-} from "../middleware/upload.middleware.js";
-import { validate } from "../middleware/validation.middleware.js";
-import { volunteerApplicationValidation } from "../validators/volunteer.validator.js";
-
 const router = express.Router();
 
-// ---------------------- PUBLIC ROUTES ----------------------
-// Submit a volunteer application (with optional resume upload)
+/**
+ * When a resume file is uploaded, the client wraps all JSON fields into a
+ * single "data" string so multer can transport them. Expand it back here
+ * before the request reaches the controller.
+ */
+const parseMultipartBody = (req, _res, next) => {
+  if (typeof req.body?.data === "string") {
+    try { req.body = JSON.parse(req.body.data); } catch { /* leave as-is */ }
+  }
+  next();
+};
+
+// ── Public ────────────────────────────────────────────────────
 router.post(
   "/",
-  uploadDocument("resume"), // handle resume upload
-  handleUploadError, // catch multer errors
-  validate(volunteerApplicationValidation), // validate request body
+  uploadDocument("resume"),
+  handleUploadError,
+  parseMultipartBody,
   createVolunteer
 );
 
-// ---------------------- ADMIN ROUTES ----------------------
-// Protect all admin routes
+// ── Admin (protected) ─────────────────────────────────────────
 router.use(protect, authorize("admin", "super_admin"));
 
-// Get all volunteers
-router.get("/", getAllVolunteers);
-
-// Get single volunteer by ID
-router.get("/:id", getVolunteerById);
-
-// Update volunteer application
-router.put("/:id", validate(volunteerApplicationValidation), updateVolunteer);
-
-// Delete volunteer application
-router.delete("/:id", deleteVolunteer);
-
-// Approve volunteer
-router.post("/:id/approve", approveVolunteer);
-
-// Reject volunteer (requires reason)
-router.post("/:id/reject", rejectVolunteer);
-
-// Log volunteer activity
+router.get("/",          getAllVolunteers);
+router.get("/:id",       getVolunteerById);
+router.put("/:id",       updateVolunteer);
+router.delete("/:id",    deleteVolunteer);
+router.post("/:id/approve",      approveVolunteer);
+router.post("/:id/reject",       rejectVolunteer);
 router.post("/:id/log-activity", logVolunteerActivity);
 
 export default router;

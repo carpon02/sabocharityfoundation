@@ -117,6 +117,9 @@ const VolunteerModal = ({ isOpen, onClose, type = "volunteer" }) => {
   const handleInputChange = (e) => {
     const { name, value, type, checked, files } = e.target;
 
+    // Determine the actual value based on input type
+    const inputValue = type === "checkbox" ? checked : value;
+
     if (name.includes(".")) {
       const [parent, child, grandchild] = name.split(".");
       if (grandchild) {
@@ -126,7 +129,7 @@ const VolunteerModal = ({ isOpen, onClose, type = "volunteer" }) => {
             ...prev[parent],
             [child]: {
               ...prev[parent][child],
-              [grandchild]: value,
+              [grandchild]: inputValue,
             },
           },
         }));
@@ -135,7 +138,7 @@ const VolunteerModal = ({ isOpen, onClose, type = "volunteer" }) => {
           ...prev,
           [parent]: {
             ...prev[parent],
-            [child]: value,
+            [child]: inputValue,
           },
         }));
       }
@@ -144,15 +147,10 @@ const VolunteerModal = ({ isOpen, onClose, type = "volunteer" }) => {
         ...prev,
         [name]: files[0] || null,
       }));
-    } else if (type === "checkbox") {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: checked,
-      }));
     } else {
       setFormData((prev) => ({
         ...prev,
-        [name]: value,
+        [name]: inputValue,
       }));
     }
   };
