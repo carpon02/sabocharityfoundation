@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, use } from "react";
 import { useTheme } from "../../context/ThemeContext";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence,motion } from "framer-motion";
 import {
   Settings as SettingsIcon,
   User,
@@ -83,6 +83,7 @@ const ProfileSection = ({ user, onUpdate, isLoading, onRefresh }) => {
       country: user.location?.country || "Nigeria",
     },
   });
+
   const handleSave = useCallback(async () => {
     try {
       await onUpdate("profile", formData);
@@ -981,7 +982,7 @@ const SecuritySection = ({ user, onUpdate, isLoading }) => {
           </div>
 
           {/* 2FA Node */}
-          <div
+          {/* <div
             className={`p-6 rounded-2xl border transition-all duration-500 flex items-center justify-between
             ${
               darkMode
@@ -1033,7 +1034,7 @@ const SecuritySection = ({ user, onUpdate, isLoading }) => {
                 className="inline-block h-6 w-6 rounded-full bg-white shadow-md"
               />
             </button>
-          </div>
+          </div> */}
         </div>
       </div>
     </motion.div>
@@ -1204,6 +1205,7 @@ const Settings = () => {
   const [apiError, setApiError] = useState(null);
   const [usingMockData, setUsingMockData] = useState(false);
 
+  console.log(userData);
   // Fetch user settings on mount
   const fetchSettings = useCallback(async () => {
     try {
@@ -1296,7 +1298,7 @@ const Settings = () => {
     { id: "notifications", label: "Notifications", icon: Bell },
     { id: "privacy", label: "Privacy", icon: LockIcon },
     { id: "security", label: "Security", icon: Shield },
-    { id: "preferences", label: "Preferences", icon: SettingsIcon },
+    // { id: "preferences", label: "Preferences", icon: SettingsIcon },
   ];
 
   if (initialLoading) {
@@ -1500,12 +1502,12 @@ const Settings = () => {
           />
         )}
 
-        {activeSection === "preferences" && (
+        {/* {activeSection === "preferences" && (
           <PreferencesSection
             preferences={userData.preferences}
             onUpdate={handleUpdate}
           />
-        )}
+        )} */}
       </div>
 
       {/* Account Summary - Strategic Lifecycle Module */}

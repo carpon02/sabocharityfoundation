@@ -449,7 +449,7 @@ const Header = ({ darkMode, setDarkMode, userName, user, setIsOpen }) => {
           </div>
 
           {/* Notification Button */}
-          <button
+          {/* <button
             aria-label="Show notifications"
             className={`relative p-2.5 rounded-xl transition-all hover:scale-105 active:scale-95
               ${darkMode ? "bg-gray-800 hover:bg-gray-700" : "bg-gray-100 hover:bg-gray-200"}
@@ -460,7 +460,7 @@ const Header = ({ darkMode, setDarkMode, userName, user, setIsOpen }) => {
               className={darkMode ? "text-gray-300" : "text-gray-700"}
             />
             <span className="absolute top-2 right-2 w-2 h-2 bg-primary-500 rounded-full border-2 border-white dark:border-dark animate-pulse" />
-          </button>
+          </button> */}
 
           {/* Theme Toggle */}
           <button
