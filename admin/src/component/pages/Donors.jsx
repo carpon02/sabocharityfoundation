@@ -1,5 +1,5 @@
 // admin/src/component/pages/Donors.jsx - Donor Management Hub
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -25,6 +25,7 @@ import {
   CreditCard,
   CheckCircle,
   Clock,
+  Filter,
   XCircle,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
@@ -37,10 +38,12 @@ import {
   verifyUser,
   exportDonors,
   setFilters,
+  resetFilters,
   selectDonors,
   selectStats,
   selectPagination,
   selectFilters,
+  selectLoading,
 } from "../../features/donor/adminDonorsSlice";
 
 const Donors = () => {
@@ -51,9 +54,12 @@ const Donors = () => {
   const stats = useSelector(selectStats);
   const pagination = useSelector(selectPagination);
   const filters = useSelector(selectFilters);
+  const donorsLoading = useSelector(selectLoading);
 
   const [localSearch, setLocalSearch] = useState(filters.search || "");
   const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const searchDebounceRef = useRef(null);
 
   // ── Action modals ────────────────────────────────────────────────────────
   const [detailDonor, setDetailDonor]       = useState(null);
@@ -168,10 +174,30 @@ const Donors = () => {
     }
   };
 
-  const handleRefresh = () => {
-    dispatch(fetchAllDonors(filters));
-    dispatch(fetchDonorStats());
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await Promise.all([
+      dispatch(fetchAllDonors(filters)),
+      dispatch(fetchDonorStats()),
+    ]);
+    setIsRefreshing(false);
   };
+
+  const handleClearFilters = () => {
+    setLocalSearch("");
+    dispatch(resetFilters());
+  };
+
+  // Debounced search — waits 300ms after typing stops before dispatching
+  const handleSearchChange = useCallback((value) => {
+    setLocalSearch(value);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      dispatch(setFilters({ search: value, page: 1 }));
+    }, 300);
+  }, [dispatch]);
+
+  const hasActiveFilters = !!(filters.search || filters.tier || filters.statusFilter);
 
   // ── Donor detail drawer ──────────────────────────────────────────────────
   const handleViewDetails = (donor) => {
@@ -310,16 +336,22 @@ const Donors = () => {
               type="text"
               placeholder="Search donors by name or email..."
               value={localSearch}
-              onChange={(e) => {
-                setLocalSearch(e.target.value);
-                dispatch(setFilters({ ...filters, search: e.target.value, page: 1 }));
-              }}
-              className={`w-full pl-14 pr-6 py-4 rounded-2xl border-2 outline-none transition-all text-sm font-semibold ${
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className={`w-full pl-14 pr-10 py-4 rounded-2xl border-2 outline-none transition-all text-sm font-semibold ${
                 darkMode
                   ? "bg-gray-800/50 border-gray-700 text-white focus:border-primary-500 focus:bg-gray-800"
                   : "bg-gray-50 border-gray-100 text-dark focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-500/10"
               }`}
             />
+            {/* Clear search */}
+            {localSearch && (
+              <button
+                onClick={() => handleSearchChange("")}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                <X size={16} />
+              </button>
+            )}
           </div>
 
           {/* Tier Filter */}
@@ -327,31 +359,71 @@ const Donors = () => {
             value={filters.tier || "all"}
             onChange={(e) => {
               const tier = e.target.value;
-              dispatch(setFilters({ ...filters, tier: tier !== "all" ? tier : undefined, page: 1 }));
+              dispatch(setFilters({ tier: tier !== "all" ? tier : "", page: 1 }));
             }}
-            className={`px-8 py-4 rounded-2xl border-2 outline-none cursor-pointer text-sm font-bold ${
+            className={`px-5 py-4 rounded-2xl border-2 outline-none cursor-pointer text-sm font-bold ${
               darkMode
                 ? "bg-gray-800/50 border-gray-700 text-white focus:border-primary-500"
                 : "bg-gray-50 border-gray-100 text-dark focus:border-primary-500 hover:bg-white transition-colors"
             }`}
           >
-            <option value="all">All Donor Levels</option>
-            <option value="platinum">Platinum Donors</option>
-            <option value="gold">Gold Supporters</option>
-            <option value="silver">Silver Donors</option>
-            <option value="bronze">Bronze Supporters</option>
+            <option value="all">All Levels</option>
+            <option value="platinum">🏆 Platinum (≥₦1M)</option>
+            <option value="gold">🥇 Gold (≥₦500K)</option>
+            <option value="silver">🥈 Silver (≥₦100K)</option>
+            <option value="bronze">🥉 Bronze (&lt;₦100K)</option>
           </select>
+
+          {/* Status Filter */}
+          <select
+            value={filters.statusFilter || "all"}
+            onChange={(e) => {
+              const val = e.target.value;
+              dispatch(setFilters({ statusFilter: val !== "all" ? val : "", page: 1 }));
+            }}
+            className={`px-5 py-4 rounded-2xl border-2 outline-none cursor-pointer text-sm font-bold ${
+              darkMode
+                ? "bg-gray-800/50 border-gray-700 text-white focus:border-primary-500"
+                : "bg-gray-50 border-gray-100 text-dark focus:border-primary-500 hover:bg-white transition-colors"
+            }`}
+          >
+            <option value="all">All Status</option>
+            <option value="active">✅ Active</option>
+            <option value="blocked">🚫 Blocked</option>
+            <option value="verified">🔵 Verified</option>
+          </select>
+
+          {/* Clear filters — only when filters are active */}
+          {hasActiveFilters && (
+            <button
+              onClick={handleClearFilters}
+              className={`px-5 py-4 rounded-2xl border-2 font-bold text-sm transition-all flex items-center gap-2 ${
+                darkMode
+                  ? "bg-rose-900/20 border-rose-800 text-rose-400 hover:bg-rose-900/40"
+                  : "bg-rose-50 border-rose-200 text-rose-600 hover:bg-rose-100"
+              }`}
+              title="Clear all filters"
+            >
+              <Filter size={16} />
+              Clear
+            </button>
+          )}
 
           {/* Refresh Button */}
           <button
             onClick={handleRefresh}
-            className={`px-8 py-4 rounded-2xl border-2 font-bold text-sm transition-all flex items-center gap-2 hover:scale-105 active:scale-95 ${
+            disabled={isRefreshing || donorsLoading}
+            className={`px-5 py-4 rounded-2xl border-2 font-bold text-sm transition-all flex items-center gap-2 hover:scale-105 active:scale-95 disabled:opacity-60 ${
               darkMode
                 ? "bg-gray-800/50 border-gray-700 text-gray-300 hover:text-white hover:bg-gray-700"
                 : "bg-white border-gray-200 text-gray-600 hover:text-primary-600 hover:border-primary-200"
             }`}
           >
-            <RefreshCw size={18} /> Refresh
+            <RefreshCw
+              size={18}
+              className={isRefreshing || donorsLoading ? "animate-spin" : ""}
+            />
+            {isRefreshing ? "Refreshing..." : "Refresh"}
           </button>
         </div>
       </motion.div>

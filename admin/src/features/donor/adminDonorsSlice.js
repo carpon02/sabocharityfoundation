@@ -5,9 +5,9 @@ import apiClient from "../../config/apiConfig";
 // ============ HELPER FUNCTIONS ============
 
 const calculateTier = (totalDonated) => {
-  if (totalDonated >= 5000000) return "Platinum";
-  if (totalDonated >= 2000000) return "Gold";
-  if (totalDonated >= 1000000) return "Silver";
+  if (totalDonated >= 1000000) return "Platinum";
+  if (totalDonated >= 500000)  return "Gold";
+  if (totalDonated >= 100000)  return "Silver";
   return "Bronze";
 };
 
@@ -208,6 +208,15 @@ export const fetchAllDonors = createAsyncThunk(
         donors = donors.filter(
           (d) => d.totalDonated <= parseFloat(filters.maxAmount),
         );
+      }
+      if (filters.statusFilter) {
+        if (filters.statusFilter === 'active') {
+          donors = donors.filter((d) => d.isActive !== false);
+        } else if (filters.statusFilter === 'blocked') {
+          donors = donors.filter((d) => d.isActive === false);
+        } else if (filters.statusFilter === 'verified') {
+          donors = donors.filter((d) => d.isEmailVerified === true);
+        }
       }
 
       // Sort
