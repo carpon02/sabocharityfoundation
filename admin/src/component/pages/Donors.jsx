@@ -485,13 +485,24 @@ const Donors = () => {
                               />
                             </motion.div>
                             <div>
-                              <h4
-                                className={`font-bold text-sm mb-1 group-hover:text-primary-600 transition-colors ${
-                                  darkMode ? "text-white" : "text-dark"
-                                }`}
-                              >
-                                {donor.fullName}
-                              </h4>
+                              {/* Name row with verified badge inline before the name */}
+                              <div className="flex items-center gap-1.5 mb-1">
+                                {donor.isVerified && (
+                                  <span
+                                    title="Verified donor"
+                                    className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-emerald-500 text-white flex-shrink-0"
+                                  >
+                                    <CheckCircle size={10} />
+                                  </span>
+                                )}
+                                <h4
+                                  className={`font-bold text-sm group-hover:text-primary-600 transition-colors ${
+                                    darkMode ? "text-white" : "text-dark"
+                                  }`}
+                                >
+                                  {donor.fullName}
+                                </h4>
+                              </div>
                               <div className="flex items-center gap-2 flex-wrap">
                                 <p
                                   className={`text-xs font-medium ${
@@ -500,13 +511,6 @@ const Donors = () => {
                                 >
                                   {donor.email}
                                 </p>
-                                {/* Verified pill — always visible, no hover needed */}
-                                {donor.isVerified && (
-                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
-                                    <CheckCircle size={9} />
-                                    Verified
-                                  </span>
-                                )}
                                 {donor.status === 'suspended' && (
                                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-100 dark:bg-rose-900/30 text-rose-500 dark:text-rose-400 text-[10px] font-bold">
                                     <ShieldOff size={9} />
