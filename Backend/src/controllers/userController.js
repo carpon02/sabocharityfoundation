@@ -161,13 +161,16 @@ export const deleteUser = asyncHandler(async (req, res, next) => {
 // @access  Private/Admin
 // ==========================
 export const updateUserStatus = asyncHandler(async (req, res, next) => {
-  const { status } = req.body; // 'active', 'inactive', 'banned'
+  const { status } = req.body; // 'active' | 'suspended' | 'inactive' | 'banned'
   const user = await User.findById(req.params.id);
   if (!user) return next(new ApiError("User not found", 404));
 
-  if (status) user.status = status; // Assuming User model has a status field, or use isActive
-  // If User model uses isActive boolean:
-  if (req.body.isActive !== undefined) user.isActive = req.body.isActive;
+  // User schema uses isActive (boolean) — map status string to it
+  if (status === 'active') {
+    user.isActive = true;
+  } else if (status === 'suspended' || status === 'inactive' || status === 'banned') {
+    user.isActive = false;
+  }
 
   await user.save();
   res

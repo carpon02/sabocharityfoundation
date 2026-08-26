@@ -881,12 +881,12 @@ const Donors = () => {
                    <ShieldCheck size={28} className="text-primary-500" />}
                 </div>
                 <h3 className={`text-xl font-extrabold mb-2 ${ darkMode ? 'text-white' : 'text-dark' }`}>
-                  {confirmAction.type === 'suspend' ? 'Suspend Donor?' :
+                  {confirmAction.type === 'suspend' ? 'Block Donor?' :
                    confirmAction.type === 'activate' ? 'Activate Donor?' : 'Verify Donor?'}
                 </h3>
                 <p className={`text-sm ${ darkMode ? 'text-gray-400' : 'text-gray-600' }`}>
                   {confirmAction.type === 'suspend'
-                    ? `${confirmAction.donor.fullName} will be suspended and lose access to their account.`
+                    ? `${confirmAction.donor.fullName} will be blocked and lose access to their account.`
                     : confirmAction.type === 'activate'
                     ? `${confirmAction.donor.fullName}'s account will be reactivated.`
                     : `${confirmAction.donor.fullName} will be marked as a verified donor.`}
@@ -904,7 +904,7 @@ const Donors = () => {
                     'bg-primary-500 hover:bg-primary-600'
                   }`}>
                   {actionLoading ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : null}
-                  {confirmAction.type === 'suspend' ? 'Suspend' :
+                  {confirmAction.type === 'suspend' ? 'Block' :
                    confirmAction.type === 'activate' ? 'Activate' : 'Verify'}
                 </button>
               </div>
@@ -1026,10 +1026,12 @@ const Donors = () => {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="bg-white text-primary-600 border-2 border-primary-100 hover:border-primary-200 px-8 py-4 rounded-2xl font-bold shadow-xl shadow-gray-200/50 hover:shadow-2xl transition-all flex items-center gap-3"
+            onClick={handleExport}
+            disabled={isLoading}
+            className="bg-white text-primary-600 border-2 border-primary-100 hover:border-primary-200 px-8 py-4 rounded-2xl font-bold shadow-xl shadow-gray-200/50 hover:shadow-2xl transition-all flex items-center gap-3 disabled:opacity-50"
           >
             <Download size={20} />
-            <span>View Loyalty Report</span>
+            <span>{isLoading ? 'Generating...' : 'View Loyalty Report'}</span>
           </motion.button>
         </div>
       </motion.div>
