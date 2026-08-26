@@ -7,24 +7,37 @@ import axios from 'axios';
 import crypto from 'crypto';
 import logger from '../../config/logger.js';
 
-const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
-const PAYSTACK_PUBLIC_KEY = process.env.PAYSTACK_PUBLIC_KEY;
 const PAYSTACK_BASE_URL = 'https://api.paystack.co';
 
-const paystackClient = axios.create({
-  baseURL: PAYSTACK_BASE_URL,
-  headers: {
-    'Authorization': `Bearer ${PAYSTACK_SECRET_KEY}`,
-    'Content-Type': 'application/json'
+/**
+ * Returns a configured Axios client using the live process.env value.
+ * Reading the key lazily (inside a function) instead of at module
+ * evaluation time prevents the ESM import-hoisting race where the
+ * module is loaded before dotenv.config() has run, resulting in
+ * PAYSTACK_SECRET_KEY being undefined and Paystack returning 'Invalid key'.
+ */
+const getPaystackClient = () => {
+  const key = process.env.PAYSTACK_SECRET_KEY;
+  if (!key) {
+    throw new Error(
+      'PAYSTACK_SECRET_KEY is not set. Check your Backend/.env file.'
+    );
   }
-});
+  return axios.create({
+    baseURL: PAYSTACK_BASE_URL,
+    headers: {
+      Authorization: `Bearer ${key}`,
+      'Content-Type': 'application/json',
+    },
+  });
+};
 
 /**
  * Initialize a payment transaction with Paystack
  */
 export const initializePayment = async (data) => {
   try {
-    const response = await paystackClient.post('/transaction/initialize', data);
+    const response = await getPaystackClient().post('/transaction/initialize', data);
     return response.data;
   } catch (error) {
     logger.error('Paystack initialization error:', {
@@ -40,7 +53,7 @@ export const initializePayment = async (data) => {
  */
 export const verifyPayment = async (reference) => {
   try {
-    const response = await paystackClient.get(`/transaction/verify/${reference}`);
+    const response = await getPaystackClient().get(`/transaction/verify/${reference}`);
     return response.data;
   } catch (error) {
     logger.error('Paystack verification error:', {
@@ -56,7 +69,7 @@ export const verifyPayment = async (reference) => {
  */
 export const getTransaction = async (transactionId) => {
   try {
-    const response = await paystackClient.get(`/transaction/${transactionId}`);
+    const response = await getPaystackClient().get(`/transaction/${transactionId}`);
     return response.data;
   } catch (error) {
     logger.error('Paystack get transaction error:', {
@@ -80,7 +93,7 @@ export const refundTransaction = async (reference, amount = null, currency = 'NG
       ...(merchant_note && { merchant_note })
     };
 
-    const response = await paystackClient.post('/refund', refundData);
+    const response = await getPaystackClient().post('/refund', refundData);
     
     if (response.data.status) {
       logger.info('Paystack refund successful:', {
@@ -111,7 +124,7 @@ export const verifyWebhookSignature = (signature, body) => {
       : JSON.stringify(body);
     
     const hash = crypto
-      .createHmac('sha512', PAYSTACK_SECRET_KEY)
+      .createHmac('sha512', process.env.PAYSTACK_SECRET_KEY)
       .update(bodyString)
       .digest('hex');
     
@@ -148,7 +161,7 @@ export const listTransactions = async (filters = {}) => {
     if (filters.from) params.append('from', filters.from.toISOString());
     if (filters.to) params.append('to', filters.to.toISOString());
 
-    const response = await paystackClient.get(`/transaction?${params.toString()}`);
+    const response = await getPaystackClient().get(`/transaction?${params.toString()}`);
     return response.data;
   } catch (error) {
     logger.error('Paystack list transactions error:', {

@@ -2,17 +2,28 @@ import axios from 'axios';
 import crypto from 'crypto';
 import logger from '../config/logger.js';
 
-const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
-const PAYSTACK_PUBLIC_KEY = process.env.PAYSTACK_PUBLIC_KEY;
 const PAYSTACK_BASE_URL = 'https://api.paystack.co';
 
-const paystackClient = axios.create({
-  baseURL: PAYSTACK_BASE_URL,
-  headers: {
-    'Authorization': `Bearer ${PAYSTACK_SECRET_KEY}`,
-    'Content-Type': 'application/json'
+/**
+ * Returns a configured Axios client using the live process.env value.
+ * Lazy initialization prevents the ESM import-hoisting race where keys
+ * are undefined because this module loads before dotenv.config() runs.
+ */
+const getPaystackClient = () => {
+  const key = process.env.PAYSTACK_SECRET_KEY;
+  if (!key) {
+    throw new Error(
+      'PAYSTACK_SECRET_KEY is not set. Check your Backend/.env file.'
+    );
   }
-});
+  return axios.create({
+    baseURL: PAYSTACK_BASE_URL,
+    headers: {
+      Authorization: `Bearer ${key}`,
+      'Content-Type': 'application/json',
+    },
+  });
+};
 
 /**
  * Initialize a payment transaction with Paystack
@@ -26,7 +37,7 @@ const paystackClient = axios.create({
  */
 export const initializePayment = async (data) => {
   try {
-    const response = await paystackClient.post('/transaction/initialize', data);
+    const response = await getPaystackClient().post('/transaction/initialize', data);
     return response.data;
   } catch (error) {
     logger.error('Paystack initialization error:', {
@@ -44,7 +55,7 @@ export const initializePayment = async (data) => {
  */
 export const verifyPayment = async (reference) => {
   try {
-    const response = await paystackClient.get(`/transaction/verify/${reference}`);
+    const response = await getPaystackClient().get(`/transaction/verify/${reference}`);
     return response.data;
   } catch (error) {
     logger.error('Paystack verification error:', {
@@ -62,7 +73,7 @@ export const verifyPayment = async (reference) => {
  */
 export const getTransaction = async (transactionId) => {
   try {
-    const response = await paystackClient.get(`/transaction/${transactionId}`);
+    const response = await getPaystackClient().get(`/transaction/${transactionId}`);
     return response.data;
   } catch (error) {
     logger.error('Paystack get transaction error:', {
@@ -82,7 +93,13 @@ export const getTransaction = async (transactionId) => {
  * @param {string} [merchant_note] - Internal note
  * @returns {Promise<Object>} Refund response
  */
-export const refundTransaction = async (reference, amount = null, currency = 'NGN', customer_note = '', merchant_note = '') => {
+export const refundTransaction = async (
+  reference,
+  amount = null,
+  currency = 'NGN',
+  customer_note = '',
+  merchant_note = ''
+) => {
   try {
     const refundData = {
       transaction: reference,
@@ -92,8 +109,8 @@ export const refundTransaction = async (reference, amount = null, currency = 'NG
       ...(merchant_note && { merchant_note })
     };
 
-    const response = await paystackClient.post('/refund', refundData);
-    
+    const response = await getPaystackClient().post('/refund', refundData);
+
     if (response.data.status) {
       logger.info('Paystack refund successful:', {
         reference,
@@ -101,7 +118,7 @@ export const refundTransaction = async (reference, amount = null, currency = 'NG
         refundReference: response.data.data?.transaction?.reference
       });
     }
-    
+
     return response.data;
   } catch (error) {
     logger.error('Paystack refund error:', {
@@ -121,18 +138,24 @@ export const refundTransaction = async (reference, amount = null, currency = 'NG
  */
 export const verifyWebhookSignature = (signature, body) => {
   try {
-    // If body is already a string, use it directly
-    // Otherwise, stringify it
-    const bodyString = typeof body === 'string' 
-      ? body 
+    const bodyString = typeof body === 'string'
+      ? body
       : JSON.stringify(body);
-    
+
     const hash = crypto
-      .createHmac('sha512', PAYSTACK_SECRET_KEY)
+      .createHmac('sha512', process.env.PAYSTACK_SECRET_KEY)
       .update(bodyString)
       .digest('hex');
-    
-    return hash === signature;
+
+    // Use timingSafeEqual to prevent timing attacks
+    const hashBuffer = Buffer.from(hash);
+    const signatureBuffer = Buffer.from(signature);
+
+    if (hashBuffer.length !== signatureBuffer.length) {
+      return false;
+    }
+
+    return crypto.timingSafeEqual(hashBuffer, signatureBuffer);
   } catch (error) {
     logger.error('Webhook signature verification error:', {
       error: error.message,
@@ -156,7 +179,7 @@ export const verifyWebhookSignature = (signature, body) => {
 export const listTransactions = async (filters = {}) => {
   try {
     const params = new URLSearchParams();
-    
+
     if (filters.perPage) params.append('perPage', filters.perPage);
     if (filters.page) params.append('page', filters.page);
     if (filters.customer) params.append('customer', filters.customer);
@@ -164,7 +187,7 @@ export const listTransactions = async (filters = {}) => {
     if (filters.from) params.append('from', filters.from.toISOString());
     if (filters.to) params.append('to', filters.to.toISOString());
 
-    const response = await paystackClient.get(`/transaction?${params.toString()}`);
+    const response = await getPaystackClient().get(`/transaction?${params.toString()}`);
     return response.data;
   } catch (error) {
     logger.error('Paystack list transactions error:', {
@@ -188,7 +211,7 @@ export const listTransactions = async (filters = {}) => {
  */
 export const chargeAuthorization = async (data) => {
   try {
-    const response = await paystackClient.post('/transaction/charge_authorization', data);
+    const response = await getPaystackClient().post('/transaction/charge_authorization', data);
     logger.info('Paystack charge_authorization success:', {
       reference: data.reference,
       amount: data.amount,

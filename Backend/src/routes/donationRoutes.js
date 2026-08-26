@@ -5,7 +5,7 @@ import express from "express";
 import {
   initializeDonation,
   submitManualDonation,
-  verifyDonationPayment,
+  getDonationStatus,
   getMyDonations,
   getDonation,
   getAllDonations,
@@ -73,11 +73,13 @@ router.post(
 );
 
 /**
- * @route   POST /api/v1/donations/verify/:reference
- * @desc    Verify payment (Paystack webhook/callback)
+ * @route   GET /api/v1/donations/status/:reference
+ * @desc    Get current donation status by payment reference (read-only, for frontend polling)
+ *          The webhook is the sole authority for verifying payments — this endpoint never
+ *          calls Paystack or mutates any data.
  * @access  Public
  */
-router.post("/verify/:reference", verifyDonationPayment);
+router.get("/status/:reference", getDonationStatus);
 
 // --------- ADMIN ROUTES (BEFORE GENERIC :id ROUTES) ---------
 
@@ -162,7 +164,7 @@ export default router;
 
 CORRECT ORDER (What we have now):
 1. /initialize                    ✅ Specific path
-2. /verify/:reference             ✅ Specific path
+2. /status/:reference             ✅ Specific path (read-only polling)
 3. /admin/all                     ✅ Specific path
 4. /my-donations                  ✅ Specific path
 5. /:id/receipt                   ✅ More specific than /:id

@@ -28,7 +28,7 @@ export const fetchAllPayments = createAsyncThunk(
     try {
       const queryParams = new URLSearchParams({
         page: filters.page || 1,
-        limit: filters.limit || 20,
+        limit: filters.limit || 25,
         sortBy: filters.sortBy || "createdAt",
         order: filters.order || "desc",
         ...(filters.search && { search: filters.search }),
@@ -201,7 +201,7 @@ const initialState = {
     page: 1,
     pages: 1,
     total: 0,
-    limit: 20,
+    limit: 25,
   },
   filters: {
     search: "",
@@ -211,7 +211,7 @@ const initialState = {
     startDate: "",
     endDate: "",
     page: 1,
-    limit: 20,
+    limit: 25,
     sortBy: "createdAt",
     order: "desc",
   },

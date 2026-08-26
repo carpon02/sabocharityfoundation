@@ -87,8 +87,58 @@ export const getAllCampaigns = asyncHandler(async (req, res, next) => {
   const total = await Campaign.countDocuments(finalQuery);
   const pagination = new Pagination(page, limit, total);
 
+  // ── Enrich with live raisedAmount from approved donations ─────────────────
+  // One aggregate for all campaigns in this page (not N+1 queries)
+  const campaignIds = campaigns.map((c) => c._id);
+  const donationStats = await Donation.aggregate([
+    {
+      $match: {
+        campaign: { $in: campaignIds },
+        approvalStatus: "approved",
+      },
+    },
+    {
+      $group: {
+        _id: "$campaign",
+        liveRaised: { $sum: "$amount" },
+        donors: { $addToSet: "$donor" },
+      },
+    },
+  ]);
+
+  // Build a lookup map by campaign ID
+  const statsMap = {};
+  for (const s of donationStats) {
+    statsMap[s._id.toString()] = {
+      liveRaised: s.liveRaised,
+      liveDonors: (s.donors || []).filter(Boolean).length,
+    };
+  }
+
+  // Patch each campaign and silently sync stale DB values fire-and-forget
+  const bulkOps = [];
+  const enriched = campaigns.map((c) => {
+    const stat = statsMap[c._id.toString()] || { liveRaised: 0, liveDonors: 0 };
+    if (c.raisedAmount !== stat.liveRaised || c.donorCount !== stat.liveDonors) {
+      bulkOps.push({
+        updateOne: {
+          filter: { _id: c._id },
+          update: { $set: { raisedAmount: stat.liveRaised, donorCount: stat.liveDonors } },
+        },
+      });
+    }
+    c.raisedAmount = stat.liveRaised;
+    c.donorCount = stat.liveDonors;
+    return c;
+  });
+
+  if (bulkOps.length > 0) {
+    Campaign.bulkWrite(bulkOps).catch(() => {}); // fire-and-forget
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   ApiResponse.success(res, "Campaigns fetched successfully", {
-    campaigns,
+    campaigns: enriched,
     pagination: pagination.toJSON(),
   });
 });
@@ -122,6 +172,43 @@ export const getCampaign = asyncHandler(async (req, res, next) => {
   ) {
     return next(new ApiError("Campaign not accessible", 403));
   }
+
+  // ── Compute live raisedAmount from approved donations ───────────────────
+  // The stored field can be stale if webhooks were missed (dev environment)
+  // or if bank-transfer approvals happened before this fix. Always compute
+  // from the ground truth so the progress bar is accurate.
+  const raisedStats = await Donation.aggregate([
+    {
+      $match: {
+        campaign: campaign._id,
+        approvalStatus: "approved",
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: "$amount" },
+        donors: { $addToSet: "$donor" },
+      },
+    },
+  ]);
+
+  const liveRaised = raisedStats[0]?.total || 0;
+  const liveDonors = (raisedStats[0]?.donors || []).filter(Boolean).length;
+
+  // Patch the campaign object returned to the client with live values
+  campaign.raisedAmount = liveRaised;
+  campaign.donorCount = liveDonors;
+
+  // Sync the DB silently if stale (so future reads are faster)
+  const storedRaised = campaign.toObject().raisedAmount;
+  if (storedRaised !== liveRaised) {
+    Campaign.findByIdAndUpdate(campaign._id, {
+      raisedAmount: liveRaised,
+      donorCount: liveDonors,
+    }).exec().catch(() => {}); // fire-and-forget, don't block response
+  }
+  // ─────────────────────────────────────────────────────────────────────────
 
   ApiResponse.success(res, "Campaign fetched successfully", { campaign });
 });

@@ -6,6 +6,7 @@ import { sendEmail } from "../../services/emailService.js";
 import { generateReceipt } from "../../services/receiptService.js";
 import logger from "../../config/logger.js";
 import { refundTransaction } from "../external/PaystackService.js";
+import campaignRepository from "../../repositories/CampaignRepository.js"; // singleton instance
 
 class PaymentService {
   async getPaymentStats(query) {
@@ -369,13 +370,32 @@ class PaymentService {
     const payment = await Donation.findById(id).populate("campaign donor");
     if (!payment) throw new Error("Payment not found");
 
-    if (!payment.paymentVerified && payment.paymentMethod !== "bank_transfer") {
-      throw new Error("Payment must be verified before approval");
+    // Allow approval when:
+    // - payment is already webhook-verified (paymentVerified = true), OR
+    // - it's a bank_transfer (no Paystack verification expected), OR
+    // - it's a card payment with a paystackReference (went through Paystack
+    //   checkout; webhook may have failed but admin is manually confirming)
+    const isApprovable =
+      payment.paymentVerified ||
+      payment.paymentMethod === 'bank_transfer' ||
+      (payment.paymentMethod === 'card' && payment.paystackReference);
+
+    if (!isApprovable) {
+      throw new Error(
+        'Payment cannot be approved: no Paystack verification on record. ' +
+        'Ensure the donor completed checkout before approving.'
+      );
     }
 
     if (payment.approvalStatus !== "pending") {
       throw new Error(`Payment is already ${payment.approvalStatus}`);
     }
+
+    // Capture BEFORE we overwrite paymentVerified below
+    const wasAlreadyWebhookVerified =
+      payment.paymentVerified === true && payment.paymentMethod === 'card';
+
+    const campaign = payment.campaign;
 
     payment.approvalStatus = "approved";
     payment.status = "completed";
@@ -389,10 +409,22 @@ class PaymentService {
 
     await payment.save();
 
-    const campaign = payment.campaign;
-    campaign.raisedAmount = (campaign.raisedAmount || 0) + payment.amount;
+    // ── Update raisedAmount ────────────────────────────────────────────────
+    // For card payments: if the Paystack webhook already ran (wasAlreadyWebhookVerified),
+    //   raisedAmount was already incremented — skip to avoid double-counting.
+    // For bank_transfer payments: NO webhook exists, so always increment here.
+    // For card payments where the webhook failed: also increment here.
+    if (!wasAlreadyWebhookVerified && campaign?._id) {
+      await campaignRepository.incrementRaisedAmount(campaign._id, payment.amount);
+      logger.info('raisedAmount incremented via admin approval', {
+        campaignId: campaign._id,
+        amount: payment.amount,
+        method: payment.paymentMethod,
+      });
+    }
+    // ──────────────────────────────────────────────────────────────────────
 
-    if (!payment.anonymous) {
+    if (!payment.anonymous && payment.donor?._id) {
       const previousDonations = await Donation.countDocuments({
         campaign: campaign._id,
         donor: payment.donor._id,
@@ -402,9 +434,9 @@ class PaymentService {
 
       if (previousDonations === 0) {
         campaign.donorCount = (campaign.donorCount || 0) + 1;
+        await campaign.save();
       }
     }
-    await campaign.save();
 
     const receipt = await generateReceipt(payment);
     payment.receiptUrl = receipt.url;
@@ -412,22 +444,32 @@ class PaymentService {
     payment.receiptGenerated = true;
     await payment.save();
 
-    await sendEmail({
-      to: payment.donor.email,
-      subject: "Payment Protocol Verified - Impact Manifested",
-      template: "paymentApproved",
-      data: {
-        donorName: payment.donor.fullName,
-        amount: payment.amount,
-        campaignTitle: campaign.title,
-        donationId: payment.donationId,
-        receiptUrl: receipt.url,
-        impactMessage: payment.impactMessage,
-      },
-      attachments: [
-        { filename: `receipt-${payment.donationId}.pdf`, path: receipt.path },
-      ],
-    }).catch(err => logger.error("Failed to send approval email:", err));
+    // Send approval email — only for registered donors (guests have no account email flow)
+    const donorEmail = payment.donor?.email || payment.guestInfo?.email;
+    const donorName = payment.anonymous
+      ? 'Anonymous'
+      : payment.donor?.fullName ||
+        `${payment.guestInfo?.firstName || ''} ${payment.guestInfo?.lastName || ''}`.trim() ||
+        'Supporter';
+
+    if (donorEmail) {
+      await sendEmail({
+        to: donorEmail,
+        subject: "Donation Approved - Thank You!",
+        template: "paymentApproved",
+        data: {
+          donorName,
+          amount: payment.amount,
+          campaignTitle: campaign.title,
+          donationId: payment.donationId,
+          receiptUrl: receipt.url,
+          impactMessage: payment.impactMessage,
+        },
+        attachments: [
+          { filename: `receipt-${payment.donationId}.pdf`, path: receipt.path },
+        ],
+      }).catch(err => logger.error("Failed to send approval email:", err));
+    }
 
     if (receipt.path && fs.existsSync(receipt.path)) {
       try { fs.unlinkSync(receipt.path); } catch (err) {}
@@ -553,3 +595,4 @@ class PaymentService {
 }
 
 export default new PaymentService();
+

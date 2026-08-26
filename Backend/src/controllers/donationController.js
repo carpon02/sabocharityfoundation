@@ -13,6 +13,7 @@ import donationService from "../services/domain/DonationService.js";
 import donationRepository from "../repositories/DonationRepository.js";
 import { generateReceipt } from "../services/receiptService.js";
 import { PAGINATION } from "../constants/index.js";
+import Donation from "../models/Donation.js";
 
 /**
  * @desc    Initialize donation payment
@@ -118,17 +119,34 @@ export const submitManualDonation = asyncHandler(async (req, res, next) => {
 });
 
 /**
- * @desc    Verify payment (Paystack callback/webhook)
- * @route   POST /api/v1/donations/verify/:reference
- * @access  Public (for webhooks) / Private
+ * @desc    Get donation status by payment reference (read-only, for frontend polling)
+ * @route   GET /api/v1/donations/status/:reference
+ * @access  Public
  */
-export const verifyDonationPayment = asyncHandler(async (req, res, next) => {
+export const getDonationStatus = asyncHandler(async (req, res, next) => {
   const { reference } = req.params;
 
-  const donation = await donationService.verifyDonationPayment(reference);
+  // Read-only: find by either reference field — no Paystack API call, no side effects.
+  // The webhook is the sole authority for marking a donation as verified.
+  const donation = await Donation.findOne({
+    $or: [
+      { paymentReference: reference },
+      { paystackReference: reference },
+    ],
+  }).select("status approvalStatus paymentVerified amount donationId campaign")
+    .populate("campaign", "title");
 
-  return ApiResponse.success(res, "Payment verified successfully", {
-    donation,
+  if (!donation) {
+    return next(new NotFoundError("Donation"));
+  }
+
+  return ApiResponse.success(res, "Donation status retrieved", {
+    status: donation.status,
+    approvalStatus: donation.approvalStatus,
+    paymentVerified: donation.paymentVerified,
+    amount: donation.amount,
+    donationId: donation.donationId,
+    campaignTitle: donation.campaign?.title,
   });
 });
 

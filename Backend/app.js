@@ -115,7 +115,6 @@ app.get("/health", (req, res) => {
 // ✅ API version
 const API_VERSION = process.env.API_VERSION || "v1";
 
-// ✅ Register routes
 // ✅ Register routes (with selective limiter)
 if (process.env.NODE_ENV !== "test") {
   app.use(`/api/${API_VERSION}/auth/login`, authLimiter);

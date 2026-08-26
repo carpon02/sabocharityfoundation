@@ -22,10 +22,15 @@ export const initializeDonationValidation = [
 
 export const adminActionValidation = [
   body("adminNotes")
-    .optional()
+    .optional({ values: "falsy" }) // accept missing, null, undefined, or empty string
     .trim()
-    .isLength({ min: 5 })
-    .withMessage("Notes must be at least 5 characters"),
+    .custom((val) => {
+      // Only enforce length when a non-empty string is actually provided
+      if (val && val.length > 0 && val.length < 5) {
+        throw new Error("Notes must be at least 5 characters");
+      }
+      return true;
+    }),
 ];
 
 export const rejectionValidation = [

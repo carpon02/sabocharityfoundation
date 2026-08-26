@@ -2,6 +2,69 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import apiClient from "../../config/apiConfig";
 
+// =============== INITIALIZE DONATION (Paystack) ===============
+// Backend creates a DB record and returns a Paystack authorization URL/reference.
+// The frontend then opens the Paystack popup with that reference.
+// Do NOT use the popup's onSuccess callback to verify payment — the webhook does that.
+export const initializeDonation = createAsyncThunk(
+  "donations/initialize",
+  async (
+    {
+      campaignId,
+      amount,
+      email,
+      donorInfo,
+      paymentMethod = "card",
+      isRecurring = false,
+      recurringFrequency,
+      anonymous = false,
+      donorNote = "",
+    },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await apiClient.post("/donations/initialize", {
+        campaignId,
+        amount,
+        email,
+        donorInfo,
+        paymentMethod,
+        isRecurring,
+        recurringFrequency,
+        anonymous,
+        donorNote,
+      });
+      // Returns { payment: { reference, authorizationUrl, ... }, donation: { ... } }
+      return response.data.data;
+    } catch (error) {
+      const message =
+        error.response?.data?.message ||
+        error.message ||
+        "Payment initialization failed";
+      return rejectWithValue(message);
+    }
+  },
+);
+
+// =============== CHECK DONATION STATUS (polling) ===============
+// Read-only endpoint — never triggers verification or any side effect.
+// Used to poll after the Paystack popup closes to confirm the webhook fired.
+export const checkDonationStatus = createAsyncThunk(
+  "donations/checkStatus",
+  async (reference, { rejectWithValue }) => {
+    try {
+      const response = await apiClient.get(`/donations/status/${reference}`);
+      return response.data.data; // { status, approvalStatus, paymentVerified, amount, donationId, campaignTitle }
+    } catch (error) {
+      const message =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to fetch donation status";
+      return rejectWithValue(message);
+    }
+  },
+);
+
 // =============== FETCH MY DONATIONS ===============
 export const fetchMyDonations = createAsyncThunk(
   "donations/fetchMyDonations",

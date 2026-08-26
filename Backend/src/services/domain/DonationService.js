@@ -412,12 +412,13 @@ class DonationService {
         new Date(),
       );
 
-      // Atomically update campaign statistics
-      await campaignRepository.incrementRaisedAmount(
-        donation.campaign._id,
-        donation.amount,
-      );
+      // NOTE: raisedAmount is intentionally NOT incremented here.
+      // The Paystack webhook (handleSuccessfulCharge) is the sole
+      // authority for incrementing raisedAmount so the campaign
+      // progress bar reflects reality immediately after payment —
+      // regardless of admin approval timing. (Option A architecture)
 
+      // Increment donorCount — a new unique donor has been confirmed.
       await campaignRepository.incrementDonorCount(donation.campaign._id);
 
       return approvedDonation;

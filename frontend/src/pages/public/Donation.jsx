@@ -1,4 +1,4 @@
-import React, { useState, useReducer, memo, useEffect } from "react";
+import React, { useState, useReducer, memo, useEffect, useRef, useCallback } from "react";
 import apiClient from "../../config/apiConfig";
 import toast from "react-hot-toast";
 import { usePaystackPayment } from "react-paystack";
@@ -89,17 +89,15 @@ const initialState = {
     donationMode: "one-time",
     paymentMethod: "online",
   },
-  paystackConfig: {
-    reference: new Date().getTime().toString(),
-    email: "",
-    amount: 0,
-    publicKey: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || "",
-  },
+  // paystackConfig is derived on-the-fly via a ref, not stored in state,
+  // to avoid the state→effect timing race.
   ui: {
     showPopup: false,
     popupStep: "bank",
     isSubmitting: false,
     submitSuccess: false,
+    // polling state so the thank-you message can update once webhook confirms
+    pollStatus: "idle", // "idle" | "polling" | "verified" | "failed"
   },
 };
 
@@ -107,11 +105,6 @@ const donationReducer = (state, action) => {
   switch (action.type) {
     case "UPDATE_INTENT":
       return { ...state, intent: { ...state.intent, ...action.payload } };
-    case "SET_PAYSTACK_CONFIG":
-      return {
-        ...state,
-        paystackConfig: { ...state.paystackConfig, ...action.payload },
-      };
     case "SET_POPUP":
       return {
         ...state,
@@ -123,6 +116,8 @@ const donationReducer = (state, action) => {
       };
     case "SET_SUBMITTING":
       return { ...state, ui: { ...state.ui, isSubmitting: action.payload } };
+    case "SET_POLL_STATUS":
+      return { ...state, ui: { ...state.ui, pollStatus: action.payload } };
     case "SUBMISSION_SUCCESS":
       return {
         ...initialState,
@@ -177,9 +172,57 @@ const Donation = () => {
   const [state, dispatch] = useReducer(donationReducer, initialState);
   const { intent, ui } = state;
   const [activeCampaignId, setActiveCampaignId] = useState(null);
-  const [triggerPaystack, setTriggerPaystack] = useState(false);
 
-  const initializePayment = usePaystackPayment(state.paystackConfig);
+  // ─── Paystack config ref ───────────────────────────────────────────────────
+  // Stored in a ref rather than state to avoid the state→effect timing race.
+  // initializePayment() is called directly inside handleDonateSubmit, so the
+  // hook config must already be in place via paystackConfigRef before the hook
+  // is invoked.
+  const paystackConfigRef = useRef({
+    reference: "",
+    email: "",
+    amount: 0,
+    publicKey: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || "",
+  });
+
+  const initializePayment = usePaystackPayment(paystackConfigRef.current);
+
+  // ─── Polling helpers ───────────────────────────────────────────────────────
+  // After the Paystack popup closes successfully, we poll GET /donations/status
+  // for up to 10 seconds so the thank-you message can confirm backend receipt.
+  const pollIntervalRef = useRef(null);
+  const pollAttemptsRef = useRef(0);
+  const MAX_POLL_ATTEMPTS = 5; // 5 × 2s = 10s
+
+  const startPolling = useCallback((reference) => {
+    dispatch({ type: "SET_POLL_STATUS", payload: "polling" });
+    pollAttemptsRef.current = 0;
+
+    pollIntervalRef.current = setInterval(async () => {
+      pollAttemptsRef.current += 1;
+      try {
+        const { data } = await apiClient.get(`/donations/status/${reference}`);
+        if (data.data?.paymentVerified || data.data?.status === "verified") {
+          clearInterval(pollIntervalRef.current);
+          dispatch({ type: "SET_POLL_STATUS", payload: "verified" });
+        } else if (pollAttemptsRef.current >= MAX_POLL_ATTEMPTS) {
+          clearInterval(pollIntervalRef.current);
+          dispatch({ type: "SET_POLL_STATUS", payload: "idle" });
+        }
+      } catch {
+        // Silently ignore poll errors; the webhook is the real source of truth
+        if (pollAttemptsRef.current >= MAX_POLL_ATTEMPTS) {
+          clearInterval(pollIntervalRef.current);
+          dispatch({ type: "SET_POLL_STATUS", payload: "idle" });
+        }
+      }
+    }, 2000);
+  }, []);
+
+  // Clean up polling on unmount
+  useEffect(() => {
+    return () => clearInterval(pollIntervalRef.current);
+  }, []);
 
   useEffect(() => {
     const fetchCampaign = async () => {
@@ -229,20 +272,43 @@ const Donation = () => {
           paymentMethod: "card",
           isRecurring: intent.donationMode === "monthly",
         };
+
         const { data } = await apiClient.post("/donations/initialize", payload);
+
         if (data.success) {
-          dispatch({
-            type: "SET_PAYSTACK_CONFIG",
-            payload: {
-              reference: data.data.payment.reference,
-              email: intent.email,
-              amount: parseFloat(intent.amount) * 100,
+          // ── Store Paystack config in the ref so the hook picks it up ──────
+          // We must update paystackConfigRef.current BEFORE calling
+          // initializePayment(), otherwise the hook uses stale values.
+          paystackConfigRef.current = {
+            reference: data.data.payment.reference,
+            email: intent.email,
+            amount: parseFloat(intent.amount) * 100, // kobo
+            publicKey: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || "",
+          };
+
+          // ── Open Paystack inline checkout ─────────────────────────────────
+          initializePayment(
+            // onSuccess — called when customer completes payment in the popup
+            (ref) => {
+              // ✅ Show success UI immediately for great UX.
+              // ❌ Do NOT call /verify here — the webhook is already doing that
+              //    server-side and is the only trusted source of truth.
+              dispatch({
+                type: "SET_POPUP",
+                payload: { show: true, step: "thanks" },
+              });
+              toast.success("Donation received! Thank you.");
+
+              // Start polling GET /donations/status/:reference in the background
+              // so the thank-you screen can confirm once the webhook fires.
+              startPolling(ref.reference);
             },
-          });
-          setTriggerPaystack(true);
+            // onClose — customer closed the popup without completing payment
+            () => toast("Payment cancelled")
+          );
         }
       } catch (err) {
-        toast.error("Payment initialization failed");
+        toast.error(err.response?.data?.message || "Payment initialization failed");
         console.error(err);
       } finally {
         dispatch({ type: "SET_SUBMITTING", payload: false });
@@ -252,23 +318,40 @@ const Donation = () => {
     }
   };
 
-  useEffect(() => {
-    if (triggerPaystack) {
-      initializePayment(
-        (ref) => {
-          apiClient.post(`/donations/verify/${ref.reference}`).then(() => {
-            dispatch({
-              type: "SET_POPUP",
-              payload: { show: true, step: "thanks" },
-            });
-            toast.success("Donation Successful!");
-          });
-        },
-        () => toast("Payment Cancelled")
-      );
-      setTriggerPaystack(false);
+  // ─── Bank Transfer: save intent to DB ─────────────────────────────────────
+  const handleBankTransferConfirm = async () => {
+    dispatch({ type: "SET_SUBMITTING", payload: true });
+    try {
+      const formData = new FormData();
+      if (activeCampaignId) formData.append("campaignId", activeCampaignId);
+      formData.append("amount", parseFloat(intent.amount));
+      formData.append("donorInfo[firstName]", intent.firstName || "Anonymous");
+      formData.append("donorInfo[lastName]", intent.lastName || "");
+      formData.append("donorInfo[email]", intent.email || "");
+      formData.append("donorInfo[phone]", intent.phone || "");
+      formData.append("paymentMethod", "bank_transfer");
+
+      await apiClient.post("/donations/submit-manual", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      dispatch({
+        type: "SET_POPUP",
+        payload: { show: true, step: "thanks" },
+      });
+    } catch (err) {
+      // Even if the API call fails, show the bank details screen
+      // so the donor has the information. Log the error silently.
+      console.error("Bank transfer record failed to save:", err);
+      // Still advance to thanks — the transfer details were already shown
+      dispatch({
+        type: "SET_POPUP",
+        payload: { show: true, step: "thanks" },
+      });
+    } finally {
+      dispatch({ type: "SET_SUBMITTING", payload: false });
     }
-  }, [triggerPaystack, initializePayment]);
+  };
 
   return (
     <div className="bg-paper min-h-screen overflow-hidden selection:bg-primary-100">
@@ -653,19 +736,36 @@ const Donation = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-3xl bg-dark/60">
           <div className="glass-card-dark-premium p-16 rounded-[4rem] text-center space-y-10 max-w-xl border-white/10 animate-fade-in-up">
             <div className="w-24 h-24 bg-primary-600 rounded-full flex items-center justify-center text-white mx-auto shadow-[0_0_50px_rgba(16,185,129,0.5)]">
-              <CheckCircle2 size={48} />
+              {ui.pollStatus === "polling" ? (
+                <Loader size={48} className="animate-spin" />
+              ) : (
+                <CheckCircle2 size={48} />
+              )}
             </div>
             <div className="space-y-4">
               <h3 className="text-5xl font-black text-white tracking-tight">
                 Thank You!
               </h3>
-              <p className="text-gray-400 font-medium">
-                Your donation has been verified and received successfully. Thank you for 
-                your generous support in helping us empower the youth of Sabo, Ibadan.
-              </p>
+              {ui.pollStatus === "verified" ? (
+                <p className="text-green-400 font-medium">
+                  ✅ Payment confirmed! Your donation is now pending admin
+                  approval. You will receive a confirmation email shortly.
+                </p>
+              ) : ui.pollStatus === "polling" ? (
+                <p className="text-gray-400 font-medium">
+                  Confirming with server… this only takes a moment.
+                </p>
+              ) : (
+                <p className="text-gray-400 font-medium">
+                  Your donation has been received. We&apos;ll send you a
+                  confirmation email once it&apos;s approved. Thank you for
+                  supporting the youth of Sabo, Ibadan.
+                </p>
+              )}
             </div>
             <button
               onClick={() => {
+                clearInterval(pollIntervalRef.current);
                 dispatch({ type: "RESET" });
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
@@ -675,6 +775,7 @@ const Donation = () => {
             </button>
           </div>
         </div>
+
       )}
 
       {ui.showPopup && ui.popupStep === "bank" && (
@@ -737,21 +838,21 @@ const Donation = () => {
             <div className="bg-primary-50 p-6 rounded-[2rem] flex items-start gap-4">
               <AlertCircle className="text-primary-600 shrink-0 mt-1" />
               <p className="text-xs font-bold text-primary-900 leading-relaxed uppercase tracking-wider">
-                Important: After making your transfer, please email your proof of payment or 
-                contact us via WhatsApp to acknowledge your donation.
+                Important: After making your transfer, click the button below to record your donation.
+                You may also email your proof of payment or contact us via WhatsApp.
               </p>
             </div>
 
             <button
-              onClick={() =>
-                dispatch({
-                  type: "SET_POPUP",
-                  payload: { show: true, step: "thanks" },
-                })
-              }
-              className="w-full py-6 bg-dark text-white font-black rounded-[2rem] shadow-2xl"
+              onClick={handleBankTransferConfirm}
+              disabled={ui.isSubmitting}
+              className="w-full py-6 bg-dark text-white font-black rounded-[2rem] shadow-2xl disabled:opacity-50"
             >
-              I Have Made the Transfer
+              {ui.isSubmitting ? (
+                <Loader className="animate-spin mx-auto" />
+              ) : (
+                "I Have Made the Transfer"
+              )}
             </button>
           </div>
         </div>

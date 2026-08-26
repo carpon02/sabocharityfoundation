@@ -59,15 +59,39 @@ const CampaignDetail = () => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   useEffect(() => {
-    if (id) {
-      dispatch(fetchCampaignById(id));
-    }
+    dispatch(fetchCampaignById(id));
   }, [dispatch, id]);
+
+  // ── Live refresh: poll every 30 s + re-fetch on tab focus ─────────────────
+  // Keeps raisedAmount current without a full page reload.
+  // When an admin approves a donation while the user is viewing this page,
+  // the progress bar will update within at most 30 seconds automatically.
+  useEffect(() => {
+    const refetch = () => dispatch(fetchCampaignById(id));
+
+    // Poll every 30 seconds
+    const interval = setInterval(refetch, 30_000);
+
+    // Also re-fetch the instant the user focuses this tab
+    window.addEventListener('focus', refetch);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', refetch);
+    };
+  }, [dispatch, id]);
+  // ──────────────────────────────────────────────────────────────────────────
 
   // Reset modal when campaign changes
   useEffect(() => {
     setShowDonationModal(false);
   }, [id]);
+
+  // Re-fetch campaign after modal closes to get updated raisedAmount / progress
+  const handleModalClose = useCallback(() => {
+    setShowDonationModal(false);
+    dispatch(fetchCampaignById(id));
+  }, [dispatch, id]);
 
   const campaign = selectedCampaign;
 
@@ -865,11 +889,9 @@ const CampaignDetail = () => {
       {/* Donation Modal */}
       <DonationModal
         isOpen={showDonationModal}
-        onClose={() => setShowDonationModal(false)}
+        onClose={handleModalClose}
         campaign={campaign}
         user={user}
-        onSubmitDonation={handleDonation}
-        isSubmitting={isSubmitting}
       />
     </div>
   );

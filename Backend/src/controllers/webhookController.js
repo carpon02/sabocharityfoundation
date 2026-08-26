@@ -2,12 +2,11 @@
 // FILE: controllers/webhookController.js
 // ============================================
 import Donation from '../models/Donation.js';
-import Campaign from '../models/Campaign.js';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
 import { verifyWebhookSignature, verifyPayment } from '../services/paystackService.js';
 import { sendEmail } from '../services/emailService.js';
-import { generateReceipt } from '../services/receiptService.js';
+import campaignRepository from '../repositories/CampaignRepository.js';
 import logger from '../config/logger.js';
 import crypto from 'crypto';
 import IdempotencyKey from '../models/IdempotencyKey.js';
@@ -203,18 +202,20 @@ const handleSuccessfulCharge = async (chargeData) => {
 
     await donation.save();
 
-    // Update campaign raised amount — critical for progress bars
+    // ── Option A: Webhook is the sole authority for raisedAmount ──────────
+    // Update campaign progress bar immediately after payment is verified,
+    // regardless of when admin approves. Uses atomic $inc to prevent races.
     if (donation.campaign?._id) {
-      await Campaign.findByIdAndUpdate(
+      await campaignRepository.incrementRaisedAmount(
         donation.campaign._id,
-        { $inc: { raisedAmount: donation.amount } },
-        { new: true }
+        donation.amount
       );
-      logger.info('Campaign raisedAmount updated', {
+      logger.info('Campaign raisedAmount incremented via webhook', {
         campaignId: donation.campaign._id,
         incrementBy: donation.amount,
       });
     }
+    // ─────────────────────────────────────────────────────────────────────
 
     logger.info('Donation verified via webhook', {
       donationId: donation.donationId,
@@ -222,14 +223,22 @@ const handleSuccessfulCharge = async (chargeData) => {
       amount: donation.amount
     });
 
+    // Resolve donor identity — supports both registered users and guests
+    const donorEmail = donation.donor?.email || donation.guestInfo?.email;
+    const donorName = donation.anonymous
+      ? 'Anonymous'
+      : donation.donor?.fullName ||
+        `${donation.guestInfo?.firstName || ''} ${donation.guestInfo?.lastName || ''}`.trim() ||
+        'Supporter';
+
     // Send notification to donor
-    if (donation.donor && donation.donor.email) {
+    if (donorEmail) {
       await sendEmail({
-        to: donation.donor.email,
+        to: donorEmail,
         subject: 'Payment Received - Pending Approval',
         template: 'donation-verified',
         data: {
-          donorName: donation.anonymous ? 'Anonymous' : donation.donor.fullName,
+          donorName,
           amount: donation.amount,
           campaignTitle: donation.campaign.title,
           donationId: donation.donationId,
@@ -245,7 +254,7 @@ const handleSuccessfulCharge = async (chargeData) => {
     // Create a database notification for finance/super admins
     await Notification.create({
       title: 'New Donation Pending Approval',
-      message: `${donation.anonymous ? 'Anonymous' : donation.donor.fullName} donated ${donation.amount} to "${donation.campaign.title}".`,
+      message: `${donorName} donated ${donation.amount} to "${donation.campaign.title}".`,
       type: 'donation',
       link: '/admin/payments',
       recipientRole: 'finance_admin',

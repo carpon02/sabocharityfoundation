@@ -77,6 +77,8 @@ const Payments = () => {
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [initiateRefund, setInitiateRefund] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const [isRejecting, setIsRejecting] = useState(false);
 
   useEffect(() => {
     dispatch(fetchPaymentStats({ period: "30days" }));
@@ -324,8 +326,8 @@ const Payments = () => {
           </span>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
+        <div className="overflow-x-auto w-full -mx-0">
+          <table className="w-full min-w-[800px] text-left">
             <thead
               className={`${
                 darkMode ? "bg-gray-900/30" : "bg-gray-50/50"
@@ -449,30 +451,36 @@ const Payments = () => {
                             {payment.approvalStatus === "pending" && (
                               <>
                                 <motion.button
-                                  whileHover={{ scale: 1.15 }}
+                                  whileHover={{ scale: isApproving && selectedPayment?._id === payment._id ? 1 : 1.15 }}
                                   whileTap={{ scale: 0.9 }}
                                   onClick={() => handleApprove(payment)}
+                                  disabled={isApproving && selectedPayment?._id === payment._id}
                                   title="Approve"
-                                  className={`p-2 rounded-xl transition-all ${
+                                  className={`p-2 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                                     darkMode
                                       ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white"
                                       : "bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white shadow-sm"
                                   }`}
                                 >
-                                  <Check size={16} />
+                                  {isApproving && selectedPayment?._id === payment._id
+                                    ? <Loader size={16} className="animate-spin" />
+                                    : <Check size={16} />}
                                 </motion.button>
                                 <motion.button
-                                  whileHover={{ scale: 1.15 }}
+                                  whileHover={{ scale: isRejecting && selectedPayment?._id === payment._id ? 1 : 1.15 }}
                                   whileTap={{ scale: 0.9 }}
                                   onClick={() => handleReject(payment)}
+                                  disabled={isRejecting && selectedPayment?._id === payment._id}
                                   title="Reject"
-                                  className={`p-2 rounded-xl transition-all ${
+                                  className={`p-2 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                                     darkMode
                                       ? "bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white"
                                       : "bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white shadow-sm"
                                   }`}
                                 >
-                                  <X size={16} />
+                                  {isRejecting && selectedPayment?._id === payment._id
+                                    ? <Loader size={16} className="animate-spin" />
+                                    : <X size={16} />}
                                 </motion.button>
                               </>
                             )}
@@ -500,54 +508,122 @@ const Payments = () => {
           </table>
         </div>
 
-        {/* Pagination */}
-        {pagination.pages > 1 && (
-          <div className="flex items-center justify-between p-6">
-            <span className={`text-xs font-bold uppercase tracking-wider ${darkMode ? "text-gray-500" : "text-gray-400"}`}>
-              Page {pagination.page} of {pagination.pages}
+        {/* ── Pagination Bar ──────────────────────────────────────────── */}
+        <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t ${darkMode ? "border-gray-800" : "border-gray-100"}`}>
+
+          {/* Left: rows-per-page selector + count */}
+          <div className="flex items-center gap-3">
+            <span className={`text-xs font-semibold ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+              Rows per page:
             </span>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-1">
+              {[25, 50, 75, 100].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => dispatch(setFilters({ ...filters, page: 1, limit: n }))}
+                  className={`min-w-[40px] h-8 px-2 rounded-lg text-xs font-bold transition-all ${
+                    (filters.limit || 25) === n
+                      ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/30"
+                      : darkMode
+                        ? "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+            <span className={`text-xs ${darkMode ? "text-gray-500" : "text-gray-400"}`}>
+              {pagination.total > 0 ? (
+                <>
+                  Showing{" "}
+                  <span className={`font-bold ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                    {((pagination.page - 1) * (filters.limit || 25)) + 1}–
+                    {Math.min(pagination.page * (filters.limit || 25), pagination.total)}
+                  </span>{" "}
+                  of{" "}
+                  <span className={`font-bold ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                    {pagination.total}
+                  </span>
+                </>
+              ) : (
+                "No records"
+              )}
+            </span>
+          </div>
+
+          {/* Right: page navigation */}
+          {pagination.pages > 1 && (
+            <div className="flex items-center gap-2">
+              {/* Previous */}
               <button
                 onClick={() => dispatch(setFilters({ ...filters, page: pagination.page - 1 }))}
                 disabled={pagination.page === 1}
-                className={`p-2 rounded-lg transition-all disabled:opacity-50 ${darkMode ? "hover:bg-gray-800 text-white" : "hover:bg-gray-100 text-dark"}`}
+                className={`p-2 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                  darkMode ? "hover:bg-gray-800 text-white" : "hover:bg-gray-100 text-dark"
+                }`}
+                title="Previous page"
               >
-                <ChevronLeft size={20} />
+                <ChevronLeft size={18} />
               </button>
-              <div className="hidden sm:flex items-center gap-2">
-                {Array.from({ length: Math.min(pagination.pages, 5) }, (_, i) => {
-                  let pageNum;
-                  if (pagination.pages <= 5) pageNum = i + 1;
-                  else if (pagination.page <= 3) pageNum = i + 1;
-                  else if (pagination.page >= pagination.pages - 2) pageNum = pagination.pages - 4 + i;
-                  else pageNum = pagination.page - 2 + i;
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => dispatch(setFilters({ ...filters, page: pageNum }))}
-                      className={`w-10 h-10 rounded-xl font-bold text-xs transition-all ${
-                        pagination.page === pageNum
-                          ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 scale-105"
-                          : darkMode
-                            ? "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
-                            : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
-                      }`}
-                    >
-                      {pageNum}
-                    </button>
+
+              {/* Page numbers (up to 7 visible) */}
+              <div className="flex items-center gap-1">
+                {(() => {
+                  const total = pagination.pages;
+                  const cur = pagination.page;
+                  let pages = [];
+                  if (total <= 7) {
+                    pages = Array.from({ length: total }, (_, i) => i + 1);
+                  } else if (cur <= 4) {
+                    pages = [1, 2, 3, 4, 5, "…", total];
+                  } else if (cur >= total - 3) {
+                    pages = [1, "…", total - 4, total - 3, total - 2, total - 1, total];
+                  } else {
+                    pages = [1, "…", cur - 1, cur, cur + 1, "…", total];
+                  }
+                  return pages.map((p, i) =>
+                    p === "…" ? (
+                      <span
+                        key={`ellipsis-${i}`}
+                        className={`w-8 text-center text-xs select-none ${darkMode ? "text-gray-600" : "text-gray-400"}`}
+                      >
+                        …
+                      </span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => dispatch(setFilters({ ...filters, page: p }))}
+                        className={`w-9 h-9 rounded-xl font-bold text-xs transition-all ${
+                          pagination.page === p
+                            ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 scale-105"
+                            : darkMode
+                              ? "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
+                              : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    )
                   );
-                })}
+                })()}
               </div>
+
+              {/* Next */}
               <button
                 onClick={() => dispatch(setFilters({ ...filters, page: pagination.page + 1 }))}
                 disabled={pagination.page === pagination.pages}
-                className={`p-2 rounded-lg transition-all disabled:opacity-50 ${darkMode ? "hover:bg-gray-800 text-white" : "hover:bg-gray-100 text-dark"}`}
+                className={`p-2 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                  darkMode ? "hover:bg-gray-800 text-white" : "hover:bg-gray-100 text-dark"
+                }`}
+                title="Next page"
               >
-                <ChevronRight size={20} />
+                <ChevronRight size={18} />
               </button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
+        {/* ──────────────────────────────────────────────────────────────── */}
       </motion.div>
 
       {/* Transparency Note */}
@@ -622,21 +698,40 @@ const Payments = () => {
               <div className="flex gap-4 mt-8">
                 <button
                   onClick={() => setShowApproveModal(false)}
-                  className={`flex-1 py-4 rounded-xl font-bold uppercase tracking-wider text-xs transition-colors ${
+                  disabled={isApproving}
+                  className={`flex-1 py-4 rounded-xl font-bold uppercase tracking-wider text-xs transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                     darkMode ? "bg-gray-900 text-gray-400 hover:bg-gray-800" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                   }`}
                 >
                   Cancel
                 </button>
                 <button
+                  disabled={isApproving}
                   onClick={async () => {
-                    await dispatch(approvePayment({ paymentId: selectedPayment._id }));
-                    setShowApproveModal(false);
-                    dispatch(fetchAllPayments(filters));
+                    setIsApproving(true);
+                    try {
+                      await dispatch(approvePayment({ paymentId: selectedPayment._id }));
+                      setShowApproveModal(false);
+                      // Refresh both the table AND the stat cards
+                      dispatch(fetchAllPayments(filters));
+                      dispatch(fetchPaymentStats({ period: "30days" }));
+                    } finally {
+                      setIsApproving(false);
+                    }
                   }}
-                  className="flex-1 py-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold uppercase tracking-wider text-xs shadow-lg shadow-emerald-500/20 transition-all"
+                  className="flex-1 py-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold uppercase tracking-wider text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2"
                 >
-                  Confirm Donation
+                  {isApproving ? (
+                    <>
+                      <Loader size={14} className="animate-spin" />
+                      Verifying...
+                    </>
+                  ) : (
+                    <>
+                      <Check size={14} />
+                      Confirm Donation
+                    </>
+                  )}
                 </button>
               </div>
             </motion.div>
@@ -690,21 +785,40 @@ const Payments = () => {
               <div className="flex gap-4 mt-8">
                 <button
                   onClick={() => setShowRejectModal(false)}
-                  className={`flex-1 py-4 rounded-xl font-bold uppercase tracking-wider text-xs transition-colors ${
+                  disabled={isRejecting}
+                  className={`flex-1 py-4 rounded-xl font-bold uppercase tracking-wider text-xs transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                     darkMode ? "bg-gray-900 text-gray-400 hover:bg-gray-800" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                   }`}
                 >
                   Cancel
                 </button>
                 <button
+                  disabled={isRejecting || !rejectionReason.trim()}
                   onClick={async () => {
-                    await dispatch(rejectPayment({ paymentId: selectedPayment._id, rejectionReason, initiateRefund }));
-                    setShowRejectModal(false);
-                    dispatch(fetchAllPayments(filters));
+                    setIsRejecting(true);
+                    try {
+                      await dispatch(rejectPayment({ paymentId: selectedPayment._id, rejectionReason, initiateRefund }));
+                      setShowRejectModal(false);
+                      // Refresh both the table AND the stat cards
+                      dispatch(fetchAllPayments(filters));
+                      dispatch(fetchPaymentStats({ period: "30days" }));
+                    } finally {
+                      setIsRejecting(false);
+                    }
                   }}
-                  className="flex-1 py-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold uppercase tracking-wider text-xs shadow-lg shadow-rose-500/20 transition-all"
+                  className="flex-1 py-4 rounded-xl bg-rose-600 hover:bg-rose-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold uppercase tracking-wider text-xs shadow-lg shadow-rose-500/20 transition-all flex items-center justify-center gap-2"
                 >
-                  Confirm Rejection
+                  {isRejecting ? (
+                    <>
+                      <Loader size={14} className="animate-spin" />
+                      Rejecting...
+                    </>
+                  ) : (
+                    <>
+                      <X size={14} />
+                      Confirm Rejection
+                    </>
+                  )}
                 </button>
               </div>
             </motion.div>

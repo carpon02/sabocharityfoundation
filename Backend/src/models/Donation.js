@@ -145,6 +145,10 @@ const donationSchema = new mongoose.Schema(
     failureReason: String,
     refundedAt: Date,
     refundReason: String,
+    refundStatus: {
+      type: String,
+      enum: ["pending", "processed", "failed"],
+    },
   },
   {
     timestamps: true,
