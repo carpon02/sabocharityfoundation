@@ -4,13 +4,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
-  MoreVertical,
   ChevronLeft,
   ChevronRight,
   Users,
   Award,
   Download,
-  Filter,
   Activity,
   Star,
   Zap,
@@ -18,15 +16,25 @@ import {
   BarChart3,
   Heart,
   Eye,
-  Trash2,
-  Edit,
   TrendingUp,
+  ShieldCheck,
+  ShieldOff,
+  UserCheck,
+  X,
+  Calendar,
+  CreditCard,
+  CheckCircle,
+  Clock,
+  XCircle,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import { StatsCard } from "../shared";
 import {
   fetchDonorStats,
   fetchAllDonors,
+  fetchDonorDetails,
+  updateUserStatus,
+  verifyUser,
   exportDonors,
   setFilters,
   selectDonors,
@@ -46,6 +54,16 @@ const Donors = () => {
 
   const [localSearch, setLocalSearch] = useState(filters.search || "");
   const [isLoading, setIsLoading] = useState(false);
+
+  // ── Action modals ────────────────────────────────────────────────────────
+  const [detailDonor, setDetailDonor]       = useState(null);
+  const [detailHistory, setDetailHistory]   = useState([]);
+  const [detailLoading, setDetailLoading]   = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+
+  const [confirmAction, setConfirmAction]   = useState(null); // { type, donor }
+  const [actionLoading, setActionLoading]   = useState(false);
+  // ────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     dispatch(fetchDonorStats());
@@ -154,6 +172,47 @@ const Donors = () => {
     dispatch(fetchAllDonors(filters));
     dispatch(fetchDonorStats());
   };
+
+  // ── Donor detail drawer ──────────────────────────────────────────────────
+  const handleViewDetails = async (donor) => {
+    setDetailDonor(donor);
+    setDetailHistory([]);
+    setShowDetailModal(true);
+    if (!donor.isGuest) {
+      setDetailLoading(true);
+      try {
+        const res = await dispatch(fetchDonorDetails(donor._id)).unwrap();
+        setDetailHistory(res.history || []);
+        setDetailDonor(res.donor || donor);
+      } catch (_) {}
+      finally { setDetailLoading(false); }
+    } else {
+      setDetailHistory(donor.donations || []);
+    }
+  };
+
+  // ── Verify / suspend confirm ─────────────────────────────────────────────
+  const openConfirm = (type, donor) => setConfirmAction({ type, donor });
+  const closeConfirm = () => { if (!actionLoading) setConfirmAction(null); };
+
+  const handleConfirmedAction = async () => {
+    if (!confirmAction) return;
+    const { type, donor } = confirmAction;
+    setActionLoading(true);
+    try {
+      if (type === 'verify') {
+        await dispatch(verifyUser(donor._id)).unwrap();
+      } else if (type === 'suspend') {
+        await dispatch(updateUserStatus({ id: donor._id, status: 'suspended' })).unwrap();
+      } else if (type === 'activate') {
+        await dispatch(updateUserStatus({ id: donor._id, status: 'active' })).unwrap();
+      }
+      dispatch(fetchAllDonors(filters));
+      setConfirmAction(null);
+    } catch (_) {}
+    finally { setActionLoading(false); }
+  };
+  // ────────────────────────────────────────────────────────────────────────
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -433,13 +492,28 @@ const Donors = () => {
                               >
                                 {donor.fullName}
                               </h4>
-                              <p
-                                className={`text-xs font-medium ${
-                                  darkMode ? "text-gray-500" : "text-gray-500"
-                                }`}
-                              >
-                                {donor.email}
-                              </p>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p
+                                  className={`text-xs font-medium ${
+                                    darkMode ? "text-gray-500" : "text-gray-500"
+                                  }`}
+                                >
+                                  {donor.email}
+                                </p>
+                                {/* Verified pill — always visible, no hover needed */}
+                                {donor.isVerified && (
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
+                                    <CheckCircle size={9} />
+                                    Verified
+                                  </span>
+                                )}
+                                {donor.status === 'suspended' && (
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-100 dark:bg-rose-900/30 text-rose-500 dark:text-rose-400 text-[10px] font-bold">
+                                    <ShieldOff size={9} />
+                                    Suspended
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </td>
@@ -498,19 +572,82 @@ const Donors = () => {
 
                         {/* Actions */}
                         <td className="px-8 py-6">
-                          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0">
+                          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                            {/* View Details */}
                             <motion.button
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
+                              onClick={() => handleViewDetails(donor)}
                               className={`p-2.5 rounded-xl transition-all ${
                                 darkMode
-                                  ? "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
+                                  ? "bg-gray-800 text-gray-400 hover:text-primary-400 hover:bg-gray-700"
                                   : "bg-white text-gray-500 hover:text-primary-600 hover:bg-primary-50 shadow-sm border border-gray-100"
                               }`}
-                              title="View details"
+                              title="View donation history"
                             >
-                              <Eye size={18} />
+                              <Eye size={16} />
                             </motion.button>
+
+                            {/* Verify donor — idempotent: hidden if already verified */}
+                            {!donor.isGuest && (
+                              donor.isVerified ? (
+                                /* Already verified — static badge, no action */
+                                <span
+                                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 cursor-default"
+                                  title="Donor is already verified"
+                                >
+                                  <ShieldCheck size={13} />
+                                  Verified
+                                </span>
+                              ) : (
+                                <motion.button
+                                  whileHover={{ scale: 1.1 }}
+                                  whileTap={{ scale: 0.9 }}
+                                  onClick={() => openConfirm('verify', donor)}
+                                  className={`p-2.5 rounded-xl transition-all ${
+                                    darkMode
+                                      ? "bg-gray-800 text-gray-400 hover:text-emerald-400 hover:bg-gray-700"
+                                      : "bg-white text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 shadow-sm border border-gray-100"
+                                  }`}
+                                  title="Verify this donor"
+                                >
+                                  <ShieldCheck size={16} />
+                                </motion.button>
+                              )
+                            )}
+
+                            {/* Suspend / Activate */}
+                            {!donor.isGuest && (
+                              donor.status === 'suspended' ? (
+                                <motion.button
+                                  whileHover={{ scale: 1.1 }}
+                                  whileTap={{ scale: 0.9 }}
+                                  onClick={() => openConfirm('activate', donor)}
+                                  className={`p-2.5 rounded-xl transition-all ${
+                                    darkMode
+                                      ? "bg-gray-800 text-gray-400 hover:text-emerald-400 hover:bg-gray-700"
+                                      : "bg-white text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 shadow-sm border border-gray-100"
+                                  }`}
+                                  title="Activate donor"
+                                >
+                                  <UserCheck size={16} />
+                                </motion.button>
+                              ) : (
+                                <motion.button
+                                  whileHover={{ scale: 1.1 }}
+                                  whileTap={{ scale: 0.9 }}
+                                  onClick={() => openConfirm('suspend', donor)}
+                                  className={`p-2.5 rounded-xl transition-all ${
+                                    darkMode
+                                      ? "bg-gray-800 text-gray-400 hover:text-rose-400 hover:bg-gray-700"
+                                      : "bg-white text-gray-500 hover:text-rose-600 hover:bg-rose-50 shadow-sm border border-gray-100"
+                                  }`}
+                                  title="Suspend donor"
+                                >
+                                  <ShieldOff size={16} />
+                                </motion.button>
+                              )
+                            )}
                           </div>
                         </td>
                       </motion.tr>
@@ -627,6 +764,150 @@ const Donors = () => {
           )}
         </div>
       </motion.div>
+
+      {/* ── Donor Detail Modal ──────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showDetailModal && detailDonor && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className={`relative w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-3xl border ${
+                darkMode
+                  ? "bg-gray-900 border-gray-700"
+                  : "bg-white border-gray-200 shadow-2xl"
+              }`}
+            >
+              {/* Header */}
+              <div className="sticky top-0 z-10 flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-800 bg-inherit rounded-t-3xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl overflow-hidden border-2 border-primary-200">
+                    <img
+                      src={detailDonor.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(detailDonor.fullName)}&background=10b981&color=fff`}
+                      alt={detailDonor.fullName}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div>
+                    <h2 className={`font-extrabold text-lg ${darkMode ? "text-white" : "text-dark"}`}>
+                      {detailDonor.fullName}
+                    </h2>
+                    <p className="text-xs text-gray-500">{detailDonor.email}</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowDetailModal(false)} className="p-2 rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Summary */}
+              <div className="p-6 grid grid-cols-2 gap-4">
+                {[
+                  { label: 'Total Donated', value: new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(detailDonor.totalDonated || 0), icon: CreditCard, color: 'text-emerald-500' },
+                  { label: 'Donations', value: `${detailDonor.donationCount || 0} made`, icon: Activity, color: 'text-primary-500' },
+                  { label: 'First Donation', value: detailDonor.firstDonation ? new Date(detailDonor.firstDonation).toLocaleDateString('en-NG', { year:'numeric', month:'short', day:'numeric' }) : 'N/A', icon: Calendar, color: 'text-amber-500' },
+                  { label: 'Last Donation', value: detailDonor.lastDonation ? new Date(detailDonor.lastDonation).toLocaleDateString('en-NG', { year:'numeric', month:'short', day:'numeric' }) : 'N/A', icon: Clock, color: 'text-blue-500' },
+                ].map(({ label, value, icon: Icon, color }) => (
+                  <div key={label} className={`p-4 rounded-2xl ${ darkMode ? 'bg-gray-800/60' : 'bg-gray-50' }`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Icon size={14} className={color} />
+                      <span className="text-xs font-semibold text-gray-500">{label}</span>
+                    </div>
+                    <p className={`font-bold text-sm ${darkMode ? 'text-white' : 'text-dark'}`}>{value}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Donation History */}
+              <div className="px-6 pb-6">
+                <h3 className={`font-bold text-sm uppercase tracking-wider mb-3 ${ darkMode ? 'text-gray-400' : 'text-gray-500' }`}>Donation History</h3>
+                {detailLoading ? (
+                  <div className="flex justify-center py-8"><div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" /></div>
+                ) : detailHistory.length === 0 ? (
+                  <p className="text-center text-sm text-gray-400 py-6">No donation history available.</p>
+                ) : (
+                  <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+                    {detailHistory.map((d) => (
+                      <div key={d._id} className={`flex items-center justify-between p-3 rounded-xl ${ darkMode ? 'bg-gray-800/50' : 'bg-gray-50' }`}>
+                        <div>
+                          <p className={`font-bold text-sm ${ darkMode ? 'text-white' : 'text-dark' }`}>
+                            {new Intl.NumberFormat('en-NG', { style:'currency', currency:'NGN', minimumFractionDigits:0 }).format(d.amount)}
+                          </p>
+                          <p className="text-xs text-gray-500">{d.campaign?.title || 'General Donation'}</p>
+                          <p className="text-xs text-gray-400">{new Date(d.createdAt).toLocaleDateString('en-NG')}</p>
+                        </div>
+                        {d.approvalStatus === 'approved' ? (
+                          <CheckCircle size={16} className="text-emerald-500 shrink-0" />
+                        ) : d.approvalStatus === 'rejected' ? (
+                          <XCircle size={16} className="text-rose-500 shrink-0" />
+                        ) : (
+                          <Clock size={16} className="text-amber-500 shrink-0" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Confirm Action Modal ────────────────────────────────────────── */}
+      <AnimatePresence>
+        {confirmAction && (
+          <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className={`w-full max-w-sm p-8 rounded-3xl border ${
+                darkMode ? "bg-gray-900 border-gray-700" : "bg-white border-gray-200 shadow-2xl"
+              }`}
+            >
+              <div className="text-center mb-6">
+                <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
+                  confirmAction.type === 'suspend' ? 'bg-rose-100' :
+                  confirmAction.type === 'activate' ? 'bg-emerald-100' : 'bg-primary-100'
+                }`}>
+                  {confirmAction.type === 'suspend' ? <ShieldOff size={28} className="text-rose-500" /> :
+                   confirmAction.type === 'activate' ? <UserCheck size={28} className="text-emerald-500" /> :
+                   <ShieldCheck size={28} className="text-primary-500" />}
+                </div>
+                <h3 className={`text-xl font-extrabold mb-2 ${ darkMode ? 'text-white' : 'text-dark' }`}>
+                  {confirmAction.type === 'suspend' ? 'Suspend Donor?' :
+                   confirmAction.type === 'activate' ? 'Activate Donor?' : 'Verify Donor?'}
+                </h3>
+                <p className={`text-sm ${ darkMode ? 'text-gray-400' : 'text-gray-600' }`}>
+                  {confirmAction.type === 'suspend'
+                    ? `${confirmAction.donor.fullName} will be suspended and lose access to their account.`
+                    : confirmAction.type === 'activate'
+                    ? `${confirmAction.donor.fullName}'s account will be reactivated.`
+                    : `${confirmAction.donor.fullName} will be marked as a verified donor.`}
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={closeConfirm} disabled={actionLoading}
+                  className={`flex-1 py-3 rounded-2xl font-bold text-sm transition-all ${ darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }`}>
+                  Cancel
+                </button>
+                <button onClick={handleConfirmedAction} disabled={actionLoading}
+                  className={`flex-1 py-3 rounded-2xl font-bold text-sm text-white transition-all disabled:opacity-60 flex items-center justify-center gap-2 ${
+                    confirmAction.type === 'suspend' ? 'bg-rose-500 hover:bg-rose-600' :
+                    confirmAction.type === 'activate' ? 'bg-emerald-500 hover:bg-emerald-600' :
+                    'bg-primary-500 hover:bg-primary-600'
+                  }`}>
+                  {actionLoading ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : null}
+                  {confirmAction.type === 'suspend' ? 'Suspend' :
+                   confirmAction.type === 'activate' ? 'Activate' : 'Verify'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      {/* ─────────────────────────────────────────────────────────────────── */}
 
       {/* Pagination */}
       {pagination && pagination.pages > 1 && (
