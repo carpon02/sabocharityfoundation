@@ -213,5 +213,7 @@ function sanitizeUser(user) {
     avatar: user.avatar || null,
     location: user.location || { country: "Nigeria" },
     role: user.role,
+    isEmailVerified: user.isEmailVerified || false,
+    isActive: user.isActive !== undefined ? user.isActive : true,
   };
 }

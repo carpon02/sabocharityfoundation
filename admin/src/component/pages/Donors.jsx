@@ -174,21 +174,15 @@ const Donors = () => {
   };
 
   // ── Donor detail drawer ──────────────────────────────────────────────────
-  const handleViewDetails = async (donor) => {
+  const handleViewDetails = (donor) => {
     setDetailDonor(donor);
-    setDetailHistory([]);
+    // donations[] is already populated in the aggregated donor object
+    setDetailHistory(
+      [...(donor.donations || [])].sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      )
+    );
     setShowDetailModal(true);
-    if (!donor.isGuest) {
-      setDetailLoading(true);
-      try {
-        const res = await dispatch(fetchDonorDetails(donor._id)).unwrap();
-        setDetailHistory(res.history || []);
-        setDetailDonor(res.donor || donor);
-      } catch (_) {}
-      finally { setDetailLoading(false); }
-    } else {
-      setDetailHistory(donor.donations || []);
-    }
   };
 
   // ── Verify / suspend confirm ─────────────────────────────────────────────
@@ -485,11 +479,11 @@ const Donors = () => {
                               />
                             </motion.div>
                             <div>
-                              {/* Name row with verified badge inline before the name */}
+                              {/* Name row — verified circle badge before name */}
                               <div className="flex items-center gap-1.5 mb-1">
-                                {donor.isVerified && (
+                                {donor.isEmailVerified && (
                                   <span
-                                    title="Verified donor"
+                                    title="Email-verified donor"
                                     className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-emerald-500 text-white flex-shrink-0"
                                   >
                                     <CheckCircle size={10} />
@@ -511,10 +505,11 @@ const Donors = () => {
                                 >
                                   {donor.email}
                                 </p>
-                                {donor.status === 'suspended' && (
+                                {/* Blocked/inactive pill */}
+                                {donor.isActive === false && (
                                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-100 dark:bg-rose-900/30 text-rose-500 dark:text-rose-400 text-[10px] font-bold">
                                     <ShieldOff size={9} />
-                                    Suspended
+                                    Blocked
                                   </span>
                                 )}
                               </div>
@@ -592,63 +587,69 @@ const Donors = () => {
                               <Eye size={16} />
                             </motion.button>
 
-                            {/* Verify donor — idempotent: hidden if already verified */}
+                            {/* ── Verify button ── idempotent */}
                             {!donor.isGuest && (
-                              donor.isVerified ? (
-                                /* Already verified — static badge, no action */
+                              donor.isEmailVerified ? (
+                                // Already verified — non-clickable green badge
                                 <span
-                                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 cursor-default"
-                                  title="Donor is already verified"
+                                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 cursor-default"
+                                  title="Already verified"
                                 >
                                   <ShieldCheck size={13} />
                                   Verified
                                 </span>
                               ) : (
+                                // Not yet verified — clickable amber button
                                 <motion.button
                                   whileHover={{ scale: 1.1 }}
                                   whileTap={{ scale: 0.9 }}
                                   onClick={() => openConfirm('verify', donor)}
-                                  className={`p-2.5 rounded-xl transition-all ${
+                                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all border ${
                                     darkMode
-                                      ? "bg-gray-800 text-gray-400 hover:text-emerald-400 hover:bg-gray-700"
-                                      : "bg-white text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 shadow-sm border border-gray-100"
+                                      ? "bg-amber-900/30 text-amber-400 border-amber-800 hover:bg-amber-900/50"
+                                      : "bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100"
                                   }`}
                                   title="Verify this donor"
                                 >
-                                  <ShieldCheck size={16} />
+                                  <ShieldCheck size={13} />
+                                  Verify
                                 </motion.button>
                               )
                             )}
 
-                            {/* Suspend / Activate */}
+                            {/* ── Block / Activate button ── */}
                             {!donor.isGuest && (
-                              donor.status === 'suspended' ? (
+                              donor.isActive === false ? (
+                                // Blocked — show red state + activate button
                                 <motion.button
-                                  whileHover={{ scale: 1.1 }}
-                                  whileTap={{ scale: 0.9 }}
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
                                   onClick={() => openConfirm('activate', donor)}
-                                  className={`p-2.5 rounded-xl transition-all ${
+                                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all border ${
                                     darkMode
-                                      ? "bg-gray-800 text-gray-400 hover:text-emerald-400 hover:bg-gray-700"
-                                      : "bg-white text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 shadow-sm border border-gray-100"
+                                      ? "bg-rose-900/30 text-rose-400 border-rose-800 hover:bg-emerald-900/30 hover:text-emerald-400 hover:border-emerald-800"
+                                      : "bg-rose-50 text-rose-600 border-rose-200 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200"
                                   }`}
-                                  title="Activate donor"
+                                  title="Donor is blocked — click to activate"
                                 >
-                                  <UserCheck size={16} />
+                                  <UserCheck size={13} />
+                                  Blocked
                                 </motion.button>
                               ) : (
+                                // Active — show clickable block button
                                 <motion.button
                                   whileHover={{ scale: 1.1 }}
                                   whileTap={{ scale: 0.9 }}
                                   onClick={() => openConfirm('suspend', donor)}
-                                  className={`p-2.5 rounded-xl transition-all ${
+                                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all border ${
                                     darkMode
-                                      ? "bg-gray-800 text-gray-400 hover:text-rose-400 hover:bg-gray-700"
-                                      : "bg-white text-gray-500 hover:text-rose-600 hover:bg-rose-50 shadow-sm border border-gray-100"
+                                      ? "bg-gray-800 text-gray-400 border-gray-700 hover:bg-rose-900/30 hover:text-rose-400 hover:border-rose-800"
+                                      : "bg-white text-gray-500 border-gray-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200"
                                   }`}
-                                  title="Suspend donor"
+                                  title="Block this donor"
                                 >
-                                  <ShieldOff size={16} />
+                                  <ShieldOff size={13} />
+                                  Block
                                 </motion.button>
                               )
                             )}
