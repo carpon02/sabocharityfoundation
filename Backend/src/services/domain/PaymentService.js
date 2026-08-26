@@ -268,7 +268,7 @@ class PaymentService {
 
     const payments = await Donation.find(query)
       .populate({ path: "campaign", select: "title slug images category" })
-      .populate({ path: "donor", select: "fullName email avatar" })
+      .populate({ path: "donor", select: "fullName email avatar isEmailVerified isActive" })
       .populate({ path: "approvedBy rejectedBy", select: "fullName email" })
       .sort({ [sortBy]: sortOrder })
       .limit(parseInt(limit))
