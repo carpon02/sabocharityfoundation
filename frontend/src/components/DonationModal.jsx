@@ -301,7 +301,7 @@ const DonationModal = ({
                   Payment Confirmed
                 </p>
                 <p className="text-sm text-emerald-600 dark:text-emerald-300">
-                  Your payment was successful. Our team will review and approve your donation shortly. A receipt will be emailed to you.
+                  Your payment was successful! A receipt will be emailed to you shortly once the transaction is fully verified.
                 </p>
               </div>
             )}
