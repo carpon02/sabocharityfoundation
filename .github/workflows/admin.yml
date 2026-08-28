@@ -5,10 +5,12 @@ on:
     branches: [main]
     paths:
       - "admin/**"
+      - ".github/workflows/admin.yml"
   pull_request:
     branches: [main]
     paths:
       - "admin/**"
+      - ".github/workflows/admin.yml"
 
 jobs:
   build:
@@ -28,14 +30,13 @@ jobs:
           cache-dependency-path: admin/package-lock.json
 
       - name: Install Dependencies
-        run: npm install
+        run: npm ci
 
       - name: Lint
         run: npm run lint
 
       - name: Test
-        run: npm run test || echo "No tests configured"
-        continue-on-error: true
+        run: npm run test:ci
 
       - name: Build
         run: npm run build

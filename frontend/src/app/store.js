@@ -1,7 +1,4 @@
-// store.js
 import { configureStore } from "@reduxjs/toolkit";
-import { persistStore, persistReducer } from "redux-persist";
-import storage from "redux-persist/lib/storage";
 import authReducer from "../features/auth/authSlice";
 import donationReducer from "../features/donation/donationSlice";
 import notificationsReducer from "../features/notification/notificationsSlice";
@@ -16,20 +13,9 @@ import volunteerReducer from "../features/volunteer/volunteerSlice";
 import contactReducer from "../features/contact/contactSlice";
 import newsletterReducer from "../features/newsletter/newsletterSlice";
 
-// ✅ Configure persistence
-const persistConfig = {
-  key: "root", // key for localStorage
-  storage, // use localStorage
-  whitelist: ["user", "verified"], // only persist specific slices if needed
-};
-
-// ✅ Wrap authReducer with persistReducer
-const persistedReducer = persistReducer(persistConfig, authReducer);
-
-// ✅ Configure the store
 export const store = configureStore({
   reducer: {
-    auth: persistedReducer,
+    auth: authReducer,
     donations: donationReducer,
     notifications: notificationsReducer,
     events: eventReducer,
@@ -43,11 +29,4 @@ export const store = configureStore({
     contact: contactReducer,
     newsletter: newsletterReducer,
   },
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      serializableCheck: false, // needed for redux-persist
-    }),
 });
-
-// ✅ Create persistor
-export const persistor = persistStore(store);

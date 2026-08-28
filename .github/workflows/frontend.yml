@@ -5,10 +5,12 @@ on:
     branches: [main]
     paths:
       - "frontend/**"
+      - ".github/workflows/frontend.yml"
   pull_request:
     branches: [main]
     paths:
       - "frontend/**"
+      - ".github/workflows/frontend.yml"
 
 jobs:
   build:
@@ -28,17 +30,15 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install Dependencies
-        run: npm install --legacy-peer-deps
+        run: npm ci --legacy-peer-deps
 
       - name: Lint
         run: npm run lint
 
       - name: Test
-        run: npm run test || echo "No tests configured"
-        continue-on-error: true
+        run: npm run test:ci
 
       - name: Build
         run: npm run build
         env:
-          # These would ideally be secrets, but for build process we might need mock values if they are baked in
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}

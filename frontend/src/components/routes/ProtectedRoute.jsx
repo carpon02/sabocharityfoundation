@@ -1,16 +1,19 @@
-// components/ProtectedRoute.jsx
 import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
+import { useSelector } from "react-redux";
+import LoadingSpinner from "../LoadingSpinner";
 
 const ProtectedRoute = () => {
-  const storedUser = JSON.parse(localStorage.getItem("user"));
+  const { isAuthenticated, sessionChecked } = useSelector((state) => state.auth);
 
-  if (!storedUser) {
-    // Not logged in → redirect to login
+  if (!sessionChecked) {
+    return <LoadingSpinner fullScreen message="Checking session..." />;
+  }
+
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  // ✅ If authenticated → render child routes inside UserLayout
   return <Outlet />;
 };
 

@@ -3,7 +3,7 @@ import React, { useEffect, Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
-import { loadUserFromStorage } from "./features/auth/authSlice";
+import { restoreSession, clearSession } from "./features/auth/authSlice";
 import ErrorBoundary from "./components/ErrorBoundary";
 import LoadingSpinner from "./components/LoadingSpinner";
 import { ScrollToTop, ScrollToTopButton } from "./components";
@@ -12,6 +12,7 @@ import { ScrollToTop, ScrollToTopButton } from "./components";
 const Home = lazy(() => import("./pages/public/Home"));
 const About = lazy(() => import("./pages/public/About"));
 const Blogs = lazy(() => import("./pages/public/Blogs"));
+const BlogDetail = lazy(() => import("./pages/public/BlogDetail"));
 const Campaigns = lazy(() => import("./pages/public/Campaigns"));
 const Contact = lazy(() => import("./pages/public/Contact"));
 const GetInvolved = lazy(() => import("./pages/public/GetInvolved"));
@@ -35,7 +36,6 @@ const MyCampaigns = lazy(() => import("./pages/user/MyCampaigns"));
 
 import PublicLayout from "./layout/PublicLayout";
 import UserLayout from "./layout/UserLayout";
-import ProgramDetail from "./components/CampaignDetail";
 import NotFound from "./pages/public/NotFound";
 import CampaignDetail from "./components/CampaignDetail";
 import ProtectedRoute from "./components/routes/ProtectedRoute";
@@ -48,9 +48,14 @@ const App = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
 
-  // Load user from storage on app mount
   useEffect(() => {
-    dispatch(loadUserFromStorage());
+    dispatch(restoreSession());
+  }, [dispatch]);
+
+  useEffect(() => {
+    const onUnauthorized = () => dispatch(clearSession());
+    window.addEventListener("auth:unauthorized", onUnauthorized);
+    return () => window.removeEventListener("auth:unauthorized", onUnauthorized);
   }, [dispatch]);
 
   return (
@@ -99,14 +104,14 @@ const App = () => {
                 <Route path="/" element={<Home />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/blogs" element={<Blogs />} />
-                <Route path="/blogs/:id" element={<ProgramDetail />} />
+                <Route path="/blogs/:id" element={<BlogDetail />} />
+                <Route path="/updates/:id" element={<BlogDetail />} />
                 <Route path="/campaigns" element={<Campaigns />} />
                 <Route path="/campaigns/:id" element={<CampaignDetail />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/get-involved" element={<GetInvolved />} />
                 <Route path="/media" element={<Media />} />
                 <Route path="/make-donation" element={<Donation />} />
-                <Route path="/updates/:id" element={<ProgramDetail />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/terms-of-service" element={<TermsOfService />} />
                 <Route path="/sitemap" element={<Sitemap />} />

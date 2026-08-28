@@ -1,8 +1,6 @@
 // src/redux/slices/eventSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
-
-const API_URL = import.meta.env.VITE_API_URL || "/api/v1";
+import apiClient from "../../config/apiConfig";
 
 // ============ ASYNC THUNKS ============
 
@@ -12,7 +10,7 @@ export const getAllEvents = createAsyncThunk(
   async (params = {}, { rejectWithValue }) => {
     try {
       const queryString = new URLSearchParams(params).toString();
-      const response = await axios.get(`${API_URL}/events?${queryString}`);
+      const response = await apiClient.get(`/events?${queryString}`);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(
@@ -27,8 +25,8 @@ export const getUpcomingEvents = createAsyncThunk(
   "events/getUpcomingEvents",
   async (limit = 10, { rejectWithValue }) => {
     try {
-      const response = await axios.get(
-        `${API_URL}/events/upcoming?limit=${limit}`,
+      const response = await apiClient.get(
+        `/events/upcoming?limit=${limit}`,
       );
       return response.data.data;
     } catch (error) {
@@ -44,7 +42,7 @@ export const getPastEvents = createAsyncThunk(
   "events/getPastEvents",
   async (limit = 10, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${API_URL}/events/past?limit=${limit}`);
+      const response = await apiClient.get(`/events/past?limit=${limit}`);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(
@@ -59,7 +57,7 @@ export const getEventById = createAsyncThunk(
   "events/getEventById",
   async (id, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${API_URL}/events/${id}`);
+      const response = await apiClient.get(`/events/${id}`);
       return response.data.data.event;
     } catch (error) {
       return rejectWithValue(
@@ -74,7 +72,7 @@ export const getEventBySlug = createAsyncThunk(
   "events/getEventBySlug",
   async (slug, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${API_URL}/events/slug/${slug}`);
+      const response = await apiClient.get(`/events/slug/${slug}`);
       return response.data.data.event;
     } catch (error) {
       return rejectWithValue(
@@ -87,20 +85,9 @@ export const getEventBySlug = createAsyncThunk(
 // Create new event (admin only)
 export const createEvent = createAsyncThunk(
   "events/createEvent",
-  async (eventData, { rejectWithValue, getState }) => {
+  async (eventData, { rejectWithValue }) => {
     try {
-      const { auth } = getState();
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${auth.token}`,
-        },
-      };
-      const response = await axios.post(
-        `${API_URL}/events/create-event`,
-        eventData,
-        config,
-      );
+      const response = await apiClient.post(`/events/create-event`, eventData);
       return response.data.data.event;
     } catch (error) {
       return rejectWithValue(
@@ -113,20 +100,9 @@ export const createEvent = createAsyncThunk(
 // Update event (admin only)
 export const updateEvent = createAsyncThunk(
   "events/updateEvent",
-  async ({ id, eventData }, { rejectWithValue, getState }) => {
+  async ({ id, eventData }, { rejectWithValue }) => {
     try {
-      const { auth } = getState();
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${auth.token}`,
-        },
-      };
-      const response = await axios.put(
-        `${API_URL}/events/${id}`,
-        eventData,
-        config,
-      );
+      const response = await apiClient.put(`/events/${id}`, eventData);
       return response.data.data.event;
     } catch (error) {
       return rejectWithValue(
@@ -139,15 +115,9 @@ export const updateEvent = createAsyncThunk(
 // Delete event (admin only)
 export const deleteEvent = createAsyncThunk(
   "events/deleteEvent",
-  async (id, { rejectWithValue, getState }) => {
+  async (id, { rejectWithValue }) => {
     try {
-      const { auth } = getState();
-      const config = {
-        headers: {
-          Authorization: `Bearer ${auth.token}`,
-        },
-      };
-      const response = await axios.delete(`${API_URL}/events/${id}`, config);
+      const response = await apiClient.delete(`/events/${id}`);
       return { id, message: response.data.message };
     } catch (error) {
       return rejectWithValue(
@@ -160,19 +130,11 @@ export const deleteEvent = createAsyncThunk(
 // Add speaker to event (admin only)
 export const addSpeaker = createAsyncThunk(
   "events/addSpeaker",
-  async ({ id, speakerData }, { rejectWithValue, getState }) => {
+  async ({ id, speakerData }, { rejectWithValue }) => {
     try {
-      const { auth } = getState();
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${auth.token}`,
-        },
-      };
-      const response = await axios.post(
-        `${API_URL}/events/${id}/speakers`,
+      const response = await apiClient.post(
+        `/events/${id}/speakers`,
         speakerData,
-        config,
       );
       return response.data.data.event;
     } catch (error) {
@@ -186,19 +148,11 @@ export const addSpeaker = createAsyncThunk(
 // Add agenda item to event (admin only)
 export const addAgendaItem = createAsyncThunk(
   "events/addAgendaItem",
-  async ({ id, agendaData }, { rejectWithValue, getState }) => {
+  async ({ id, agendaData }, { rejectWithValue }) => {
     try {
-      const { auth } = getState();
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${auth.token}`,
-        },
-      };
-      const response = await axios.post(
-        `${API_URL}/events/${id}/agenda`,
+      const response = await apiClient.post(
+        `/events/${id}/agenda`,
         agendaData,
-        config,
       );
       return response.data.data.event;
     } catch (error) {
@@ -212,24 +166,11 @@ export const addAgendaItem = createAsyncThunk(
 // Register for event (authenticated or guest)
 export const registerForEvent = createAsyncThunk(
   "events/registerForEvent",
-  async ({ eventId, registrationData }, { rejectWithValue, getState }) => {
+  async ({ eventId, registrationData }, { rejectWithValue }) => {
     try {
-      const { auth } = getState();
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      };
-
-      // Add auth token if user is logged in
-      if (auth.token) {
-        config.headers.Authorization = `Bearer ${auth.token}`;
-      }
-
-      const response = await axios.post(
-        `${API_URL}/events/${eventId}/register`,
+      const response = await apiClient.post(
+        `/events/${eventId}/register`,
         registrationData,
-        config,
       );
       return response.data.data;
     } catch (error) {
@@ -243,19 +184,9 @@ export const registerForEvent = createAsyncThunk(
 // Cancel event registration (authenticated users only)
 export const cancelEventRegistration = createAsyncThunk(
   "events/cancelEventRegistration",
-  async (eventId, { rejectWithValue, getState }) => {
+  async (eventId, { rejectWithValue }) => {
     try {
-      const { auth } = getState();
-      const config = {
-        headers: {
-          Authorization: `Bearer ${auth.token}`,
-        },
-      };
-
-      const response = await axios.delete(
-        `${API_URL}/events/${eventId}/register`,
-        config,
-      );
+      const response = await apiClient.delete(`/events/${eventId}/register`);
       return { eventId, message: response.data.message };
     } catch (error) {
       return rejectWithValue(
@@ -268,19 +199,9 @@ export const cancelEventRegistration = createAsyncThunk(
 // Get user's registered events (authenticated users only)
 export const getUserRegisteredEvents = createAsyncThunk(
   "events/getUserRegisteredEvents",
-  async (_, { rejectWithValue, getState }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const { auth } = getState();
-      const config = {
-        headers: {
-          Authorization: `Bearer ${auth.token}`,
-        },
-      };
-
-      const response = await axios.get(
-        `${API_URL}/events/user/registered`,
-        config,
-      );
+      const response = await apiClient.get(`/events/user/registered`);
       return response.data.data.events || [];
     } catch (error) {
       return rejectWithValue(

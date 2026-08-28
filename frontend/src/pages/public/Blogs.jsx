@@ -29,7 +29,8 @@ const Blogs = () => {
   const recentPosts = blogs?.filter((b) => b._id !== featuredPost?._id) || [];
 
   const getImageUrl = (blog) => {
-    if (blog?.featuredImage) return blog.featuredImage;
+    if (typeof blog?.featuredImage === "string") return blog.featuredImage;
+    if (blog?.featuredImage?.url) return blog.featuredImage.url;
     if (blog?.images?.[0]?.url) return blog.images[0].url;
     return "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1200&fit=crop";
   };

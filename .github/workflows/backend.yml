@@ -5,10 +5,12 @@ on:
     branches: [main]
     paths:
       - "Backend/**"
+      - ".github/workflows/backend.yml"
   pull_request:
     branches: [main]
     paths:
       - "Backend/**"
+      - ".github/workflows/backend.yml"
 
 jobs:
   build:
@@ -28,16 +30,17 @@ jobs:
           cache-dependency-path: Backend/package-lock.json
 
       - name: Install Dependencies
-        run: npm install
+        run: npm ci
 
       - name: Lint
         run: npm run lint
 
-      - name: Test Unit
-        # Assuming there is a test:unit script, or fallback to test
-        run: npm run test:unit || npm test || echo "No tests configured"
-        continue-on-error: true
+      - name: Test
+        run: npm run test:ci
         env:
           NODE_ENV: test
-          JWT_SECRET: "test_secret"
-          # Add other necessary env vars for testing here
+          JWT_SECRET: test_secret
+          PAYSTACK_SECRET_KEY: sk_test_ci
+          CLOUDINARY_CLOUD_NAME: test
+          CLOUDINARY_API_KEY: test
+          CLOUDINARY_API_SECRET: test

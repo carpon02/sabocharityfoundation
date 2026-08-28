@@ -171,8 +171,8 @@ const Sidebar = ({ darkMode, location, onLogout, isOpen, setIsOpen, user }) => {
         {/* Main Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
           {NAVIGATION_CONFIG.mainLinks.filter((link) => {
-            const adminRole = user?.adminRole || "super_admin"; // fallback for testing
-            return link.roles.includes(adminRole) || adminRole === "super_admin";
+            const adminRole = user?.adminRole;
+            return Boolean(adminRole) && (link.roles.includes(adminRole) || adminRole === "super_admin");
           }).map((link, index) => {
             const Icon = link.icon;
             const isActive = location.pathname === link.path;

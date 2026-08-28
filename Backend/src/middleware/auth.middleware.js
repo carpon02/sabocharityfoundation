@@ -9,11 +9,17 @@ import asyncHandler from '../utils/asyncHandler.js';
  */
 export const protect = asyncHandler(async (req, res, next) => {
   let token;
+  const isAdminApp = req.headers['x-app-type'] === 'admin';
 
-  // 1️⃣ Check Authorization header or cookie
+  // 1️⃣ Check Authorization header first, then the app-specific cookie.
+  // Admin dashboard sends X-App-Type: admin → read 'admin_token'.
+  // Public frontend (no header) → read 'token'.
+  // This prevents cookie collision when both apps run on localhost.
   if (req.headers.authorization?.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
-  } else if (req.cookies?.token) {
+  } else if (isAdminApp && req.cookies?.admin_token) {
+    token = req.cookies.admin_token;
+  } else if (!isAdminApp && req.cookies?.token) {
     token = req.cookies.token;
   }
 
@@ -108,7 +114,7 @@ export const requireVerification = (req, res, next) => {
     return next(new ApiError('User not authenticated', 401));
   }
   
-  if (!req.user.isVerified) {
+  if (!req.user.isEmailVerified) {
     return next(
       new ApiError('Please verify your email to access this resource', 403)
     );
@@ -134,7 +140,7 @@ export const checkOwnership = (modelName) => {
     
     if (
       docUserId !== userId &&
-      !['admin', 'super_admin'].includes(req.user.role)
+      !['admin'].includes(req.user.role)
     ) {
       return next(
         new ApiError('You do not have permission to access this resource', 403)

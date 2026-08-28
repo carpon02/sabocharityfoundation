@@ -14,7 +14,6 @@ import {
   downloadReceipt,
   regenerateReceiptController,
 } from "../controllers/donationController.js";
-import { handlePaystackWebhook } from "../controllers/webhookController.js";
 import {
   protect,
   restrictTo,
@@ -35,18 +34,7 @@ const router = express.Router();
 // More specific routes MUST come BEFORE generic ones
 // ============================================
 
-// --------- PUBLIC ROUTES (FIRST) ---------
-
-/**
- * @route   POST /api/v1/donations/webhook
- * @desc    Paystack webhook handler (must be before other routes)
- * @access  Public (Paystack only)
- */
-router.post(
-  "/webhook",
-  express.raw({ type: "application/json" }),
-  handlePaystackWebhook,
-);
+// Webhook is registered in app.js BEFORE express.json() so HMAC uses raw bytes.
 
 /**
  * @route   POST /api/v1/donations/initialize

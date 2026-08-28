@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, NavLink } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { logoutUser } from "../features/auth/authSlice";
 import { Menu, X, ChevronDown, User, LogOut } from "lucide-react";
 import { assets } from "../assets/assets";
 
@@ -22,6 +23,7 @@ const NavbarModern = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const location = useLocation();
+  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
 
   useEffect(() => {
@@ -47,7 +49,7 @@ const NavbarModern = () => {
   }, [location.pathname]);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
+    dispatch(logoutUser());
     window.location.href = "/login";
   };
 

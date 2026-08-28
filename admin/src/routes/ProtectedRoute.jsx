@@ -1,16 +1,24 @@
-// component/ProtectedRoute.jsx
-import React from 'react';
-import { Navigate } from 'react-router-dom';
+import React from "react";
+import { Navigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 const ProtectedRoute = ({ children }) => {
-  // Check if admin is authenticated
-  const isAuthenticated = localStorage.getItem('adminToken');
-  
-  if (!isAuthenticated) {
-    // Redirect to login if not authenticated
+  const { isAuthenticated, sessionChecked, user } = useSelector(
+    (state) => state.adminAuth,
+  );
+
+  if (!sessionChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-sm text-gray-500">
+        Checking session...
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || user?.role !== "admin") {
     return <Navigate to="/admin-login" replace />;
   }
-  
+
   return children;
 };
 

@@ -2,7 +2,6 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import toast from "react-hot-toast";
 import apiClient from "../../config/apiConfig";
 
-// =============== ADMIN LOGIN ===============
 export const loginAdmin = createAsyncThunk(
   "adminAuth/loginAdmin",
   async ({ email, password }, { rejectWithValue }) => {
@@ -12,83 +11,54 @@ export const loginAdmin = createAsyncThunk(
         password,
       });
 
-      const data = response.data;
-
-      // ✅ CHECK IF USER IS ADMIN
-      if (data.data.user.role !== "admin") {
+      const user = response.data.data.user;
+      if (user.role !== "admin") {
+        await apiClient.post("/auth/logout").catch(() => {});
         return rejectWithValue(
-          `Access denied. Admin credentials required to steward our shared mission.`,
+          "Access denied. Admin credentials required to steward our shared mission.",
         );
       }
 
-      // Store in localStorage with admin prefix
-      localStorage.setItem("adminToken", data.data.token);
-      localStorage.setItem("adminUser", JSON.stringify(data.data.user));
-
       toast.success(
-        `Welcome back, ${data.data.user.fullName}! Together, we uplift the underprivileged.`,
+        `Welcome back, ${user.fullName}! Together, we uplift the underprivileged.`,
       );
-      return data.data;
+      return response.data.data;
     } catch (error) {
       const message =
         error.response?.data?.message ||
         error.message ||
-        `Network hiccup—our connection to impact persists.`;
+        "Network hiccup—our connection to impact persists.";
       return rejectWithValue(message);
     }
   },
 );
 
-// =============== LOAD ADMIN FROM STORAGE ===============
-export const loadAdminFromStorage = createAsyncThunk(
-  "adminAuth/loadAdminFromStorage",
+export const restoreAdminSession = createAsyncThunk(
+  "adminAuth/restoreAdminSession",
   async (_, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem("adminToken");
-      const user = localStorage.getItem("adminUser");
-
-      if (!token || !user) {
-        return rejectWithValue(
-          "No admin data found—log in to continue our work.",
-        );
+      const response = await apiClient.get("/auth/me");
+      const user = response.data.data.user;
+      if (user.role !== "admin") {
+        return rejectWithValue("Not an admin session");
       }
-
-      const parsedUser = JSON.parse(user);
-
-      // Verify user is still admin
-      if (parsedUser.role !== "admin") {
-        localStorage.clear();
-        return rejectWithValue("Invalid admin session—renew your stewardship.");
-      }
-
-      return { token, user: parsedUser };
-    } catch (error) {
-      localStorage.clear();
-      return rejectWithValue(
-        `Failed to load admin—let's reconnect with purpose.`,
-      );
+      return response.data.data;
+    } catch {
+      return rejectWithValue("No admin session");
     }
   },
 );
 
-// =============== LOGOUT ADMIN ===============
+export const loadAdminFromStorage = restoreAdminSession;
+
 export const logoutAdmin = createAsyncThunk(
   "adminAuth/logoutAdmin",
   async (_, { rejectWithValue }) => {
     try {
       const response = await apiClient.post("/auth/logout");
-
-      // Clear localStorage
-      localStorage.removeItem("adminToken");
-      localStorage.removeItem("adminUser");
-      localStorage.removeItem("persist:adminAuth");
-
       toast.success("Logged out with grace—rest, then return to empower.");
       return response.data;
     } catch (error) {
-      localStorage.removeItem("adminToken");
-      localStorage.removeItem("adminUser");
-      localStorage.removeItem("persist:adminAuth");
       const message =
         error.response?.data?.message ||
         error.message ||
@@ -98,24 +68,15 @@ export const logoutAdmin = createAsyncThunk(
   },
 );
 
-// =============== GET CURRENT ADMIN ===============
 export const getCurrentAdmin = createAsyncThunk(
   "adminAuth/getCurrentAdmin",
   async (_, { rejectWithValue }) => {
     try {
       const response = await apiClient.get("/auth/me");
-      const data = response.data;
-
-      // Verify still admin
-      if (data.data.user.role !== "admin") {
-        localStorage.clear();
-        return rejectWithValue(
-          "Admin access renewed—welcome back to stewardship.",
-        );
+      if (response.data.data.user.role !== "admin") {
+        return rejectWithValue("Admin access required");
       }
-
-      localStorage.setItem("adminUser", JSON.stringify(data.data.user));
-      return data.data;
+      return response.data.data;
     } catch (error) {
       const message =
         error.response?.data?.message ||
@@ -126,16 +87,22 @@ export const getCurrentAdmin = createAsyncThunk(
   },
 );
 
-// =============== INITIAL STATE ===============
 const initialState = {
   user: null,
-  token: null,
   loading: false,
   error: null,
   isAuthenticated: false,
+  sessionChecked: false,
 };
 
-// =============== SLICE ===============
+const applyAdmin = (state, user) => {
+  state.user = user;
+  state.isAuthenticated = user?.role === "admin";
+  state.sessionChecked = true;
+  state.loading = false;
+  state.error = null;
+};
+
 const adminAuthSlice = createSlice({
   name: "adminAuth",
   initialState,
@@ -146,60 +113,48 @@ const adminAuthSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // LOGIN
       .addCase(loginAdmin.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(loginAdmin.fulfilled, (state, action) => {
-        state.loading = false;
-        state.user = action.payload.user;
-        state.token = action.payload.token;
-        state.isAuthenticated = true;
+        applyAdmin(state, action.payload.user);
       })
       .addCase(loginAdmin.rejected, (state, action) => {
         state.loading = false;
+        state.sessionChecked = true;
         state.error = action.payload;
         toast.error(action.payload);
       })
-
-      // LOAD FROM STORAGE
-      .addCase(loadAdminFromStorage.fulfilled, (state, action) => {
-        if (action.payload) {
-          state.user = action.payload.user;
-          state.token = action.payload.token;
-          state.isAuthenticated = true;
-        }
+      .addCase(restoreAdminSession.fulfilled, (state, action) => {
+        applyAdmin(state, action.payload.user);
       })
-      .addCase(loadAdminFromStorage.rejected, (state) => {
+      .addCase(restoreAdminSession.rejected, (state) => {
         state.user = null;
-        state.token = null;
         state.isAuthenticated = false;
+        state.sessionChecked = true;
       })
-
-      // LOGOUT
       .addCase(logoutAdmin.fulfilled, (state) => {
         state.user = null;
-        state.token = null;
         state.isAuthenticated = false;
+        state.sessionChecked = true;
       })
-
-      // GET CURRENT ADMIN
+      .addCase(logoutAdmin.rejected, (state) => {
+        state.user = null;
+        state.isAuthenticated = false;
+        state.sessionChecked = true;
+      })
       .addCase(getCurrentAdmin.fulfilled, (state, action) => {
-        state.user = action.payload.user;
+        applyAdmin(state, action.payload.user);
       })
       .addCase(getCurrentAdmin.rejected, (state) => {
         state.user = null;
-        state.token = null;
         state.isAuthenticated = false;
-        localStorage.clear();
+        state.sessionChecked = true;
       });
   },
 });
 
 export const { clearError } = adminAuthSlice.actions;
-
-// ✅ Export selector for token access
-export const selectAdminToken = (state) => state.adminAuth.token;
-
+export const selectAdminToken = () => null;
 export default adminAuthSlice.reducer;

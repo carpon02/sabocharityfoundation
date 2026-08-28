@@ -36,7 +36,7 @@ router.post(
 );
 
 // ── Admin (protected) ─────────────────────────────────────────
-router.use(protect, authorize("admin", "super_admin"));
+router.use(protect, authorize("admin"));
 
 router.get("/",          getAllVolunteers);
 router.get("/:id",       getVolunteerById);

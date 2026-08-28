@@ -1,13 +1,22 @@
 // ============================================
 // FILE: jobs/donationCron.js
 // Recurring Donation Processor
-// Runs daily to charge saved Paystack authorization tokens
+// Runs daily to charge saved Paystack authorization tokens.
+// Uses a MongoDB distributed lock so only one replica
+// processes charges, even when horizontally scaled.
 // ============================================
 import cron from 'node-cron';
 import crypto from 'crypto';
+import os from 'os';
 import Donation from '../models/Donation.js';
+import { acquireLock, releaseLock } from '../models/CronLock.js';
 import { chargeAuthorization } from '../services/paystackService.js';
 import logger from '../config/logger.js';
+
+const LOCK_NAME = 'recurring-donations';
+const INSTANCE_ID = `${os.hostname()}-${process.pid}`;
+// Lock TTL — 30 minutes is generous for the daily run
+const LOCK_TTL_MS = 30 * 60 * 1000;
 
 /**
  * Calculate the next recurring date based on frequency
@@ -102,11 +111,20 @@ const processRecurringDonation = async (donation) => {
 };
 
 /**
- * Main cron handler — finds all due recurring donations and processes them
+ * Main cron handler — acquires a distributed lock, then finds and
+ * processes all due recurring donations.  If another replica already
+ * holds the lock, this instance skips the run.
  */
 const runRecurringDonationProcessor = async () => {
+  // ── Distributed lock ──────────────────────────────────────────
+  const locked = await acquireLock(LOCK_NAME, INSTANCE_ID, LOCK_TTL_MS);
+  if (!locked) {
+    logger.info('🔄 Recurring Donation Processor skipped — another instance holds the lock');
+    return;
+  }
+
   const startTime = Date.now();
-  logger.info('🔄 Recurring Donation Processor started');
+  logger.info('🔄 Recurring Donation Processor started', { instance: INSTANCE_ID });
 
   try {
     // Find all recurring donations that:
@@ -157,6 +175,11 @@ const runRecurringDonationProcessor = async () => {
     logger.error('🔄 Recurring Donation Processor critical error:', {
       error: error.message,
       stack: error.stack,
+    });
+  } finally {
+    // Always release so the next scheduled run (or another replica) can proceed
+    await releaseLock(LOCK_NAME).catch((err) => {
+      logger.error('Failed to release cron lock', { error: err.message });
     });
   }
 };

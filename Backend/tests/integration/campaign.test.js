@@ -30,6 +30,7 @@ describe("Campaign API Integration Tests", () => {
       password: "Admin@123456",
       phone: "08087654321",
       role: "admin",
+      adminRole: "super_admin",
       isActive: true,
     });
 
@@ -47,7 +48,11 @@ describe("Campaign API Integration Tests", () => {
       password: "User@123456",
       phone: "08012345678",
     });
-    userToken = userResponse.body.data.token;
+    userToken = jwt.default.sign(
+      { id: userResponse.body.data.user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" },
+    );
     regularUser = await User.findOne({ email: "user@example.com" });
   });
 
@@ -402,9 +407,16 @@ describe("Campaign API Integration Tests", () => {
           phone: "08099999999",
         });
 
+      const jwt = await import("jsonwebtoken");
+      const otherToken = jwt.default.sign(
+        { id: otherUserResponse.body.data.user._id },
+        process.env.JWT_SECRET,
+        { expiresIn: "1d" },
+      );
+
       const response = await request(app)
         .delete(`/api/v1/campaigns/${userCampaign._id}`)
-        .set("Authorization", `Bearer ${otherUserResponse.body.data.token}`)
+        .set("Authorization", `Bearer ${otherToken}`)
         .expect(403);
 
       expect(response.body.success).toBe(false);

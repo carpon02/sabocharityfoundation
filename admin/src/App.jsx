@@ -20,14 +20,13 @@ import EditEvent from "./component/pages/EditEvent";
 import EventDetails from "./component/pages/EventDetails";
 import Campaigns from "./component/pages/Campaigns";
 import VolunteerQueue from "./component/pages/VolunteerQueue";
-import { loadAdminFromStorage } from "./features/auth/adminAuthSlice";
+import { restoreAdminSession } from "./features/auth/adminAuthSlice";
 
 const App = () => {
   const dispatch = useDispatch();
 
-  // Load admin token from localStorage on app mount
   useEffect(() => {
-    dispatch(loadAdminFromStorage());
+    dispatch(restoreAdminSession());
   }, [dispatch]);
   return (
     <ThemeProvider>

@@ -81,13 +81,14 @@ describe("Admin Payments Page", () => {
 
   it("should render the payments page title", () => {
     render(<Payments />, { preloadedState: initialState });
-    expect(screen.getByText(/Financial Stewardship/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Donation History/i })).toBeInTheDocument();
   });
 
   it("should display payment statistics", () => {
     render(<Payments />, { preloadedState: initialState });
-    expect(screen.getByText(/Mobilized Capital/i)).toBeInTheDocument();
-    expect(screen.getByText(/Verified Missions/i)).toBeInTheDocument();
+    const cards = screen.getAllByTestId("stats-card").map((el) => el.textContent);
+    expect(cards.some((text) => /Total Donations/i.test(text))).toBe(true);
+    expect(cards.some((text) => /Verified Donations/i.test(text))).toBe(true);
   });
 
   it("should render the list of payments", () => {
@@ -106,25 +107,18 @@ describe("Admin Payments Page", () => {
   it("should open approval modal when clicking approve button", async () => {
     render(<Payments />, { preloadedState: initialState });
 
-    // Find the approve button (the one with Check icon)
-    // In our component, it's a button with only icons
-    const approveButtons = screen.getAllByRole("button").filter((btn) => {
-      // We can check classes or icons if we mocks them differently, but here we'll just use the first one for pending payments
-      return btn.querySelector("svg") !== null;
-    });
-
-    // The first Check button is likely the one we want
-    fireEvent.click(approveButtons[1]); // Skipping Export Fiscal Dossier button
+    const approveButton = screen.getByTitle("Approve");
+    fireEvent.click(approveButton);
 
     await waitFor(() => {
-      expect(screen.getByText("Validate Signature?")).toBeInTheDocument();
+      expect(screen.getByText(/Confirm Donation/i)).toBeInTheDocument();
     });
   });
 
   it("should dispatch setFilters when typing in search", () => {
     render(<Payments />, { preloadedState: initialState });
     const searchInput = screen.getByPlaceholderText(
-      /Scanning transaction signatures/i,
+      /Search giving records/i,
     );
 
     fireEvent.change(searchInput, { target: { value: "Alice" } });

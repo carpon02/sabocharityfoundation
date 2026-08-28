@@ -35,6 +35,20 @@ export const fetchTrendingBlogs = createAsyncThunk(
   }
 );
 
+export const fetchBlogById = createAsyncThunk(
+  "blogs/fetchById",
+  async (id, { rejectWithValue }) => {
+    try {
+      const data = await blogsService.getBlogById(id);
+      return data.data || data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || error.message || "Failed to fetch blog"
+      );
+    }
+  }
+);
+
 // Fetch single blog by slug
 export const fetchBlogBySlug = createAsyncThunk(
   "blogs/fetchBySlug",
@@ -130,6 +144,19 @@ const blogsSlice = createSlice({
       .addCase(fetchTrendingBlogs.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      .addCase(fetchBlogById.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchBlogById.fulfilled, (state, action) => {
+        state.loading = false;
+        state.selectedBlog = action.payload.blog || action.payload;
+      })
+      .addCase(fetchBlogById.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+        state.selectedBlog = null;
       })
       // Fetch blog by slug
       .addCase(fetchBlogBySlug.pending, (state) => {

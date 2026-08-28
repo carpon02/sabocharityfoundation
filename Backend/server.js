@@ -22,7 +22,9 @@ const API_VERSION = process.env.API_VERSION || "v1";
 
 // Validate required environment variables
 const requiredEnv = [
+  "MONGODB_URI",
   "JWT_SECRET",
+  "PAYSTACK_SECRET_KEY",
   "CLOUDINARY_API_KEY",
   "CLOUDINARY_API_SECRET",
   "CLOUDINARY_CLOUD_NAME",

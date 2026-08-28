@@ -33,7 +33,10 @@ describe("Auth API Integration Tests", () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data.user.email).toBe(userData.email);
       expect(response.body.data.user.fullName).toBe(userData.fullName);
-      expect(response.body.data.token).toBeDefined();
+      expect(response.body.data.token).toBeUndefined();
+      expect(response.headers["set-cookie"]).toEqual(
+        expect.arrayContaining([expect.stringMatching(/^token=/)]),
+      );
 
       // Verify user was created in database
       const user = await User.findOne({ email: userData.email });
@@ -116,7 +119,10 @@ describe("Auth API Integration Tests", () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.user.email).toBe("test@example.com");
-      expect(response.body.data.token).toBeDefined();
+      expect(response.body.data.token).toBeUndefined();
+      expect(response.headers["set-cookie"]).toEqual(
+        expect.arrayContaining([expect.stringMatching(/^token=/)]),
+      );
     });
 
     it("should reject login with incorrect password", async () => {
@@ -158,13 +164,13 @@ describe("Auth API Integration Tests", () => {
           phone: "08012345678",
         });
 
-      authToken = registerResponse.body.data.token;
+      authToken = registerResponse.headers["set-cookie"];
     });
 
     it("should get user profile with valid token", async () => {
       const response = await request(app)
         .get("/api/v1/auth/me")
-        .set("Authorization", `Bearer ${authToken}`)
+        .set("Cookie", authToken)
         .expect(200);
 
       expect(response.body.success).toBe(true);

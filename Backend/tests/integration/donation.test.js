@@ -34,21 +34,24 @@ describe("Donation API Integration Tests", () => {
         password: "Test@123456",
         phone: "08012345678",
       });
-    donorToken = donorResponse.body.data.token;
     donorUser = await User.findOne({ email: "donor@example.com" });
+    const jwt = await import("jsonwebtoken");
+    donorToken = jwt.default.sign(
+      { id: donorUser._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" },
+    );
 
-    // Create admin user
     adminUser = await User.create({
       fullName: "Admin User",
       email: "admin@example.com",
       password: "Admin@123456",
       phone: "08087654321",
       role: "admin",
+      adminRole: "super_admin",
       isActive: true,
     });
 
-    // Generate admin token manually
-    const jwt = await import("jsonwebtoken");
     adminToken = jwt.default.sign(
       { id: adminUser._id, role: adminUser.role },
       process.env.JWT_SECRET,

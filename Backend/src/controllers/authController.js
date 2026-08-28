@@ -6,21 +6,36 @@ import generateToken from "../utils/generateToken.js";
 import logger from "../config/logger.js";
 import User from "../models/User.js";
 
-const sendTokenResponse = (user, statusCode, res, message) => {
-  const token = generateToken(user._id);
-
-  const cookieOptions = {
-    expires: new Date(Date.now() + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 * 1000),
+const cookieOptions = () => {
+  const days = Number(process.env.JWT_COOKIE_EXPIRE) || 7;
+  return {
+    expires: new Date(Date.now() + days * 24 * 60 * 60 * 1000),
+    maxAge: days * 24 * 60 * 60 * 1000,
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+    path: "/",
   };
+};
+
+/**
+ * Returns the cookie name based on user role.
+ * Admin sessions get their own cookie so they don't overwrite
+ * user sessions on the same localhost domain.
+ */
+export const getCookieName = (user) =>
+  user?.role === "admin" ? "admin_token" : "token";
+
+const sendTokenResponse = (user, statusCode, res, message) => {
+  const token = generateToken(user._id);
+  const cookieName = getCookieName(user);
 
   user.password = undefined;
+  res.cookie(cookieName, token, cookieOptions());
 
-  res.cookie("token", token, cookieOptions);
-
-  return ApiResponse.success(res, message, { user: sanitizeUser(user), token }, statusCode);
+  // Session lives in the httpOnly cookie. Do not put the JWT in JSON —
+  // the SPAs would store it in localStorage and undo the cookie hardening.
+  return ApiResponse.success(res, message, { user: sanitizeUser(user) }, statusCode);
 };
 
 function sanitizeUser(user) {
@@ -66,10 +81,15 @@ export const getMe = asyncHandler(async (req, res) => {
 });
 
 export const logout = asyncHandler(async (req, res) => {
-  res.cookie("token", "none", {
-    expires: new Date(Date.now() + 10 * 1000),
+  const clearOpts = {
     httpOnly: true,
-  });
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+    path: "/",
+  };
+  // Clear both cookies so logout works regardless of which app calls it
+  res.clearCookie("token", clearOpts);
+  res.clearCookie("admin_token", clearOpts);
   return ApiResponse.success(res, "Logged out successfully");
 });
 

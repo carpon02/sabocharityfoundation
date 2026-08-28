@@ -13,7 +13,7 @@ A full-stack MERN application for managing donations, events, and volunteers for
 | **Auth** | JWT + Google OAuth |
 | **Media** | Cloudinary |
 | **Monitoring** | Sentry |
-| **CI/CD** | GitHub Actions → Docker Hub |
+| **CI/CD** | GitHub Actions |
 
 ## Project Structure
 
@@ -22,11 +22,8 @@ Charity_Project/
 ├── Backend/           # Node.js + Express REST API    (port 5000)
 ├── frontend/          # React customer-facing app     (port 5173)
 ├── admin/             # React admin dashboard         (port 5174)
-├── docker-compose.yml # Docker dev orchestration
-├── Makefile           # Quick docker shortcuts
-├── start-local.bat    # Windows: run all 3 without Docker
 ├── .env.example       # All environment variables
-└── .github/workflows/ # CI/CD pipelines
+└── .github/workflows/ # CI pipelines
 ```
 
 ---
@@ -77,13 +74,6 @@ cd frontend && npm run dev
 
 # Terminal 3: Admin
 cd admin && npm run dev
-```
-
-**Option B — Windows quick start:**
-
-```bash
-# Opens 3 separate terminal windows automatically
-start-local.bat
 ```
 
 ### 4. Access

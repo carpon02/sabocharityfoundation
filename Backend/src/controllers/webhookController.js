@@ -9,7 +9,11 @@ import { sendEmail } from '../services/emailService.js';
 import campaignRepository from '../repositories/CampaignRepository.js';
 import logger from '../config/logger.js';
 import crypto from 'crypto';
-import IdempotencyKey from '../models/IdempotencyKey.js';
+import {
+  claimWebhookEvent,
+  completeWebhookEvent,
+  releaseWebhookEvent,
+} from '../models/IdempotencyKey.js';
 
 /**
  * Handle Paystack webhook events
@@ -28,16 +32,21 @@ export const handlePaystackWebhook = async (req, res) => {
     });
   }
 
-  // Parse raw body (if it's a Buffer, convert to string then JSON)
+  // HMAC must use the exact bytes Paystack signed. JSON.stringify of a
+  // parsed object can change key order and fail verification, or worse,
+  // appear to succeed against a re-serialized body. Fail closed.
+  if (!Buffer.isBuffer(req.body)) {
+    logger.error('Webhook body is not a raw Buffer; JSON parser likely ran first');
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid webhook payload'
+    });
+  }
+
   let event;
+  let rawBody;
   try {
-    const rawBody = req.body instanceof Buffer 
-      ? req.body.toString('utf8')
-      : typeof req.body === 'string'
-      ? req.body
-      : JSON.stringify(req.body);
-    
-    // Verify webhook signature with raw body
+    rawBody = req.body.toString('utf8');
     const isValid = verifyWebhookSignature(signature, rawBody);
     
     if (!isValid) {
@@ -74,20 +83,27 @@ export const handlePaystackWebhook = async (req, res) => {
   const idempotencyKey = `paystack-${event.event}-${eventId}`;
 
   try {
-    await IdempotencyKey.create({ key: idempotencyKey });
-  } catch (error) {
-    if (error.code === 11000) {
-      logger.info('Duplicate webhook event received, ignoring idempotently', { event: event.event, idempotencyKey });
+    const claim = await claimWebhookEvent(idempotencyKey);
+    if (claim.action === 'skip') {
+      logger.info('Duplicate webhook event received, ignoring idempotently', {
+        event: event.event,
+        idempotencyKey,
+        reason: claim.reason,
+      });
       return res.status(200).json({
         success: true,
         message: 'Duplicate webhook ignored'
       });
     }
-    throw error;
+  } catch (error) {
+    logger.error('Webhook idempotency claim failed', { error: error.message, idempotencyKey });
+    return res.status(500).json({
+      success: false,
+      message: 'Webhook claim failed'
+    });
   }
 
   try {
-    // Handle different event types
     switch (event.event) {
       case 'charge.success':
         await handleSuccessfulCharge(event.data);
@@ -113,7 +129,8 @@ export const handlePaystackWebhook = async (req, res) => {
         logger.info('Unhandled webhook event', { event: event.event });
     }
 
-    // Always return 200 to acknowledge receipt
+    await completeWebhookEvent(idempotencyKey);
+
     res.status(200).json({
       success: true,
       message: 'Webhook processed'
@@ -127,12 +144,17 @@ export const handlePaystackWebhook = async (req, res) => {
       reference: event.data?.reference
     });
 
-    // Still return 200 to prevent Paystack from retrying
-    // Log the error for manual investigation
-    res.status(200).json({
+    // Release the claim so Paystack retries can complete the work.
+    await releaseWebhookEvent(idempotencyKey).catch((releaseError) => {
+      logger.error('Failed to release webhook idempotency key', {
+        error: releaseError.message,
+        idempotencyKey,
+      });
+    });
+
+    return res.status(500).json({
       success: false,
-      message: 'Webhook received but processing failed',
-      error: error.message
+      message: 'Webhook processing failed'
     });
   }
 };

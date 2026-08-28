@@ -11,6 +11,7 @@ import logger from "./src/config/logger.js";
 import * as Sentry from "@sentry/node";
 import errorHandler, { notFound } from "./src/middleware/error.middleware.js";
 import { handleUploadError } from "./src/middleware/upload.middleware.js";
+import { handlePaystackWebhook } from "./src/controllers/webhookController.js";
 
 // Import routes
 import authRoutes from "./src/routes/authRoutes.js";
@@ -28,25 +29,31 @@ import analyticsRoutes from "./src/routes/analyticsRoute.js";
 import notificationRoutes from "./src/routes/notificationRoutes.js";
 
 const app = express();
+const API_VERSION = process.env.API_VERSION || "v1";
 
-// ✅ Always start with the parsers
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
 
-// ✅ CORS: Support multiple dev origins and prod origin
+// CORS: Support multiple dev origins and prod origin
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
   "http://localhost:5175",
   "http://localhost:5176",
+  process.env.CLIENT_URL,
+  process.env.ADMIN_URL,
   process.env.CLIENT_URL_PROD || "https://saboyouthfoundation.org",
-];
+].filter(Boolean);
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // allow requests with no origin (like Postman or server-to-server)
-    if (!origin) return callback(null, true);
+    // In production, reject requests with no origin to prevent CSRF-like
+    // attacks from non-browser clients. Allow in dev for Postman etc.
+    if (!origin) {
+      if (process.env.NODE_ENV === "production") {
+        return callback(new Error("CORS policy: Origin required"));
+      }
+      return callback(null, true);
+    }
 
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
@@ -55,12 +62,12 @@ const corsOptions = {
     }
   },
   credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization", "X-App-Type"],
   optionsSuccessStatus: 200,
 };
 
 app.use(cors(corsOptions));
 
-// ✅ Basic security middleware
 app.set("trust proxy", 1);
 app.use(
   helmet({
@@ -68,7 +75,15 @@ app.use(
   }),
 );
 
-// ✅ Protect MongoDB injection
+// Paystack HMAC must run on the raw bytes. Register this BEFORE express.json().
+app.post(
+  `/api/${API_VERSION}/donations/webhook`,
+  express.raw({ type: "application/json" }),
+  handlePaystackWebhook,
+);
+
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(mongoSanitize());
 
 // ✅ Compression only for production
@@ -106,14 +121,10 @@ const authLimiter = rateLimit({
 app.get("/health", (req, res) => {
   res.status(200).json({
     success: true,
-    environment: process.env.NODE_ENV,
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
   });
 });
-
-// ✅ API version
-const API_VERSION = process.env.API_VERSION || "v1";
 
 // ✅ Register routes (with selective limiter)
 if (process.env.NODE_ENV !== "test") {

@@ -68,10 +68,9 @@ const AdminDashboard = () => {
 
   const handleExportCSV = async () => {
     try {
-      const token = localStorage.getItem("adminToken");
       const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
       const res = await fetch(`${baseUrl}/analytics/export/donations`, {
-        headers: { Authorization: `Bearer ${token}` }
+        credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to export data");
       const blob = await res.blob();

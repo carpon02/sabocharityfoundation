@@ -2,8 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { logout } from "../features/auth/authSlice";
-import { persistor } from "../app/store";
+import { logoutUser } from "../features/auth/authSlice";
 import { useTheme } from "../context/ThemeContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -535,8 +534,7 @@ const UserLayout = () => {
   }, [user]);
 
   const handleLogout = () => {
-    dispatch(logout());
-    persistor.purge();
+    dispatch(logoutUser());
     navigate("/login");
   };
 

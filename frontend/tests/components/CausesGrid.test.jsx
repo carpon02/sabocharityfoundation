@@ -52,7 +52,7 @@ describe("CausesGrid Component", () => {
 
     render(<CausesGrid />, { preloadedState });
 
-    expect(screen.getByText(/Syncing Mission Data/i)).toBeInTheDocument();
+    expect(screen.getByText(/Loading Mission Data/i)).toBeInTheDocument();
   });
 
   it("should dispatch fetchAllCampaigns on mount", () => {
@@ -99,9 +99,8 @@ describe("CausesGrid Component", () => {
 
     await waitFor(() => {
       // Education campaign: 50000/100000 = 50%
-      expect(screen.getByText("50%")).toBeInTheDocument();
-      // Healthcare campaign: 75000/200000 = 37.5% rounded to 38%
-      expect(screen.getByText("38%")).toBeInTheDocument();
+      expect(screen.getByText(/50% Funded/)).toBeInTheDocument();
+      expect(screen.getByText(/38% Funded/)).toBeInTheDocument();
     });
   });
 
@@ -150,7 +149,7 @@ describe("CausesGrid Component", () => {
 
     render(<CausesGrid />, { preloadedState });
 
-    const link = screen.getByText(/Access Full Directory/i).closest("a");
+    const link = screen.getByText(/Explore All Campaigns/i).closest("a");
     expect(link).toHaveAttribute("href", "/campaigns");
   });
 
