@@ -62,23 +62,27 @@ const CampaignDetail = () => {
     dispatch(fetchCampaignById(id));
   }, [dispatch, id]);
 
-  // ── Live refresh: poll every 30 s + re-fetch on tab focus ─────────────────
-  // Keeps raisedAmount current without a full page reload.
-  // When an admin approves a donation while the user is viewing this page,
-  // the progress bar will update within at most 30 seconds automatically.
+  // ── Live refresh: re-fetch when user returns to tab (after ≥10 s away) ────
+  // Avoids jarring refetches when Paystack popup closes (which briefly blurs
+  // the window) while still keeping the progress bar fresh for long visits.
   useEffect(() => {
     const refetch = () => dispatch(fetchCampaignById(id));
+    let hiddenAt = null;
+    const MIN_HIDDEN_MS = 10_000; // only refetch if away for ≥ 10 s
 
-    // Poll every 30 seconds
-    const interval = setInterval(refetch, 30_000);
-
-    // Also re-fetch the instant the user focuses this tab
-    window.addEventListener('focus', refetch);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('focus', refetch);
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        hiddenAt = Date.now();
+      } else if (hiddenAt && Date.now() - hiddenAt >= MIN_HIDDEN_MS) {
+        hiddenAt = null;
+        refetch();
+      } else {
+        hiddenAt = null;
+      }
     };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
   }, [dispatch, id]);
   // ──────────────────────────────────────────────────────────────────────────
 
@@ -92,6 +96,16 @@ const CampaignDetail = () => {
     setShowDonationModal(false);
     dispatch(fetchCampaignById(id));
   }, [dispatch, id]);
+
+  // Auth-gated donate action
+  const handleDonateClick = useCallback(() => {
+    if (!user) {
+      toast.error("Please log in to make a donation.");
+      navigate("/login");
+      return;
+    }
+    setShowDonationModal(true);
+  }, [user, navigate]);
 
   const campaign = selectedCampaign;
 
@@ -671,7 +685,7 @@ const CampaignDetail = () => {
 
                 {/* Donation Button */}
                 <button
-                  onClick={() => setShowDonationModal(true)}
+                  onClick={handleDonateClick}
                   disabled={
                     donationStatus === "pending" ||
                     donationStatus === "approved" ||
@@ -706,10 +720,19 @@ const CampaignDetail = () => {
                   ) : (
                     <>
                       <Heart size={20} />
-                      Donate Now
+                      {user ? "Donate Now" : "Log In to Donate"}
                     </>
                   )}
                 </button>
+
+                {/* Login nudge for guests */}
+                {!user && isCampaignActive && donationStatus === "none" && (
+                  <p className="text-xs text-center text-gray-400 dark:text-gray-500 mt-2">
+                    <Link to="/login" className="text-primary-600 dark:text-primary-400 font-semibold hover:underline">Sign in</Link> or{" "}
+                    <Link to="/login" className="text-primary-600 dark:text-primary-400 font-semibold hover:underline">create an account</Link>{" "}
+                    to donate and track your contribution.
+                  </p>
+                )}
 
                 {donationStatus === "pending" && (
                   <p className="text-xs text-amber-600 dark:text-amber-400 mt-3 text-center leading-relaxed">

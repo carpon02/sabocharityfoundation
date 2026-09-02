@@ -12,7 +12,7 @@ import {
 import donationService from "../services/domain/DonationService.js";
 import donationRepository from "../repositories/DonationRepository.js";
 import { generateReceipt } from "../services/receiptService.js";
-import { PAGINATION } from "../constants/index.js";
+import { PAGINATION, DONATION_STATUS, APPROVAL_STATUS } from "../constants/index.js";
 import Donation from "../models/Donation.js";
 
 /**
@@ -60,6 +60,115 @@ export const initializeDonation = asyncHandler(async (req, res, next) => {
   );
 
   return ApiResponse.created(res, "Donation initialized successfully", result);
+});
+
+/**
+ * @desc    Initialize a manual bank transfer (no Paystack call)
+ * @route   POST /api/v1/donations/initialize-transfer
+ * @access  Public
+ */
+export const initializeBankTransfer = asyncHandler(async (req, res, next) => {
+  const { campaignId, amount, email, donorInfo } = req.body;
+
+  if (!amount || parseFloat(amount) < 100) {
+    return next(new ValidationError("Minimum donation amount is ₦100"));
+  }
+  if (!campaignId) {
+    return next(new ValidationError("Campaign ID is required"));
+  }
+
+  // Generate a unique internal reference
+  const paymentReference = `SCF-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+
+  const firstName =
+    req.user?.fullName?.split(" ")[0] ||
+    donorInfo?.firstName ||
+    req.body["donorInfo[firstName]"] ||
+    "Guest";
+  const lastName =
+    req.user?.fullName?.split(" ").slice(1).join(" ") ||
+    donorInfo?.lastName ||
+    req.body["donorInfo[lastName]"] ||
+    "";
+  const donorEmail =
+    req.user?.email ||
+    email ||
+    donorInfo?.email ||
+    req.body["donorInfo[email]"] ||
+    "";
+
+  const donation = await Donation.create({
+    donor: req.user?._id || undefined,
+    campaign: campaignId,
+    amount: parseFloat(amount),
+    paymentMethod: "bank_transfer",
+    paymentReference,
+    status: "pending",
+    approvalStatus: "pending",
+    paymentVerified: false,
+    guestInfo: !req.user
+      ? { firstName, lastName, email: donorEmail }
+      : undefined,
+    metadata: {
+      ipAddress: req.ip,
+      userAgent: req.get("user-agent"),
+      platform: "web",
+    },
+  });
+
+  return ApiResponse.created(res, "Bank transfer initialized", {
+    donation: {
+      id: donation._id,
+      donationId: donation.donationId,
+      amount: donation.amount,
+      status: donation.status,
+    },
+    payment: {
+      reference: paymentReference,
+      method: "bank_transfer",
+      expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+      accountDetails: {
+        bankName: process.env.FOUNDATION_BANK_NAME || "First Bank of Nigeria",
+        accountName:
+          process.env.FOUNDATION_ACCOUNT_NAME ||
+          "Sabo Ibadan Youth Charity Foundation",
+        accountNumber:
+          process.env.FOUNDATION_ACCOUNT_NUMBER || "1234567890",
+      },
+    },
+  });
+});
+
+/**
+ * @desc    Check if a bank transfer has been received/verified
+ * @route   GET /api/v1/donations/transfer-status/:reference
+ * @access  Public
+ */
+export const checkTransferStatus = asyncHandler(async (req, res, next) => {
+  const { reference } = req.params;
+
+  const donation = await Donation.findOne({
+    $or: [
+      { paymentReference: reference },
+      { paystackReference: reference },
+    ],
+  }).select("status approvalStatus paymentVerified amount donationId");
+
+  if (!donation) {
+    return res.status(200).json({
+      success: true,
+      message: "Transfer not found",
+      data: { paymentVerified: false, status: "pending" },
+    });
+  }
+
+  return ApiResponse.success(res, "Transfer status retrieved", {
+    paymentVerified: donation.paymentVerified,
+    status: donation.status,
+    approvalStatus: donation.approvalStatus,
+    amount: donation.amount,
+    donationId: donation.donationId,
+  });
 });
 
 /**

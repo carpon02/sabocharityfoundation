@@ -4,6 +4,8 @@
 import express from "express";
 import {
   initializeDonation,
+  initializeBankTransfer,
+  checkTransferStatus,
   submitManualDonation,
   getDonationStatus,
   getMyDonations,
@@ -68,6 +70,20 @@ router.post(
  * @access  Public
  */
 router.get("/status/:reference", getDonationStatus);
+
+/**
+ * @route   POST /api/v1/donations/initialize-transfer
+ * @desc    Initialize a bank transfer (no Paystack - returns foundation account details)
+ * @access  Public
+ */
+router.post("/initialize-transfer", optionalAuth, initializeBankTransfer);
+
+/**
+ * @route   GET /api/v1/donations/transfer-status/:reference
+ * @desc    Check if bank transfer was received (for "I've transferred" polling)
+ * @access  Public
+ */
+router.get("/transfer-status/:reference", checkTransferStatus);
 
 // --------- ADMIN ROUTES (BEFORE GENERIC :id ROUTES) ---------
 
