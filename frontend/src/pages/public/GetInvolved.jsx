@@ -1126,65 +1126,72 @@ const GetInvolved = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-950 min-h-screen overflow-hidden">
+    <div className="bg-white min-h-screen overflow-hidden">
       <Meta
         title="Get Involved"
         description="Join the Sabo Ibadan Youth Charity Foundation. Volunteer, become an ambassador, or partner with us to create a lasting impact."
       />
-      {/* --- HERO SECTION --- */}
-      <section className="relative pt-32 pb-40 bg-primary-950 overflow-hidden">
-        {/* Abstract Background */}
-        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary-800/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-secondary-800/10 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2" />
 
-        <div className="max-w-7xl mx-auto px-4 relative z-10 text-center space-y-8">
-          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-secondary-400 font-bold text-xs uppercase tracking-[0.2em] animate-fade-in-up">
-            <Star className="w-4 h-4 fill-secondary-400" />
-            Join the Vanguard
+      {/* ── HERO ── */}
+      <section className="relative pt-28 pb-36 bg-gray-900 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-900 to-emerald-950/40" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-6">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-emerald-400 text-xs font-semibold uppercase tracking-wider">
+            <Star className="w-3.5 h-3.5 fill-emerald-400" />
+            Make a Difference
           </div>
-          <h1 className="text-6xl md:text-9xl font-black text-white leading-[0.8] tracking-tighter animate-fade-in-up">
-            Be the <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-secondary-400 to-secondary-500">
-              Catalyst.
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight">
+            Be the{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">
+              Change
             </span>
           </h1>
-          <p className="text-xl text-primary-100 max-w-2xl mx-auto animate-fade-in-up stagger-1 font-medium italic">
-            "The best way to find yourself is to lose yourself in the service of
-            others."
+          <p className="text-lg text-gray-400 max-w-xl mx-auto leading-relaxed">
+            The best way to find yourself is to lose yourself in the service of
+            others. Here's how you can get involved.
           </p>
         </div>
       </section>
 
-      {/* --- CORE OPPORTUNITIES --- */}
-      <section className="relative -mt-32 z-20 px-4 pb-32">
+      {/* ── OPPORTUNITY CARDS ── */}
+      <section className="relative -mt-20 z-20 px-4 pb-24">
         <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-3 gap-10">
+          <div className="grid lg:grid-cols-3 gap-6">
             {opportunities.map((opt, i) => (
               <div
                 key={i}
-                className="group relative h-full bg-white dark:bg-gray-900 rounded-[4rem] p-12 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.1)] border border-gray-100 dark:border-gray-800 hover:shadow-2xl hover:-translate-y-4 transition-all duration-700 animate-fade-in-up"
-                style={{ animationDelay: `${i * 150}ms` }}
+                className="group bg-white rounded-2xl p-8 shadow-lg border border-gray-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300"
               >
                 <div
-                  className={`w-20 h-20 rounded-3xl ${opt.accent} flex items-center justify-center mb-10 group-hover:rotate-6 transition-transform`}
+                  className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 ${
+                    opt.id === "corporate"
+                      ? "bg-gray-900 text-white"
+                      : opt.id === "ambassador"
+                        ? "bg-amber-100 text-amber-600"
+                        : "bg-emerald-100 text-emerald-600"
+                  }`}
                 >
-                  <opt.icon size={32} />
+                  <opt.icon size={24} />
                 </div>
 
-                <h3 className="text-3xl font-black text-dark dark:text-white mb-6 tracking-tight leading-tight">
+                <h3 className="text-xl font-bold text-gray-900 mb-3">
                   {opt.title}
                 </h3>
-                <p className="text-gray-500 dark:text-gray-400 font-medium mb-10 leading-relaxed">
+                <p className="text-sm text-gray-500 leading-relaxed mb-6">
                   {opt.desc}
                 </p>
 
-                <div className="space-y-4 mb-12">
+                <div className="space-y-2.5 mb-8">
                   {opt.benefits.map((ben, j) => (
                     <div
                       key={j}
-                      className="flex items-center gap-3 text-sm font-bold text-dark dark:text-white"
+                      className="flex items-center gap-2.5 text-sm font-medium text-gray-700"
                     >
-                      <CheckCircle2 size={18} className="text-primary-600" />
+                      <CheckCircle2
+                        size={16}
+                        className="text-emerald-500 shrink-0"
+                      />
                       {ben}
                     </div>
                   ))}
@@ -1198,10 +1205,10 @@ const GetInvolved = () => {
                       openModal(opt.id);
                     }
                   }}
-                  className={`w-full py-5 rounded-2xl font-black text-sm uppercase tracking-widest transition-all ${
-                    opt.title === "Corporate Partner"
-                      ? "bg-dark text-white hover:bg-primary-900 shadow-xl"
-                      : "bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900/50"
+                  className={`w-full py-3.5 rounded-xl text-sm font-semibold transition-colors ${
+                    opt.id === "corporate"
+                      ? "bg-gray-900 text-white hover:bg-emerald-700"
+                      : "bg-gray-50 text-gray-900 border border-gray-200 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700"
                   }`}
                 >
                   {opt.cta}
@@ -1212,71 +1219,73 @@ const GetInvolved = () => {
         </div>
       </section>
 
-      {/* --- SPONSORSHIP LEVELS (PREMIUM CARD) --- */}
-      <section className="py-24 px-4 bg-white dark:bg-gray-950">
-        <div className="max-w-7xl mx-auto bg-primary-900 rounded-[5rem] overflow-hidden relative shadow-2xl">
-          <div className="absolute inset-0 bg-gradient-premium opacity-90" />
-          <div className="absolute top-0 right-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
-
-          <div className="relative z-10 p-12 md:p-24 grid lg:grid-cols-2 gap-20 items-center">
-            <div className="space-y-10">
-              <div className="flex items-center gap-3">
-                <span className="w-12 h-0.5 bg-secondary-400" />
-                <span className="text-secondary-400 font-black uppercase tracking-widest text-xs">
-                  Strategic Sponsorship
-                </span>
+      {/* ── SPONSORSHIP ── */}
+      <section className="py-24 px-4 bg-gray-50">
+        <div className="max-w-5xl mx-auto rounded-3xl bg-gray-900 overflow-hidden shadow-xl">
+          <div className="grid lg:grid-cols-2 gap-0">
+            {/* Left */}
+            <div className="p-10 sm:p-14 space-y-8">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-amber-400 text-xs font-semibold uppercase tracking-wider">
+                Strategic Sponsorship
               </div>
-              <h2 className="text-5xl md:text-7xl font-black text-white leading-tight">
-                Your Legacy <br /> Starts{" "}
-                <span className="text-secondary-500">Here.</span>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-white leading-tight">
+                Your Legacy{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">
+                  Starts Here
+                </span>
               </h2>
-              <p className="text-xl text-primary-100 leading-relaxed font-medium">
-                We offer structured sponsorship programs for individuals and
-                organizations who want to fund specific long-term projects like
-                schools or solar clinics.
+              <p className="text-base text-gray-400 leading-relaxed">
+                Structured sponsorship programs for individuals and
+                organizations funding long-term projects like schools and solar
+                clinics.
               </p>
-              <div className="flex items-center gap-6">
-                <div className="p-6 rounded-3xl bg-white/5 border border-white/10 flex flex-col items-center">
-                  <ShieldCheck className="w-10 h-10 text-primary-400 mb-2" />
-                  <span className="text-white text-[10px] font-black uppercase tracking-widest">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10">
+                  <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                  <span className="text-xs font-medium text-white">
                     Audited Transparency
                   </span>
                 </div>
-                <div className="p-6 rounded-3xl bg-white/5 border border-white/10 flex flex-col items-center">
-                  <Sparkles className="w-10 h-10 text-secondary-500 mb-2" />
-                  <span className="text-white text-[10px] font-black uppercase tracking-widest">
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10">
+                  <Sparkles className="w-5 h-5 text-amber-400" />
+                  <span className="text-xs font-medium text-white">
                     Legacy Branding
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-900 p-12 rounded-[3.5rem] shadow-2xl">
-              <h4 className="text-2xl font-black text-dark dark:text-white text-center mb-6">
-                Inquiry Dashboard
+            {/* Right */}
+            <div className="bg-white p-10 sm:p-14 flex flex-col justify-center">
+              <h4 className="text-lg font-bold text-gray-900 mb-2 text-center">
+                Interested in Sponsoring?
               </h4>
+              <p className="text-sm text-gray-500 text-center mb-6">
+                Request our detailed prospectus to learn about tiers and
+                benefits.
+              </p>
               <button
                 onClick={() => openModal("prospectus")}
-                className="w-full py-6 bg-secondary-600 hover:bg-secondary-700 text-white font-black rounded-2xl shadow-xl transition-all flex items-center justify-center gap-4"
+                className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
               >
                 Request Prospectus
-                <ArrowRight size={20} />
+                <ArrowRight size={18} />
               </button>
-              <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-4">
-                Click above to request our detailed sponsorship prospectus
-              </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* --- FAQ MINI SECTION --- */}
-      <section className="py-32 px-4 bg-white dark:bg-gray-950">
-        <div className="max-w-3xl mx-auto text-center space-y-16">
-          <h3 className="text-4xl font-black text-dark dark:text-white tracking-tighter">
-            Common <span className="text-primary-700">Questions</span>
-          </h3>
-          <div className="space-y-6 text-left">
+      {/* ── COMMON QUESTIONS ── */}
+      <section className="py-24 px-4 bg-white">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-12">
+            <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+              Common{" "}
+              <span className="text-emerald-600">Questions</span>
+            </h3>
+          </div>
+          <div className="space-y-3">
             {[
               "How do I receive proof of my impact?",
               "Can I choose which specific project I volunteer for?",
@@ -1284,11 +1293,11 @@ const GetInvolved = () => {
             ].map((q, i) => (
               <div
                 key={i}
-                className="p-8 rounded-[2.5rem] bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 flex items-center justify-between group hover:bg-white dark:hover:bg-gray-800 hover:shadow-lg transition-all cursor-pointer"
+                className="p-5 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-between group hover:bg-white hover:border-gray-200 hover:shadow-md transition-all cursor-pointer"
               >
-                <p className="font-black text-dark dark:text-white">{q}</p>
-                <div className="w-10 h-10 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center group-hover:bg-primary-900 group-hover:text-white transition-all">
-                  <ArrowRight size={18} />
+                <p className="text-sm font-semibold text-gray-700">{q}</p>
+                <div className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center group-hover:bg-emerald-600 group-hover:border-emerald-600 group-hover:text-white transition-all shrink-0 ml-4">
+                  <ArrowRight size={14} />
                 </div>
               </div>
             ))}
@@ -1320,3 +1329,4 @@ const GetInvolved = () => {
 };
 
 export default GetInvolved;
+

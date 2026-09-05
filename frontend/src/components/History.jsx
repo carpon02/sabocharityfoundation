@@ -9,7 +9,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { motion as Motion, AnimatePresence } from "framer-motion";
-import { fadeIn, staggerContainer, scaleIn } from "../utils/animations";
+import { fadeIn, staggerContainer } from "../utils/animations";
 
 const historyData = [
   {
@@ -54,79 +54,67 @@ const History = () => {
   const [openIndex, setOpenIndex] = useState(0);
 
   return (
-    <section className="relative bg-paper py-20 sm:py-32 lg:py-40 px-4 overflow-hidden border-t border-gray-100">
-      {/* Abstract Background Decor */}
-      <Motion.div
-        className="absolute top-0 right-0 w-[800px] h-[800px] bg-secondary-100/30 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2"
-        animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-        transition={{ duration: 15, repeat: Infinity }}
-      />
-
-      <div className="max-w-7xl mx-auto relative z-10">
-        <div className="grid lg:grid-cols-2 gap-16 lg:gap-32 items-start">
-          {/* LEFT COLUMN: The Contextual Foundation */}
+    <section className="py-24 sm:py-32 bg-gray-50 px-4 border-t border-gray-100">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-24 items-start">
+          {/* Left: Header + Origin Card */}
           <Motion.div
-            className="space-y-10 sm:space-y-12 lg:sticky lg:top-40"
+            className="space-y-10 lg:sticky lg:top-32"
             variants={staggerContainer(0.1, 0)}
             initial="hidden"
             whileInView="show"
             viewport={{ once: true }}
           >
-            <div className="space-y-6 sm:space-y-8">
+            <div className="space-y-5">
               <Motion.div
-                className="inline-flex items-center gap-3 px-6 py-2 rounded-full glass-card border-gray-100 text-secondary-600 font-black text-[10px] uppercase tracking-[0.3em] shadow-sm"
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-xs font-semibold uppercase tracking-wider"
                 variants={fadeIn("down", 0.2)}
               >
-                <Globe size={14} className="text-secondary-500" />
-                Dossier: Institutional Legacy
+                <Globe size={14} />
+                Our History
               </Motion.div>
 
               <Motion.h2
-                className="text-5xl sm:text-7xl md:text-8xl font-black text-dark tracking-tighter leading-[0.8]"
+                className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight leading-tight"
                 variants={fadeIn("up", 0.3)}
               >
-                A Story of <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-700 via-primary-500 to-primary-800 text-glow-primary">
-                  Persistence.
+                A Story of{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">
+                  Persistence
                 </span>
               </Motion.h2>
 
               <Motion.p
-                className="text-lg sm:text-xl text-gray-500 font-medium leading-[1.6] max-w-xl"
+                className="text-base sm:text-lg text-gray-500 leading-relaxed max-w-lg"
                 variants={fadeIn("up", 0.4)}
               >
                 Since 2010, we have evolved from a local gathering into a
-                strategic architect of communal sovereignty in Ibadan.
+                strategic force for community development in Ibadan.
               </Motion.p>
             </div>
 
+            {/* Origin Card */}
             <Motion.div
-              className="p-8 sm:p-12 rounded-[2.5rem] sm:rounded-[4rem] bg-dark text-white space-y-6 sm:space-y-8 shadow-[0_50px_100px_-30px_rgba(0,0,0,0.4)] relative overflow-hidden group"
-              variants={scaleIn(0.5)}
+              className="p-8 rounded-2xl bg-gray-900 text-white space-y-5 shadow-lg"
+              variants={fadeIn("up", 0.5)}
             >
-              <div className="scan-line opacity-5" />
-              <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-                <Sparkles size={160} />
-              </div>
-              <div className="inline-block px-4 py-1 bg-white/10 rounded-full text-[10px] font-black uppercase tracking-widest text-primary-400">
+              <div className="inline-block px-3 py-1 bg-white/10 rounded-lg text-xs font-semibold uppercase tracking-wider text-emerald-400">
                 Core Heritage
               </div>
-              <h4 className="text-2xl sm:text-3xl font-black tracking-tight">
-                The Sabo Origin
-              </h4>
-              <p className="text-gray-400 font-medium leading-relaxed text-base sm:text-lg">
+              <h4 className="text-xl font-bold">The Sabo Origin</h4>
+              <p className="text-gray-400 leading-relaxed text-sm">
                 We were born in the heart of Sabo, Ibadan. Our story is
-                documented in the success of every node we've energized—from
-                classrooms to community clinics.
+                documented in the success of every community we've impacted
+                from classrooms to community clinics.
               </p>
-              <div className="w-24 h-1 bg-gradient-to-r from-secondary-500 to-transparent rounded-full" />
+              <div className="w-16 h-0.5 bg-emerald-500 rounded-full" />
             </Motion.div>
           </Motion.div>
 
-          {/* RIGHT COLUMN: The Interactive Chronology */}
+          {/* Right: Accordion */}
           <Motion.div
-            className="space-y-4 sm:space-y-8"
-            variants={staggerContainer(0.1, 0.4)}
+            className="space-y-3"
+            variants={staggerContainer(0.08, 0.3)}
             initial="hidden"
             whileInView="show"
             viewport={{ once: true }}
@@ -134,52 +122,43 @@ const History = () => {
             {historyData.map((item, i) => (
               <Motion.div
                 key={i}
-                variants={fadeIn("up", 0.5 + i * 0.1)}
-                className={`group transition-all duration-700 rounded-[2.5rem] sm:rounded-[3rem] ${
+                variants={fadeIn("up", 0.1 * i)}
+                className={`rounded-2xl transition-all duration-300 ${
                   openIndex === i
-                    ? "glass-card-premium border-white p-8 sm:p-10 ring-1 ring-gray-100 shadow-2xl"
-                    : "border-b border-gray-100 p-4 sm:p-6 hover:bg-gray-50/50"
+                    ? "bg-white border border-gray-200 shadow-lg p-6"
+                    : "border border-transparent hover:bg-white hover:border-gray-100 p-5"
                 }`}
               >
                 <button
                   onClick={() => setOpenIndex(openIndex === i ? -1 : i)}
-                  className="w-full flex items-center justify-between text-left focus:outline-none"
+                  className="w-full flex items-center justify-between text-left gap-4"
                 >
-                  <div className="flex items-center gap-4 sm:gap-6">
+                  <div className="flex items-center gap-3">
                     <div
-                      className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-500 ${
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 shrink-0 ${
                         openIndex === i
-                          ? "bg-dark text-white shadow-2xl scale-110 rotate-3"
-                          : "bg-gray-50 text-gray-400 group-hover:bg-primary-50 group-hover:text-primary-600"
+                          ? "bg-emerald-600 text-white"
+                          : "bg-gray-100 text-gray-400"
                       }`}
                     >
-                      <item.icon size={24} />
+                      <item.icon size={18} />
                     </div>
-                    <div>
-                      <h3
-                        className={`text-lg sm:text-2xl font-black transition-colors duration-500 ${
-                          openIndex === i
-                            ? "text-dark"
-                            : "text-gray-400 group-hover:text-dark"
-                        }`}
-                      >
-                        {item.question}
-                      </h3>
-                      {openIndex !== i && (
-                        <div className="text-[8px] sm:text-[10px] font-black text-gray-300 uppercase tracking-widest mt-1">
-                          Expand Dossier
-                        </div>
-                      )}
-                    </div>
+                    <h3
+                      className={`text-base font-semibold transition-colors ${
+                        openIndex === i ? "text-gray-900" : "text-gray-500"
+                      }`}
+                    >
+                      {item.question}
+                    </h3>
                   </div>
                   <Motion.div
                     animate={{ rotate: openIndex === i ? 180 : 0 }}
-                    transition={{ duration: 0.5 }}
+                    transition={{ duration: 0.3 }}
                     className={
-                      openIndex === i ? "text-primary-600" : "text-gray-300"
+                      openIndex === i ? "text-emerald-600" : "text-gray-300"
                     }
                   >
-                    <ChevronDown size={28} />
+                    <ChevronDown size={20} />
                   </Motion.div>
                 </button>
 
@@ -189,15 +168,12 @@ const History = () => {
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
                       className="overflow-hidden"
                     >
-                      <div className="pl-2 relative mt-6 sm:mt-10">
-                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-primary-600 to-transparent rounded-full opacity-20" />
-                        <p className="text-lg sm:text-xl text-gray-500 leading-relaxed font-medium pl-6 sm:pl-8">
-                          {item.answer}
-                        </p>
-                      </div>
+                      <p className="text-sm text-gray-500 leading-relaxed mt-4 pl-[52px] pr-4 border-l-2 border-emerald-200 ml-5">
+                        {item.answer}
+                      </p>
                     </Motion.div>
                   )}
                 </AnimatePresence>

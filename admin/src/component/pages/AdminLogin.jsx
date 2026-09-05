@@ -2,17 +2,18 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { motion } from "framer-motion";
+import logo from "../../assets/logo.png";
 import {
   Eye,
   EyeOff,
   Mail,
   Lock,
   Shield,
-  Activity,
   ArrowRight,
+  Loader2,
   ShieldCheck,
-  Heart,
+  Activity,
+  CheckCircle2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { loginAdmin } from "../../features/auth/adminAuthSlice";
@@ -52,186 +53,194 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center bg-gray-950 overflow-hidden font-sans">
-      {/* Background Effects */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,#10b98120_0%,transparent_50%)]" />
-        <motion.div
-          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-          transition={{ duration: 10, repeat: Infinity }}
-          className="absolute -top-[20%] -left-[10%] w-[60%] h-[60%] bg-emerald-600/10 blur-[150px] rounded-full"
-        />
-        <motion.div
-          animate={{ scale: [1, 1.3, 1], opacity: [0.2, 0.4, 0.2] }}
-          transition={{ duration: 15, repeat: Infinity, delay: 2 }}
-          className="absolute -bottom-[20%] -right-[10%] w-[60%] h-[60%] bg-teal-600/10 blur-[150px] rounded-full"
-        />
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Left panel — dark branding */}
+      <div className="hidden lg:flex flex-col justify-between w-[45%] bg-gray-900 p-12 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(16,185,129,0.12)_0%,_transparent_60%)]" />
+        <div className="absolute bottom-0 left-0 w-full h-1/2 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(16,185,129,0.06)_0%,_transparent_60%)]" />
+
+        {/* Logo */}
+        <div className="flex items-center gap-3 relative z-10">
+          <img src={logo} alt="Sabo Charity Foundation" className="h-12 w-auto" />
+          <div>
+            <span className="text-white font-bold text-base tracking-tight block">Sabo Charity Foundation</span>
+            <span className="text-emerald-400 text-[10px] font-semibold uppercase tracking-widest">Admin Portal</span>
+          </div>
+        </div>
+
+        {/* Center content */}
+        <div className="relative z-10 space-y-8">
+          <div className="space-y-4">
+            <div className="inline-flex items-center gap-2 bg-emerald-600/20 border border-emerald-500/30 rounded-full px-3 py-1">
+              <Shield size={12} className="text-emerald-400" />
+              <span className="text-emerald-400 text-xs font-medium">Restricted Access</span>
+            </div>
+            <h1 className="text-4xl font-bold text-white leading-tight">
+              Foundation<br />
+              <span className="text-emerald-400">Command Center</span>
+            </h1>
+            <p className="text-gray-400 text-sm leading-relaxed max-w-sm">
+              Manage donations, campaigns, events, and volunteers from a single secure dashboard.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            {[
+              "Manage all donations & payments",
+              "Create and publish campaigns",
+              "Full analytics & reporting",
+              "User & volunteer management",
+            ].map((item) => (
+              <div key={item} className="flex items-center gap-3">
+                <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
+                <span className="text-gray-300 text-sm">{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Security badges */}
+        <div className="relative z-10 grid grid-cols-2 gap-4">
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-3">
+            <ShieldCheck size={18} className="text-emerald-500" />
+            <div>
+              <p className="text-white font-semibold text-xs">Encrypted</p>
+              <p className="text-gray-500 text-[10px]">TLS Protected</p>
+            </div>
+          </div>
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-3">
+            <Activity size={18} className="text-teal-500" />
+            <div>
+              <p className="text-white font-semibold text-xs">Monitored</p>
+              <p className="text-gray-500 text-[10px]">Session Tracked</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="relative z-10 w-full max-w-xl p-4">
-        {/* Foundation Branding */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-6"
-        >
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-[2rem] bg-gradient-to-br from-emerald-600 to-teal-600 text-white shadow-[0_0_50px_rgba(16,185,129,0.4)] mb-4 border border-white/20">
-            <Heart size={28} />
+      {/* Right panel — login form */}
+      <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-12">
+        {/* Mobile logo */}
+        <div className="flex items-center gap-2.5 mb-8 lg:hidden">
+          <img src={logo} alt="Sabo Charity Foundation" className="h-10 w-auto" />
+          <div>
+            <span className="font-bold text-gray-900 text-sm block">Sabo Charity Foundation</span>
+            <span className="text-emerald-600 text-[10px] font-semibold uppercase tracking-wider">Admin Portal</span>
           </div>
-          <h1 className="text-2xl lg:text-3xl font-black tracking-tight text-white mb-1">
-            Sabo Ibadan Youth Charity Foundation
-          </h1>
-          <p className="text-sm font-semibold text-emerald-400 mb-2">
-            Ibadan Community Impact Hub
-          </p>
-          <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 flex items-center justify-center gap-2">
-            <span className="w-8 h-px bg-gray-800" /> Admin Portal{" "}
-            <span className="w-8 h-px bg-gray-800" />
-          </p>
-        </motion.div>
+        </div>
 
-        {/* Login Form */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <form
-            onSubmit={handleSubmit}
-            className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[3rem] p-8 lg:p-10 shadow-2xl relative overflow-hidden"
-          >
-            <div className="absolute top-0 right-0 p-6 opacity-20">
-              <Shield size={32} className="text-emerald-400" />
+        <div className="w-full max-w-[400px]">
+          {/* Card */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
+            {/* Badge */}
+            <div className="flex items-center gap-2 mb-6">
+              <div className="w-8 h-8 rounded-lg bg-gray-900 flex items-center justify-center">
+                <Shield size={14} className="text-emerald-400" />
+              </div>
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Admin Portal</span>
             </div>
 
-            <div className="mb-8">
-              <h2 className="text-2xl font-black tracking-tight text-white mb-1">
-                Welcome Back
-              </h2>
-              <p className="text-sm font-semibold text-gray-400">
-                Sign in to manage foundation operations
+            {/* Heading */}
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-gray-900">Welcome back</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Sign in to manage foundation operations.
               </p>
             </div>
 
-            <div className="space-y-6">
-              <div className="space-y-3">
-                <label className="text-xs font-bold text-gray-400 ml-8">
-                  Email Address
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-gray-500 tracking-wide uppercase">
+                  Email address
                 </label>
                 <div className="relative group">
-                  <Mail className="absolute left-8 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-emerald-500 transition-colors" />
+                  <Mail
+                    size={16}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-600 transition-colors pointer-events-none"
+                  />
                   <input
                     type="email"
                     placeholder="admin@saboyouth.org"
                     value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                    className="w-full bg-white/5 border border-white/10 rounded-[2rem] pl-16 pr-8 py-5 font-semibold text-sm text-white outline-none focus:border-emerald-500/50 transition-all placeholder:text-gray-700"
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    autoComplete="email"
+                    className="w-full h-11 pl-10 pr-4 rounded-lg bg-gray-50 border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400
+                      focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent focus:bg-white transition-all"
                   />
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <label className="text-xs font-bold text-gray-400 ml-8">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-gray-500 tracking-wide uppercase">
                   Password
                 </label>
                 <div className="relative group">
-                  <Lock className="absolute left-8 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-emerald-500 transition-colors" />
+                  <Lock
+                    size={16}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-600 transition-colors pointer-events-none"
+                  />
                   <input
                     type={showPassword ? "text" : "password"}
-                    placeholder="••••••••••••"
+                    placeholder="••••••••"
                     value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                    className="w-full bg-white/5 border border-white/10 rounded-[2rem] pl-16 pr-20 py-5 font-semibold text-sm text-white outline-none focus:border-emerald-500/50 transition-all placeholder:text-gray-700"
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    autoComplete="current-password"
+                    className="w-full h-11 pl-10 pr-11 rounded-lg bg-gray-50 border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400
+                      focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent focus:bg-white transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white transition-all"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                   >
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
 
-              <div className="pt-4">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white py-5 rounded-[2rem] font-bold text-sm shadow-[0_20px_40px_rgba(16,185,129,0.3)] hover:shadow-emerald-500/40 active:scale-[0.98] transition-all flex items-center justify-center gap-3 group"
-                >
-                  {loading ? (
-                    <Activity size={20} className="animate-spin" />
-                  ) : (
-                    <>
-                      Sign In to Foundation Hub{" "}
-                      <ArrowRight
-                        size={18}
-                        className="group-hover:translate-x-1 transition-transform"
-                      />
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Security Indicators */}
-            <div className="mt-8 pt-6 border-t border-white/5 grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                  <ShieldCheck size={18} />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold text-white">
-                    Secure Access
-                  </span>
-                  <span className="text-[10px] font-semibold text-gray-600">
-                    Encrypted
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-teal-500/10 flex items-center justify-center text-teal-500">
-                  <Activity size={18} />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold text-white">
-                    Protected
-                  </span>
-                  <span className="text-[10px] font-semibold text-gray-600">
-                    Session Tracked
-                  </span>
-                </div>
-              </div>
-            </div>
-          </form>
-        </motion.div>
-
-        {/* Footer */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="mt-6 text-center space-y-3"
-        >
-          <p className="text-xs font-semibold text-gray-600">
-            Sabo Ibadan Youth Charity Foundation © 2026
-          </p>
-          <div className="flex justify-center gap-8">
-            <button
-              onClick={() => window.location.href = "http://localhost:5173"}
-              className="text-xs font-semibold text-gray-500 hover:text-emerald-400 transition-colors"
-            >
-              Return to Website
-            </button>
-            <button className="text-xs font-semibold text-gray-500 hover:text-emerald-400 transition-colors">
-              Need Help?
-            </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-11 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-300 text-white text-sm font-semibold rounded-lg
+                  flex items-center justify-center gap-2 transition-all mt-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    <span>Authenticating...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Sign in</span>
+                    <ArrowRight size={16} />
+                  </>
+                )}
+              </button>
+            </form>
           </div>
-        </motion.div>
+
+          {/* Footer */}
+          <div className="mt-6 text-center space-y-2">
+            <p className="text-xs text-gray-400">
+              Sabo Ibadan Youth Charity Foundation © {new Date().getFullYear()}
+            </p>
+            <div className="flex justify-center gap-6">
+              <a
+                href="http://localhost:5173"
+                className="text-xs text-gray-500 hover:text-emerald-600 font-medium transition-colors"
+              >
+                Return to Website
+              </a>
+              <a
+                href="http://localhost:5173/contact"
+                className="text-xs text-gray-500 hover:text-emerald-600 font-medium transition-colors"
+              >
+                Need Help?
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

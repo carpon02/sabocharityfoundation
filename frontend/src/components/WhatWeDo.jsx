@@ -1,117 +1,108 @@
-import { motion as Motion } from "framer-motion";
-import { assets } from "../assets/assets";
+import React from "react";
 import { Link } from "react-router-dom";
-import { fadeIn, staggerContainer, scaleIn } from "../utils/animations";
+import { assets } from "../assets/assets";
 import { ArrowRight, CheckCircle2, ShieldCheck } from "lucide-react";
+import { motion as Motion } from "framer-motion";
+import { fadeIn, staggerContainer } from "../utils/animations";
 
 const pillars = [
   {
     title: "Education",
     desc: "Building classrooms and providing scholarships.",
-    color: "text-primary-600",
-    bg: "bg-primary-50",
+    color: "text-emerald-600",
+    bg: "bg-emerald-100",
   },
   {
     title: "Healthcare",
     desc: "Equipping rural clinics and medical outreaches.",
-    color: "text-secondary-600",
-    bg: "bg-secondary-50",
+    color: "text-blue-600",
+    bg: "bg-blue-100",
   },
   {
     title: "Welfare",
     desc: "Empowering families with sustainable resources.",
-    color: "text-primary-600",
-    bg: "bg-primary-50",
+    color: "text-amber-600",
+    bg: "bg-amber-100",
   },
 ];
 
 const WhatWeDo = () => {
   return (
-    <section className="w-full bg-paper py-20 sm:py-32 lg:py-40 px-4 relative overflow-hidden">
-      {/* Background Polish */}
-      <Motion.div
-        className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary-900/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2"
-        animate={{ x: [0, 50, 0], scale: [1, 1.1, 1] }}
-        transition={{ duration: 15, repeat: Infinity }}
-      />
-
-      <div className="max-w-7xl mx-auto relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 lg:gap-32 items-center">
-          {/* TEXT SECTION: Strategic Narrative */}
+    <section className="py-24 sm:py-32 bg-white px-4">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
+          {/* Text */}
           <Motion.div
-            className="space-y-10 sm:space-y-12"
+            className="space-y-10"
             variants={staggerContainer(0.1, 0)}
             initial="hidden"
             whileInView="show"
             viewport={{ once: true }}
           >
-            <div className="space-y-6 sm:space-y-8">
+            <div className="space-y-6">
               <Motion.div
-                className="inline-flex items-center gap-3 px-4 sm:px-6 py-1.5 sm:py-2 rounded-full glass-card border-gray-100 text-secondary-600 font-black text-[10px] uppercase tracking-[0.3em] shadow-sm"
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold uppercase tracking-wider"
                 variants={fadeIn("down", 0.2)}
               >
-                <ShieldCheck size={14} className="text-secondary-500" />
+                <ShieldCheck size={14} />
                 Our Mission
               </Motion.div>
 
               <Motion.h2
-                className="text-5xl sm:text-7xl md:text-8xl font-black text-dark tracking-tighter leading-[0.85]"
+                className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight leading-tight"
                 variants={fadeIn("up", 0.3)}
               >
-                Beyond <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-700 via-primary-500 to-primary-800 text-glow-primary">
-                  Philanthropy.
+                Beyond{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">
+                  Philanthropy
                 </span>
               </Motion.h2>
 
               <Motion.p
-                className="text-lg sm:text-xl text-gray-500 leading-relaxed font-medium max-w-xl"
+                className="text-base sm:text-lg text-gray-500 leading-relaxed max-w-lg"
                 variants={fadeIn("up", 0.4)}
               >
-                We build strong, self-sufficient communities. Our programs
-                are carefully designed to create lasting change and
-                resilience across Sabo, Ibadan.
+                We build strong, self-sufficient communities. Our programs are
+                carefully designed to create lasting change and resilience across
+                Sabo, Ibadan.
               </Motion.p>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:gap-6">
+            <div className="space-y-3">
               {pillars.map((item, i) => (
                 <Motion.div
                   key={i}
                   variants={fadeIn("up", 0.5 + i * 0.1)}
-                  whileHover={{ x: 10, scale: 1.02 }}
-                  className="flex items-start gap-4 sm:gap-6 p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] bg-white border border-gray-100 hover:border-primary-100 hover:shadow-2xl transition-all duration-500 group cursor-default"
+                  whileHover={{ x: 4 }}
+                  className="flex items-start gap-4 p-5 rounded-xl bg-gray-50 border border-gray-100 hover:border-emerald-200 hover:shadow-md transition-all duration-200 group"
                 >
                   <div
-                    className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl ${item.bg} ${item.color} group-hover:bg-primary-600 group-hover:text-white transition-all duration-500 shadow-sm`}
+                    className={`p-2.5 rounded-xl ${item.bg} ${item.color} group-hover:scale-105 transition-transform shrink-0`}
                   >
-                    <CheckCircle2 size={24} />
+                    <CheckCircle2 size={20} />
                   </div>
-                  <div className="space-y-1">
-                    <h4 className="text-xl sm:text-2xl font-black text-dark tracking-tight">
+                  <div>
+                    <h4 className="text-lg font-bold text-gray-900">
                       {item.title}
                     </h4>
-                    <p className="text-sm sm:text-base text-gray-500 font-medium">
-                      {item.desc}
-                    </p>
+                    <p className="text-sm text-gray-500">{item.desc}</p>
                   </div>
                 </Motion.div>
               ))}
             </div>
 
-            <Link
-              to="/campaigns"
-              className="group relative inline-flex items-center justify-center px-10 sm:px-12 py-5 sm:py-6 font-black text-white transition-all bg-dark rounded-[1.5rem] sm:rounded-[2rem] hover:bg-primary-900 hover-scale-subtle shadow-2xl overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-primary-400/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <span className="relative flex items-center gap-3 text-sm sm:text-base">
+            <Motion.div variants={fadeIn("up", 0.7)}>
+              <Link
+                to="/campaigns"
+                className="group inline-flex items-center gap-2 px-8 py-4 bg-gray-900 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-colors shadow-lg"
+              >
                 Explore Our Programs
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
-              </span>
-            </Link>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </Motion.div>
           </Motion.div>
 
-          {/* MEDIA SECTION: The Vision Stack */}
+          {/* Image */}
           <Motion.div
             className="relative"
             variants={fadeIn("left", 0.4)}
@@ -119,51 +110,35 @@ const WhatWeDo = () => {
             whileInView="show"
             viewport={{ once: true }}
           >
-            <div className="relative rounded-[40px] sm:rounded-[60px] lg:rounded-[80px] overflow-hidden shadow-[0_100px_150px_-30px_rgba(0,0,0,0.3)] border-[10px] sm:border-[15px] lg:border-[20px] border-white group">
-              <div className="scan-line opacity-10" />
+            <div className="rounded-2xl overflow-hidden shadow-xl border border-gray-200">
               <img
                 src={assets.what_we_do_img}
-                alt="Impact"
-                className="w-full h-full object-cover aspect-[4/5] group-hover:scale-110 transition-transform duration-[4s] ease-out"
+                alt="Community Impact"
+                className="w-full object-cover aspect-[4/5] hover:scale-105 transition-transform duration-700"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-dark/60 via-transparent to-transparent opacity-60" />
             </div>
 
-            {/* Premium Intelligence Card */}
-            <Motion.div
-              className="absolute -top-6 sm:-top-12 -right-4 sm:-right-12 glass-card-premium p-6 sm:p-12 rounded-[2rem] sm:rounded-[4rem] shadow-3xl max-w-[240px] sm:max-w-[320px] border-white"
-              variants={scaleIn(0.6)}
-              animate={{ y: [0, -20, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <div className="flex items-center gap-3 sm:gap-4 mb-2 sm:mb-4">
-                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest">
+            {/* Promise Card */}
+            <div className="absolute -top-4 -right-4 sm:top-6 sm:right-6 bg-white rounded-2xl p-5 shadow-lg border border-gray-200 max-w-[200px]">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
                   Our Promise
                 </span>
               </div>
-              <div className="text-4xl sm:text-6xl font-black text-dark tracking-tighter">
-                100%
-              </div>
-              <p className="text-gray-600 font-black text-[8px] sm:text-xs mt-2 sm:mt-3 leading-relaxed uppercase tracking-widest">
+              <div className="text-3xl font-extrabold text-gray-900">100%</div>
+              <p className="text-xs text-gray-500 mt-1 leading-relaxed">
                 Every donation goes directly to community programmes.
               </p>
-              <div className="w-full h-1 bg-gray-100 rounded-full mt-4 sm:mt-6 relative overflow-hidden">
+              <div className="w-full h-1 bg-gray-100 rounded-full mt-3 overflow-hidden">
                 <Motion.div
-                  className="absolute inset-y-0 left-0 bg-secondary-500 shadow-[0_0_10px_#f59e0b]"
+                  className="h-full bg-emerald-500 rounded-full"
                   initial={{ width: "0%" }}
                   whileInView={{ width: "100%" }}
-                  transition={{ duration: 2, delay: 1 }}
+                  transition={{ duration: 2, delay: 0.5 }}
                 />
               </div>
-            </Motion.div>
-
-            {/* Decorative Geometry */}
-            <Motion.div
-              className="absolute -bottom-8 sm:-bottom-16 -left-8 sm:-left-16 w-32 sm:w-64 h-32 sm:h-64 bg-primary-100/50 rounded-[2rem] sm:rounded-[4rem] -rotate-12 -z-10 blur-2xl"
-              animate={{ rotate: [-12, -20, -12], scale: [1, 1.1, 1] }}
-              transition={{ duration: 8, repeat: Infinity }}
-            />
+            </div>
           </Motion.div>
         </div>
       </div>

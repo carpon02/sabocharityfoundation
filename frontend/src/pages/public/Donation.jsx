@@ -25,29 +25,39 @@ import {
   CheckCircle,
   Clock,
   Building2,
+  GraduationCap,
+  Stethoscope,
+  Lightbulb,
+  Users2,
+  HandHeart,
 } from "lucide-react";
 import { motion as Motion } from "framer-motion";
 
 // ============= CONSTANTS =============
 const DONATION_TYPES = {
   education: {
-    label: "🎓 Education Initiatives",
+    icon: GraduationCap,
+    label: "Education Initiatives",
     impact: "Providing learning resources & scholarships",
   },
   healthcare: {
-    label: "🩺 Healthcare Support",
+    icon: Stethoscope,
+    label: "Healthcare Support",
     impact: "Medical bills & essential treatments",
   },
   "youth-empowerment": {
-    label: "💡 Youth Empowerment",
+    icon: Lightbulb,
+    label: "Youth Empowerment",
     impact: "Skill acquisition & business grants",
   },
   "community-development": {
-    label: "🌍 Community Development",
+    icon: Users2,
+    label: "Community Development",
     impact: "Infrastructure & welfare programs",
   },
   general: {
-    label: "❤️ General Support",
+    icon: HandHeart,
+    label: "General Support",
     impact: "Support where it's needed most",
   },
 };
@@ -344,7 +354,7 @@ const Donation = () => {
         }
       }
       if (verified) {
-        toast.success("Transfer confirmed! Thank you for your donation! 🎉");
+        toast.success("Transfer confirmed! Thank you for your donation!");
         dispatch({ type: "SET_POPUP", payload: { show: true, step: "thanks" } });
       } else {
         setTransferNotFound(true);
@@ -430,7 +440,7 @@ const Donation = () => {
         },
         callback: (response) => {
           dispatch({ type: "SET_POPUP", payload: { show: true, step: "thanks" } });
-          toast.success("Donation received! Thank you! 🎉");
+          toast.success("Donation received! Thank you!");
           dispatch({ type: "SET_SUBMITTING", payload: false });
           startPolling(response.reference);
         },
@@ -449,117 +459,108 @@ const Donation = () => {
 
   // ─────────────────────────────────────────────────────────────────────
   return (
-    <div className="bg-paper min-h-screen overflow-hidden selection:bg-primary-100">
-      {/* --- HERO --- */}
-      <section className="relative pt-32 pb-32 bg-dark overflow-hidden">
-        <div className="scan-line opacity-5" />
-        <div className="absolute inset-0 bg-primary-900/5 backdrop-blur-[100px]" />
-
-        <div className="max-w-7xl mx-auto px-4 relative z-10 text-center space-y-12">
-          <div className="inline-flex items-center gap-3 px-8 py-3 rounded-full glass-card-dark border-white/5 text-secondary-500 font-black text-[10px] uppercase tracking-[0.4em] shadow-2xl">
-            <Heart className="w-4 h-4 fill-secondary-500 animate-pulse" />
+    <div className="bg-white min-h-screen overflow-hidden">
+      {/* ── HERO ── */}
+      <section className="relative pt-28 pb-32 bg-gray-900 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-900 to-emerald-950/40" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-5">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-emerald-400 text-xs font-semibold uppercase tracking-wider">
+            <Heart className="w-3.5 h-3.5 fill-emerald-400 animate-pulse" />
             Make an Impact Today
           </div>
-
-          <h1 className="text-7xl md:text-[8rem] font-black text-white leading-[0.8] tracking-[-0.05em] animate-fade-in-up">
-            Support Our <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 via-primary-500 to-primary-300 text-glow-primary">
-              Mission.
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight">
+            Support Our{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">
+              Mission
             </span>
           </h1>
-
-          <p className="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto font-medium leading-relaxed">
+          <p className="text-lg text-gray-400 max-w-xl mx-auto leading-relaxed">
             We are building a brighter future for the youth of Sabo, Ibadan.
-            Your generous donation is the catalyst for sustainable transformation
-            across our communities.
+            Your generous donation is the catalyst for sustainable transformation.
           </p>
         </div>
       </section>
 
-      {/* --- MISSION CONTROL CENTER --- */}
-      <section className="relative -mt-24 z-20 px-4 mb-40">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12">
+      {/* ── MAIN CONTENT ── */}
+      <section className="relative -mt-16 z-20 px-4 pb-24">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Left Panel */}
-          <div className="lg:col-span-4 space-y-10">
-            <div className="glass-card-premium p-10 rounded-[3.5rem] space-y-8 group hover-scale-subtle transition-all duration-700">
-              <div className="flex justify-between border-b border-gray-100 pb-8">
-                <div className="h-16 w-16 bg-primary-900 rounded-[1.5rem] flex items-center justify-center text-primary-400">
-                  <Globe className="w-8 h-8" />
+          <div className="lg:col-span-4 space-y-5">
+            {/* Stats Card */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-md p-7 space-y-5">
+              <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+                <div className="w-11 h-11 bg-gray-900 rounded-xl flex items-center justify-center text-emerald-400">
+                  <Globe className="w-5 h-5" />
                 </div>
                 <div className="text-right">
-                  <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                    Community Trust
-                  </div>
-                  <div className="text-primary-600 font-black text-sm uppercase text-glow-primary">
-                    Verified
-                  </div>
+                  <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Community Trust</div>
+                  <div className="text-emerald-600 font-bold text-sm">Verified NGO</div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-8">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="text-4xl font-black text-dark tracking-tighter">
-                    15k+
-                  </div>
-                  <div className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">
-                    Lives Touched
-                  </div>
+                  <div className="text-3xl font-extrabold text-gray-900">15k+</div>
+                  <div className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mt-0.5">Lives Touched</div>
                 </div>
                 <div>
-                  <div className="text-4xl font-black text-dark tracking-tighter">
-                    94%
-                  </div>
-                  <div className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">
-                    Success Rate
-                  </div>
+                  <div className="text-3xl font-extrabold text-gray-900">94%</div>
+                  <div className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mt-0.5">Success Rate</div>
                 </div>
               </div>
             </div>
 
-            <div className="relative group rounded-[3.5rem] overflow-hidden shadow-2xl h-[500px]">
+            {/* Story Image */}
+            <div className="relative rounded-2xl overflow-hidden shadow-lg h-72 group">
               <img
                 src={SUCCESS_STORIES[0].image}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[5s]"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                alt="Success Story"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-dark via-dark/40 to-transparent" />
-              <div className="absolute bottom-10 left-10 right-10 space-y-4">
-                <div className="inline-block px-4 py-1.5 bg-primary-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest">
+              <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-gray-900/20 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-5 space-y-2">
+                <div className="inline-block px-2.5 py-1 bg-emerald-500 text-white rounded-lg text-[10px] font-semibold uppercase tracking-wider">
                   Success Story
                 </div>
-                <h4 className="text-3xl font-black text-white leading-tight">
-                  {SUCCESS_STORIES[0].name}
-                </h4>
-                <p className="text-gray-300 font-medium text-sm line-clamp-2">
-                  {SUCCESS_STORIES[0].fullDescription}
-                </p>
-                <button className="flex items-center gap-2 text-primary-400 font-black text-[10px] uppercase tracking-widest pt-4 group-hover:translate-x-2 transition-transform">
-                  Read Full Story <ArrowRight size={14} />
-                </button>
+                <h4 className="text-lg font-bold text-white leading-tight">{SUCCESS_STORIES[0].name}</h4>
+                <p className="text-gray-300 text-xs line-clamp-2 leading-relaxed">{SUCCESS_STORIES[0].fullDescription}</p>
               </div>
+            </div>
+
+            {/* Trust Badges */}
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { icon: ShieldCheck, label: "SSL Secure", sub: "AES-256 Bit" },
+                { icon: CheckCircle2, label: "CAC Registered", sub: "IT/NO/123456" },
+                { icon: Globe, label: "100% Program", sub: "Direct Allocation" },
+                { icon: Star, label: "Audited", sub: "Financial Clarity" },
+              ].map((badge, i) => (
+                <div key={i} className="bg-gray-50 border border-gray-100 py-4 px-3 rounded-xl flex flex-col items-center text-center gap-1.5">
+                  <badge.icon size={17} className="text-emerald-600" />
+                  <div className="text-[10px] font-bold text-gray-800 uppercase tracking-wider">{badge.label}</div>
+                  <div className="text-[9px] text-gray-400">{badge.sub}</div>
+                </div>
+              ))}
             </div>
           </div>
 
           {/* Right Panel: Donation Engine */}
           <div className="lg:col-span-8">
-            <div className="bg-white rounded-[4rem] p-10 md:p-16 shadow-[0_100px_100px_-50px_rgba(0,0,0,0.15)] border border-gray-100">
-              <form onSubmit={handleDonateSubmit} className="space-y-16">
-                {/* 1. Impact Selection */}
-                <div className="space-y-10">
-                  <div className="flex items-center gap-6">
-                    <div className="h-10 w-10 bg-dark text-white rounded-2xl flex items-center justify-center font-black">
-                      01
-                    </div>
-                    <h2 className="text-3xl font-black text-dark tracking-tight">
-                      Select Donation Cause
-                    </h2>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-lg p-8 sm:p-10">
+              <form onSubmit={handleDonateSubmit} className="space-y-10">
+                {/* 1. Cause */}
+                <div className="space-y-5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-gray-900 text-white rounded-lg flex items-center justify-center text-sm font-bold">1</div>
+                    <h2 className="text-xl font-bold text-gray-900">Select Donation Cause</h2>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {Object.entries(DONATION_TYPES).map(([key, value]) => (
                       <label
                         key={key}
-                        className={`relative p-8 rounded-[2.5rem] border-2 cursor-pointer transition-all duration-300 ${
+                        className={`relative p-5 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
                           intent.donationType === key
-                            ? "border-primary-600 bg-primary-50/50 shadow-inner"
-                            : "border-gray-100 hover:border-gray-200"
+                            ? "border-emerald-500 bg-emerald-50"
+                            : "border-gray-100 hover:border-gray-200 bg-white"
                         }`}
                       >
                         <input
@@ -569,39 +570,35 @@ const Donation = () => {
                           className="hidden"
                           checked={intent.donationType === key}
                           onChange={(e) =>
-                            dispatch({
-                              type: "UPDATE_INTENT",
-                              payload: { donationType: e.target.value },
-                            })
+                            dispatch({ type: "UPDATE_INTENT", payload: { donationType: e.target.value } })
                           }
                         />
-                        <div className="flex items-center justify-between gap-4">
-                          <span className="text-xl font-bold text-dark">
-                            {value.label}
-                          </span>
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                              intent.donationType === key ? "bg-emerald-600 text-white" : "bg-gray-100 text-gray-500"
+                            }`}>
+                              <value.icon size={14} />
+                            </div>
+                            <span className="text-sm font-semibold text-gray-900">{value.label}</span>
+                          </div>
                           {intent.donationType === key && (
-                            <CheckCircle2 className="w-6 h-6 text-primary-600" />
+                            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
                           )}
                         </div>
-                        <p className="mt-3 text-[10px] text-gray-500 font-black uppercase tracking-wider leading-relaxed">
-                          {value.impact}
-                        </p>
+                        <p className="mt-2 text-xs text-gray-500 leading-relaxed pl-9">{value.impact}</p>
                       </label>
                     ))}
                   </div>
                 </div>
 
                 {/* 2. Your Details */}
-                <div className="space-y-10">
-                  <div className="flex items-center gap-6">
-                    <div className="h-10 w-10 bg-dark text-white rounded-2xl flex items-center justify-center font-black">
-                      02
-                    </div>
-                    <h2 className="text-3xl font-black text-dark tracking-tight">
-                      Your Details
-                    </h2>
+                <div className="space-y-5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-gray-900 text-white rounded-lg flex items-center justify-center text-sm font-bold">2</div>
+                    <h2 className="text-xl font-bold text-gray-900">Your Details</h2>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <InputField
                       icon={User}
                       name="firstName"
@@ -654,48 +651,27 @@ const Donation = () => {
                   </div>
                 </div>
 
-                {/* 3. Donation Amount */}
-                <div className="space-y-10">
-                  <div className="flex items-center gap-6">
-                    <div className="h-10 w-10 bg-dark text-white rounded-2xl flex items-center justify-center font-black">
-                      03
-                    </div>
-                    <h2 className="text-3xl font-black text-dark tracking-tight">
-                      Donation Amount
-                    </h2>
+                {/* 3. Amount */}
+                <div className="space-y-5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-gray-900 text-white rounded-lg flex items-center justify-center text-sm font-bold">3</div>
+                    <h2 className="text-xl font-bold text-gray-900">Donation Amount</h2>
                   </div>
-                  <div className="space-y-8">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                       {SUGGESTED_AMOUNTS.map((amt) => (
                         <button
                           key={amt.amount}
                           type="button"
-                          onClick={() =>
-                            dispatch({
-                              type: "UPDATE_INTENT",
-                              payload: { amount: amt.amount.toString() },
-                            })
-                          }
-                          className={`group relative p-6 rounded-[2rem] border-2 transition-all duration-500 overflow-hidden ${
+                          onClick={() => dispatch({ type: "UPDATE_INTENT", payload: { amount: amt.amount.toString() } })}
+                          className={`p-4 rounded-xl border-2 transition-all duration-200 text-left ${
                             intent.amount === amt.amount.toString()
-                              ? "border-primary-600 bg-primary-50 text-dark scale-105 shadow-xl"
-                              : "border-gray-50 bg-gray-50/50 text-gray-500 hover:border-gray-200"
+                              ? "border-emerald-500 bg-emerald-50 shadow-sm"
+                              : "border-gray-100 bg-gray-50 hover:border-gray-200"
                           }`}
                         >
-                          <div className="relative z-10">
-                            <div className="text-xl font-black tracking-tighter">
-                              ₦{amt.amount.toLocaleString()}
-                            </div>
-                            <div className="text-[8px] font-black uppercase tracking-widest opacity-60">
-                              {amt.label}
-                            </div>
-                          </div>
-                          {intent.amount === amt.amount.toString() && (
-                            <Motion.div
-                              layoutId="activeAmount"
-                              className="absolute inset-0 bg-primary-600/5"
-                            />
-                          )}
+                          <div className="text-base font-bold text-gray-900">₦{amt.amount.toLocaleString()}</div>
+                          <div className="text-[10px] text-gray-400 font-medium mt-0.5">{amt.label}</div>
                         </button>
                       ))}
                     </div>
@@ -716,245 +692,106 @@ const Donation = () => {
                 </div>
 
                 {/* 4. Payment Method */}
-                <div className="space-y-10">
-                  <div className="flex items-center gap-6">
-                    <div className="h-10 w-10 bg-dark text-white rounded-2xl flex items-center justify-center font-black">
-                      04
-                    </div>
-                    <h2 className="text-3xl font-black text-dark tracking-tight">
-                      Payment Method
-                    </h2>
+                <div className="space-y-5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-gray-900 text-white rounded-lg flex items-center justify-center text-sm font-bold">4</div>
+                    <h2 className="text-xl font-bold text-gray-900">Payment Method</h2>
                   </div>
-                  <div className="grid grid-cols-2 gap-6">
-                    {/* Card / Online */}
-                    <label
-                      className={`flex flex-col items-center gap-4 p-8 rounded-[2.5rem] border-2 cursor-pointer transition-all ${
-                        intent.paymentMethod === "online"
-                          ? "border-primary-600 bg-primary-50/50 shadow-lg shadow-primary-100"
-                          : "border-gray-100 hover:border-gray-300 bg-white"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="online"
-                        className="hidden"
+                  <div className="grid grid-cols-2 gap-4">
+                    <label className={`flex flex-col items-center gap-3 p-6 rounded-xl border-2 cursor-pointer transition-all ${
+                      intent.paymentMethod === "online" ? "border-emerald-500 bg-emerald-50 shadow-sm" : "border-gray-100 hover:border-gray-200 bg-white"
+                    }`}>
+                      <input type="radio" name="paymentMethod" value="online" className="hidden"
                         checked={intent.paymentMethod === "online"}
-                        onChange={(e) =>
-                          dispatch({
-                            type: "UPDATE_INTENT",
-                            payload: { paymentMethod: e.target.value },
-                          })
-                        }
-                      />
-                      <div
-                        className={`h-14 w-14 rounded-[1.25rem] flex items-center justify-center ${
-                          intent.paymentMethod === "online"
-                            ? "bg-primary-600 text-white"
-                            : "bg-gray-100 text-gray-400"
-                        }`}
-                      >
-                        <CreditCard size={26} />
-                      </div>
+                        onChange={(e) => dispatch({ type: "UPDATE_INTENT", payload: { paymentMethod: e.target.value } })} />
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                        intent.paymentMethod === "online" ? "bg-emerald-600 text-white" : "bg-gray-100 text-gray-400"
+                      }`}><CreditCard size={22} /></div>
                       <div className="text-center">
-                        <span className="block font-black text-sm text-dark tracking-tight">
-                          Pay with Card
-                        </span>
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5 block">
-                          Instant • Secure
-                        </span>
+                        <span className="block font-semibold text-sm text-gray-900">Pay with Card</span>
+                        <span className="text-[10px] text-gray-400 mt-0.5 block">Instant · Secure</span>
                       </div>
                       {intent.paymentMethod === "online" && (
-                        <div className="w-5 h-5 rounded-full bg-primary-600 flex items-center justify-center">
-                          <CheckCircle size={12} className="text-white" />
-                        </div>
+                        <div className="w-5 h-5 rounded-full bg-emerald-600 flex items-center justify-center"><CheckCircle size={12} className="text-white" /></div>
                       )}
                     </label>
 
-                    {/* Bank Transfer */}
-                    <label
-                      className={`flex flex-col items-center gap-4 p-8 rounded-[2.5rem] border-2 cursor-pointer transition-all ${
-                        intent.paymentMethod === "bank"
-                          ? "border-emerald-500 bg-emerald-50/50 shadow-lg shadow-emerald-100"
-                          : "border-gray-100 hover:border-gray-300 bg-white"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="bank"
-                        className="hidden"
+                    <label className={`flex flex-col items-center gap-3 p-6 rounded-xl border-2 cursor-pointer transition-all ${
+                      intent.paymentMethod === "bank" ? "border-emerald-500 bg-emerald-50 shadow-sm" : "border-gray-100 hover:border-gray-200 bg-white"
+                    }`}>
+                      <input type="radio" name="paymentMethod" value="bank" className="hidden"
                         checked={intent.paymentMethod === "bank"}
-                        onChange={(e) =>
-                          dispatch({
-                            type: "UPDATE_INTENT",
-                            payload: { paymentMethod: e.target.value },
-                          })
-                        }
-                      />
-                      <div
-                        className={`h-14 w-14 rounded-[1.25rem] flex items-center justify-center ${
-                          intent.paymentMethod === "bank"
-                            ? "bg-emerald-600 text-white"
-                            : "bg-gray-100 text-gray-400"
-                        }`}
-                      >
-                        <Building2 size={26} />
-                      </div>
+                        onChange={(e) => dispatch({ type: "UPDATE_INTENT", payload: { paymentMethod: e.target.value } })} />
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                        intent.paymentMethod === "bank" ? "bg-emerald-600 text-white" : "bg-gray-100 text-gray-400"
+                      }`}><Building2 size={22} /></div>
                       <div className="text-center">
-                        <span className="block font-black text-sm text-dark tracking-tight">
-                          Transfer to Us
-                        </span>
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5 block">
-                          Bank Transfer
-                        </span>
+                        <span className="block font-semibold text-sm text-gray-900">Bank Transfer</span>
+                        <span className="text-[10px] text-gray-400 mt-0.5 block">Manual Transfer</span>
                       </div>
                       {intent.paymentMethod === "bank" && (
-                        <div className="w-5 h-5 rounded-full bg-emerald-600 flex items-center justify-center">
-                          <CheckCircle size={12} className="text-white" />
-                        </div>
+                        <div className="w-5 h-5 rounded-full bg-emerald-600 flex items-center justify-center"><CheckCircle size={12} className="text-white" /></div>
                       )}
                     </label>
                   </div>
                 </div>
 
                 {/* Submit */}
-                <div className="pt-10 border-t border-gray-100 flex flex-col md:flex-row items-center justify-between gap-10">
-                  <label className="flex items-center gap-4 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="w-6 h-6 rounded-lg text-primary-600 focus:ring-primary-100 cursor-pointer"
+                <div className="pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" className="w-5 h-5 rounded text-emerald-600 focus:ring-emerald-100 cursor-pointer"
                       checked={intent.agreedToTerms}
-                      onChange={(e) =>
-                        dispatch({
-                          type: "UPDATE_INTENT",
-                          payload: { agreedToTerms: e.target.checked },
-                        })
-                      }
-                    />
-                    <span className="text-xs font-black text-gray-400 uppercase tracking-widest leading-none">
-                      Accept Terms of Service
-                    </span>
+                      onChange={(e) => dispatch({ type: "UPDATE_INTENT", payload: { agreedToTerms: e.target.checked } })} />
+                    <span className="text-xs font-medium text-gray-500">Accept Terms of Service</span>
                   </label>
-
-                  <button
-                    type="submit"
-                    disabled={ui.isSubmitting}
-                    className="w-full md:w-auto px-16 py-7 bg-primary-600 text-white font-black rounded-[2.5rem] hover:bg-primary-700 hover-scale-subtle shadow-2xl shadow-primary-500/30 disabled:opacity-50 transition-all flex items-center justify-center gap-4 group"
+                  <button type="submit" disabled={ui.isSubmitting}
+                    className="w-full sm:w-auto px-10 py-4 bg-gray-900 text-white font-semibold rounded-xl hover:bg-emerald-700 shadow-lg disabled:opacity-50 transition-all flex items-center justify-center gap-2 group"
                   >
-                    {ui.isSubmitting ? (
-                      <Loader className="animate-spin" />
-                    ) : (
-                      <Zap
-                        size={20}
-                        className="group-hover:fill-white transition-colors"
-                      />
-                    )}
+                    {ui.isSubmitting ? <Loader className="animate-spin" size={18} /> : <Zap size={18} className="group-hover:fill-white transition-colors" />}
                     Complete Donation
                   </button>
                 </div>
               </form>
             </div>
-
-            {/* Trust badges */}
-            <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[
-                { icon: ShieldCheck, label: "SSL SECURE", sub: "AES-256 Bit" },
-                { icon: CheckCircle2, label: "CAC REGISTERED", sub: "IT/NO/123456" },
-                { icon: Globe, label: "100% PROGRAM", sub: "Donation Direct" },
-                { icon: Star, label: "AUDITED", sub: "Financial Clarity" },
-              ].map((badge, i) => (
-                <div
-                  key={i}
-                  className="bg-white/50 backdrop-blur-sm border border-gray-100 py-6 px-4 rounded-[2rem] flex flex-col items-center text-center space-y-2"
-                >
-                  <badge.icon size={20} className="text-primary-600" />
-                  <div className="space-y-0.5">
-                    <div className="text-[9px] font-black uppercase tracking-widest text-dark">
-                      {badge.label}
-                    </div>
-                    <div className="text-[7px] font-bold uppercase tracking-widest text-gray-400">
-                      {badge.sub}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </section>
 
-      {/* --- SUCCESS MODAL --- */}
+      {/* ── SUCCESS MODAL ── */}
       {ui.showPopup && ui.popupStep === "thanks" && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-dark/70 backdrop-blur-xl">
-          <div className="relative bg-white rounded-[3rem] w-full max-w-md shadow-[0_40px_80px_rgba(0,0,0,0.4)] overflow-hidden animate-fade-in-up">
-            <div className="h-2 w-full bg-gradient-to-r from-primary-400 via-primary-500 to-primary-400" />
-
-            <div className="px-12 py-10 text-center space-y-6">
-              <div className="relative mx-auto w-24 h-24">
-                <div className="absolute inset-0 rounded-full bg-primary-100 animate-ping opacity-30" />
-                <div className="relative w-24 h-24 rounded-full bg-primary-600 flex items-center justify-center shadow-[0_0_40px_rgba(16,185,129,0.45)]">
-                  {ui.pollStatus === "polling" ? (
-                    <Loader size={44} className="text-white animate-spin" />
-                  ) : (
-                    <CheckCircle2 size={44} className="text-white" />
-                  )}
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-950/80 backdrop-blur-md">
+          <div className="relative bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+            <div className="h-1.5 w-full bg-gradient-to-r from-emerald-400 to-teal-400" />
+            <div className="px-8 py-8 text-center space-y-5">
+              <div className="relative mx-auto w-20 h-20">
+                <div className="absolute inset-0 rounded-full bg-emerald-100 animate-ping opacity-40" />
+                <div className="relative w-20 h-20 rounded-full bg-emerald-600 flex items-center justify-center shadow-lg">
+                  {ui.pollStatus === "polling" ? <Loader size={36} className="text-white animate-spin" /> : <CheckCircle2 size={36} className="text-white" />}
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <h3 className="text-4xl font-black text-dark tracking-tight">
-                  Thank You! 🎉
-                </h3>
-                <p className="text-lg font-bold text-primary-600">
-                  ₦{parseFloat(intent.amount || 0).toLocaleString()} donated
-                </p>
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900">Thank You!</h3>
+                <p className="text-emerald-600 font-semibold mt-1">₦{parseFloat(intent.amount || 0).toLocaleString()} donated</p>
               </div>
-
               {ui.pollStatus === "verified" ? (
-                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4 text-left">
-                  <p className="text-xs font-black text-emerald-700 uppercase tracking-wider mb-1">
-                    ✅ Payment Confirmed
-                  </p>
-                  <p className="text-sm text-emerald-600">
-                    Your donation is now pending admin approval. A confirmation
-                    email is on its way!
-                  </p>
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-left">
+                  <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-1">Payment Confirmed</p>
+                  <p className="text-sm text-emerald-600">Your donation is now pending admin approval. A confirmation email is on its way!</p>
                 </div>
               ) : ui.pollStatus === "polling" ? (
-                <div className="bg-blue-50 border border-blue-200 rounded-2xl px-5 py-4 text-left">
-                  <p className="text-xs font-black text-blue-700 uppercase tracking-wider mb-1">
-                    ⏳ Confirming…
-                  </p>
-                  <p className="text-sm text-blue-600">
-                    Verifying your payment with the server, just a moment.
-                  </p>
+                <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-left">
+                  <p className="text-xs font-bold text-blue-700 uppercase tracking-wider mb-1">Confirming…</p>
+                  <p className="text-sm text-blue-600">Verifying your payment with the server, just a moment.</p>
                 </div>
               ) : (
-                <div className="bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-left">
-                  <p className="text-xs font-black text-gray-600 uppercase tracking-wider mb-1">
-                    🙏 Received
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Your donation has been received. We'll send a confirmation
-                    email once it's approved. Thank you for supporting the youth
-                    of Sabo, Ibadan!
-                  </p>
+                <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-left">
+                  <p className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">Received</p>
+                  <p className="text-sm text-gray-500">Your donation has been received. We'll send a confirmation email once it's approved.</p>
                 </div>
               )}
-
-              <p className="text-[11px] text-gray-400">
-                This window closes automatically in a few seconds.
-              </p>
-
-              <button
-                onClick={() => {
-                  clearInterval(pollIntervalRef.current);
-                  dispatch({ type: "RESET" });
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
-                className="w-full py-5 bg-dark text-white font-black rounded-[1.5rem] hover:bg-gray-800 transition-all"
-              >
+              <p className="text-xs text-gray-400">This window closes automatically in a few seconds.</p>
+              <button onClick={() => { clearInterval(pollIntervalRef.current); dispatch({ type: "RESET" }); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                className="w-full py-3.5 bg-gray-900 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-colors">
                 Return to Home
               </button>
             </div>
@@ -962,10 +799,10 @@ const Donation = () => {
         </div>
       )}
 
-      {/* --- BANK TRANSFER MODAL --- */}
+      {/* ── BANK TRANSFER MODAL ── */}
       {ui.showPopup && ui.popupStep === "bank" && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-dark/80 backdrop-blur-xl">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-lg shadow-[0_40px_80px_rgba(0,0,0,0.4)] overflow-hidden animate-fade-in-up">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-950/80 backdrop-blur-md">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
 
             {/* Timer progress bar */}
             <div className="h-1.5 bg-gray-100 w-full">
@@ -981,49 +818,29 @@ const Donation = () => {
               />
             </div>
 
-            <div className="px-10 py-9 space-y-7">
-              {/* Header */}
+            <div className="px-7 py-7 space-y-5">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-2xl font-black text-dark tracking-tight">
-                    Transfer to Foundation
-                  </h3>
-                  <p className="text-sm text-gray-400 font-medium mt-1">
-                    Send the exact amount to the account below
-                  </p>
+                  <h3 className="text-xl font-bold text-gray-900">Transfer to Foundation</h3>
+                  <p className="text-sm text-gray-500 mt-1">Send the exact amount to the account below</p>
                 </div>
-                <button
-                  onClick={() =>
-                    dispatch({ type: "SET_POPUP", payload: { show: false } })
-                  }
-                  className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-dark transition-all flex-shrink-0"
-                >
+                <button onClick={() => dispatch({ type: "SET_POPUP", payload: { show: false } })}
+                  className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-500 transition-colors">
                   <X size={18} />
                 </button>
               </div>
 
               {bankTimer === 0 ? (
-                /* Session Expired */
-                <div className="text-center py-6 space-y-5">
-                  <div className="w-20 h-20 bg-red-50 border-2 border-red-100 rounded-full flex items-center justify-center mx-auto">
-                    <AlertCircle size={36} className="text-red-500" />
+                <div className="text-center py-4 space-y-4">
+                  <div className="w-16 h-16 bg-red-50 border border-red-100 rounded-full flex items-center justify-center mx-auto">
+                    <AlertCircle size={28} className="text-red-500" />
                   </div>
                   <div>
-                    <h4 className="text-2xl font-black text-dark mb-2">
-                      Session Expired
-                    </h4>
-                    <p className="text-gray-500 text-sm leading-relaxed">
-                      This 30-minute payment window has closed. Please start a
-                      new donation to try again.
-                    </p>
+                    <h4 className="text-xl font-bold text-gray-900 mb-1">Session Expired</h4>
+                    <p className="text-gray-500 text-sm leading-relaxed">This 30-minute payment window has closed. Please start a new donation to try again.</p>
                   </div>
-                  <button
-                    onClick={() => {
-                      dispatch({ type: "SET_POPUP", payload: { show: false } });
-                      dispatch({ type: "RESET" });
-                    }}
-                    className="w-full py-4 bg-dark text-white font-black rounded-2xl hover:bg-gray-800 transition-all"
-                  >
+                  <button onClick={() => { dispatch({ type: "SET_POPUP", payload: { show: false } }); dispatch({ type: "RESET" }); }}
+                    className="w-full py-3.5 bg-gray-900 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-colors">
                     Start a New Donation
                   </button>
                 </div>
@@ -1076,13 +893,9 @@ const Donation = () => {
                   </div>
 
                   {/* Amount */}
-                  <div className="bg-primary-50 border-2 border-primary-200 rounded-2xl p-6 text-center">
-                    <p className="text-[10px] font-black uppercase text-primary-400 tracking-widest mb-2">
-                      Transfer Exactly This Amount
-                    </p>
-                    <p className="text-5xl font-black text-primary-700 tracking-tight">
-                      ₦{parseFloat(intent.amount || 0).toLocaleString()}
-                    </p>
+                  <div className="bg-emerald-50 border-2 border-emerald-200 rounded-xl p-5 text-center">
+                    <p className="text-[10px] font-semibold uppercase text-emerald-500 tracking-wider mb-1">Transfer Exactly This Amount</p>
+                    <p className="text-4xl font-extrabold text-emerald-700">₦{parseFloat(intent.amount || 0).toLocaleString()}</p>
                   </div>
 
                   {/* Bank details */}
@@ -1151,28 +964,11 @@ const Donation = () => {
                   )}
 
                   {/* CTA */}
-                  <button
-                    onClick={handleIveTransferred}
-                    disabled={transferChecking}
-                    className="w-full py-5 bg-dark text-white font-black rounded-2xl shadow-xl disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 hover:bg-gray-800"
-                  >
-                    {transferChecking ? (
-                      <>
-                        <Loader size={20} className="animate-spin" />
-                        Checking your transfer…
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle size={20} />
-                        I've Transferred the Money
-                      </>
-                    )}
+                  <button onClick={handleIveTransferred} disabled={transferChecking}
+                    className="w-full py-4 bg-gray-900 text-white font-semibold rounded-xl shadow-lg disabled:opacity-60 transition-all flex items-center justify-center gap-2 hover:bg-emerald-700">
+                    {transferChecking ? <><Loader size={18} className="animate-spin" /> Checking your transfer…</> : <><CheckCircle size={18} /> I've Transferred the Money</>}
                   </button>
-
-                  <p className="text-center text-xs text-gray-400 -mt-3">
-                    Include the reference in your transfer narration for faster
-                    processing.
-                  </p>
+                  <p className="text-center text-xs text-gray-400">Include the reference in your transfer narration for faster processing.</p>
                 </>
               )}
             </div>

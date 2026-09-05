@@ -1,11 +1,12 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchOverviewAnalytics } from "../../features/analytics/analyticsSlice";
 import {
   ArrowRight,
   Heart,
   Users,
   BookOpen,
-  TrendingUp,
   Award,
   Target,
   Eye,
@@ -20,104 +21,121 @@ import FAQ from "../../components/FAQ";
 import Team from "../../components/Team";
 import Meta from "../../components/Meta";
 
-const stats = [
-  {
-    icon: Users,
-    value: "5,000+",
-    label: "Lives Impacted",
-    color: "text-primary-600",
-    bg: "bg-primary-50",
-  },
-  {
-    icon: BookOpen,
-    value: "1,200+",
-    label: "Children Educated",
-    color: "text-secondary-600",
-    bg: "bg-secondary-50",
-  },
-  {
-    icon: Heart,
-    value: "500+",
-    label: "Families Supported",
-    color: "text-primary-600",
-    bg: "bg-primary-50",
-  },
-  {
-    icon: Award,
-    value: "50+",
-    label: "Active Projects",
-    color: "text-secondary-600",
-    bg: "bg-secondary-50",
-  },
-];
-
 const About = () => {
+  const dispatch = useDispatch();
+  const { overviewStats } = useSelector((state) => state.analytics);
+
+  useEffect(() => {
+    dispatch(fetchOverviewAnalytics());
+  }, [dispatch]);
+
+  const stats = [
+    {
+      icon: Users,
+      value: overviewStats
+        ? `${Math.floor(overviewStats.livesImpacted).toLocaleString()}+`
+        : "—",
+      label: "Lives Impacted",
+      color: "text-emerald-600",
+      bg: "bg-emerald-100",
+    },
+    {
+      icon: BookOpen,
+      value: overviewStats
+        ? `${overviewStats.totalDonations.toLocaleString()}+`
+        : "—",
+      label: "Total Donations",
+      color: "text-blue-600",
+      bg: "bg-blue-100",
+    },
+    {
+      icon: Heart,
+      value: overviewStats
+        ? `${overviewStats.activeVolunteers.toLocaleString()}+`
+        : "—",
+      label: "Active Volunteers",
+      color: "text-rose-600",
+      bg: "bg-rose-100",
+    },
+    {
+      icon: Award,
+      value: overviewStats ? `${overviewStats.totalCampaigns}+` : "—",
+      label: "Active Projects",
+      color: "text-amber-600",
+      bg: "bg-amber-100",
+    },
+  ];
+
   return (
-    <div className="bg-paper overflow-hidden">
+    <div className="bg-white overflow-hidden">
       <Meta
         title="About Our Mission"
         description="Discover the story and heartbeat of Sabo Ibadan Youth Charity Foundation. Founded in 2010, we are on a mission to disrupt poverty and empower the next generation."
       />
-      {/* --- PREMIUM HERO SECTION --- */}
-      <section className="relative pt-32 pb-24 overflow-hidden bg-primary-950 text-white">
-        {/* Abstract Background Flashes */}
-        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary-800/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-secondary-800/10 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2" />
+
+      {/* ── HERO SECTION ── */}
+      <section className="relative pt-28 pb-32 bg-gray-900 text-white overflow-hidden">
+        {/* Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-900 to-emerald-950/40" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid lg:grid-cols-2 gap-20 items-center">
-            <div className="space-y-10 animate-fade-in-up">
-              <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-secondary-400 font-bold text-xs uppercase tracking-widest">
-                <Sparkles className="w-4 h-4" />
-                Since 2010 • Impact First
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            {/* Left: Content */}
+            <div className="space-y-8">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-emerald-400 text-xs font-semibold uppercase tracking-wider">
+                <Sparkles className="w-3.5 h-3.5" />
+                Since 2010 · Impact First
               </div>
 
-              <h1 className="text-6xl md:text-8xl font-black leading-[0.9] tracking-tighter">
-                Our legacy of <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-secondary-400 to-secondary-500 underline decoration-primary-500/30">
-                  Hope.
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
+                Our Legacy of{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">
+                  Hope
                 </span>
               </h1>
 
-              <p className="text-xl text-gray-400 leading-relaxed max-w-xl">
+              <p className="text-lg text-gray-400 leading-relaxed max-w-lg">
                 The Sabo Youth Foundation was born from a simple belief: that
                 every child in Ibadan deserves a seat at the table of
                 opportunity.
               </p>
 
-              <div className="flex items-center gap-8 pt-6">
-                <div className="space-y-1">
-                  <div className="text-3xl font-black text-white">14+</div>
-                  <div className="text-[10px] text-gray-500 uppercase font-black tracking-widest">
-                    Years of Dedication
+              <div className="flex items-center gap-8 pt-2">
+                <div>
+                  <div className="text-2xl font-bold text-white">14+</div>
+                  <div className="text-xs text-gray-500 font-medium uppercase tracking-wider">
+                    Years Active
                   </div>
                 </div>
-                <div className="w-px h-12 bg-white/10" />
-                <div className="space-y-1">
-                  <div className="text-3xl font-black text-white">20k+</div>
-                  <div className="text-[10px] text-gray-500 uppercase font-black tracking-widest">
+                <div className="w-px h-10 bg-white/10" />
+                <div>
+                  <div className="text-2xl font-bold text-white">20k+</div>
+                  <div className="text-xs text-gray-500 font-medium uppercase tracking-wider">
                     Global Supporters
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="relative animate-fade-in-up stagger-1">
-              <div className="relative z-10 rounded-[3rem] overflow-hidden border-[16px] border-white/5 shadow-2xl">
+            {/* Right: Image */}
+            <div className="relative">
+              <div className="rounded-2xl overflow-hidden shadow-2xl border border-white/10">
                 <img
                   src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1200&fit=crop"
                   alt="About Us"
-                  className="w-full h-full object-cover aspect-[4/3] hover:scale-110 transition-transform duration-[2s]"
+                  className="w-full object-cover aspect-[4/3] hover:scale-105 transition-transform duration-700"
                 />
               </div>
-              {/* Floating glass badge */}
-              <div className="absolute -bottom-8 -left-8 glass-card-dark p-8 rounded-[2rem] shadow-2xl animate-float">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-secondary-500 flex items-center justify-center">
-                    <ShieldCheck className="w-6 h-6 text-white" />
+              {/* Badge inside image */}
+              <div className="absolute bottom-4 left-4 bg-gray-900/80 backdrop-blur-sm px-4 py-3 rounded-xl border border-white/10 shadow-lg">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center shrink-0">
+                    <ShieldCheck className="w-4 h-4 text-white" />
                   </div>
-                  <p className="text-sm font-bold text-white max-w-[120px] leading-tight">
-                    Verified Transparent Organization
+                  <p className="text-xs font-semibold text-white leading-tight">
+                    Verified Transparent
+                    <br />
+                    Organization
                   </p>
                 </div>
               </div>
@@ -126,24 +144,24 @@ const About = () => {
         </div>
       </section>
 
-      {/* --- STATS SECTION (GLASSCARDS) --- */}
-      <section className="relative -mt-20 z-20 px-4">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* ── STATS SECTION ── */}
+      <section className="relative -mt-16 z-20 px-4">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
           {stats.map((stat, i) => (
             <div
               key={i}
-              className="glass-card p-10 rounded-[2.5rem] flex flex-col items-center text-center space-y-4 hover:-translate-y-2 transition-transform shadow-xl"
+              className="bg-white rounded-2xl p-6 lg:p-8 flex flex-col items-center text-center gap-3 shadow-lg border border-gray-100 hover:-translate-y-1 transition-transform duration-200"
             >
               <div
-                className={`w-14 h-14 rounded-2xl ${stat.bg} ${stat.color} flex items-center justify-center`}
+                className={`w-12 h-12 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center`}
               >
-                <stat.icon className="w-7 h-7" />
+                <stat.icon className="w-6 h-6" />
               </div>
               <div>
-                <div className="text-4xl font-black text-dark">
+                <div className="text-2xl lg:text-3xl font-bold text-gray-900">
                   {stat.value}
                 </div>
-                <div className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+                <div className="text-[11px] font-medium text-gray-500 uppercase tracking-wider mt-0.5">
                   {stat.label}
                 </div>
               </div>
@@ -152,32 +170,36 @@ const About = () => {
         </div>
       </section>
 
-      {/* --- MISSION & VISION (HIGH CONTRAST) --- */}
-      <section className="py-32 bg-paper">
+      {/* ── MISSION & VISION ── */}
+      <section className="py-24 sm:py-32 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-10">
-            <div className="p-12 md:p-16 rounded-[4rem] bg-gray-50 border border-gray-100 space-y-8 hover:bg-gray-100 transition-colors group">
-              <div className="w-20 h-20 rounded-3xl bg-primary-900 flex items-center justify-center group-hover:rotate-6 transition-transform">
-                <Target className="w-10 h-10 text-primary-400" />
+          <div className="grid lg:grid-cols-2 gap-6 lg:gap-8">
+            {/* Mission */}
+            <div className="p-8 lg:p-12 rounded-2xl bg-gray-50 border border-gray-200 space-y-6 hover:shadow-lg transition-shadow duration-300 group">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Target className="w-7 h-7 text-white" />
               </div>
-              <h2 className="text-5xl font-black text-dark leading-tight">
-                Our <span className="text-primary-700">Mission</span>
+              <h2 className="text-3xl lg:text-4xl font-extrabold text-gray-900">
+                Our{" "}
+                <span className="text-emerald-600">Mission</span>
               </h2>
-              <p className="text-xl text-gray-600 leading-relaxed font-medium">
+              <p className="text-base lg:text-lg text-gray-600 leading-relaxed">
                 To disrupt generational poverty by providing high-quality
                 educational infrastructure, accessible healthcare, and strategic
                 economic empowerment for the youth of Ibadan.
               </p>
             </div>
 
-            <div className="p-12 md:p-16 rounded-[4rem] bg-primary-900 text-white space-y-8 hover:bg-primary-950 transition-colors group">
-              <div className="w-20 h-20 rounded-3xl bg-white/10 flex items-center justify-center group-hover:-rotate-6 transition-transform">
-                <Eye className="w-10 h-10 text-secondary-400" />
+            {/* Vision */}
+            <div className="p-8 lg:p-12 rounded-2xl bg-gray-900 text-white space-y-6 hover:shadow-lg transition-shadow duration-300 group">
+              <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Eye className="w-7 h-7 text-emerald-400" />
               </div>
-              <h2 className="text-5xl font-black leading-tight text-white">
-                Our <span className="text-secondary-400">Vision</span>
+              <h2 className="text-3xl lg:text-4xl font-extrabold">
+                Our{" "}
+                <span className="text-emerald-400">Vision</span>
               </h2>
-              <p className="text-xl text-primary-100 leading-relaxed font-medium">
+              <p className="text-base lg:text-lg text-gray-400 leading-relaxed">
                 A Lagos and Ibadan where every single young individual,
                 regardless of their background, has the tools to thrive and lead
                 in the global economy.
@@ -187,83 +209,13 @@ const About = () => {
         </div>
       </section>
 
-      {/* --- CORE SECTIONS (EXISTING COMPONENTS) --- */}
+      {/* ── CORE SECTIONS ── */}
       <div className="space-y-0">
         <WhatWeDo />
         <History />
         <Team />
         <FAQ />
       </div>
-
-      {/* --- PREMIUM CTA FINALE --- */}
-      <section className="py-32 px-4 bg-paper relative overflow-hidden">
-        {/* Background Accents */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-px bg-gradient-to-r from-transparent via-gray-100 to-transparent" />
-
-        <div className="max-w-7xl mx-auto relative rounded-[5rem] overflow-hidden bg-dark p-12 md:p-32 text-center group">
-          {/* Abstract Glows */}
-          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary-900/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 group-hover:bg-primary-500/10 transition-colors duration-1000" />
-          <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-secondary-900/10 rounded-full blur-[120px] translate-y-1/2 -translate-x-1/2" />
-
-          <div className="relative z-10 max-w-4xl mx-auto space-y-12">
-            <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-white/5 border border-white/10 text-secondary-500 font-bold text-xs uppercase tracking-[0.3em] animate-pulse">
-              Initiative Deployment
-            </div>
-
-            <h2 className="text-6xl md:text-8xl font-black text-white leading-[0.85] tracking-tighter">
-              The Future is <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-primary-600">
-                Ours to Build.
-              </span>
-            </h2>
-
-            <p className="text-xl md:text-2xl text-primary-100/60 font-medium leading-relaxed max-w-2xl mx-auto italic">
-              "Your contribution is the pulse of our operation. Every classroom
-              constructed, every child treated—it starts with your decision to
-              act."
-            </p>
-
-            <div className="flex flex-wrap justify-center gap-8 pt-6">
-              <Link
-                to="/get-involved"
-                className="relative group/btn overflow-hidden px-12 py-6 bg-primary-600 text-white font-black rounded-[2rem] shadow-[0_20px_50px_rgba(16,185,129,0.3)] hover:scale-110 active:scale-95 transition-all"
-              >
-                <span className="relative z-10 flex items-center gap-3">
-                  Join Our Mission <Users className="w-5 h-5" />
-                </span>
-                <div className="absolute inset-0 bg-gradient-to-r from-primary-400 to-primary-600 opacity-0 group-hover/btn:opacity-100 transition-opacity" />
-              </Link>
-
-              <Link
-                to="/make-donation"
-                className="relative px-12 py-6 bg-white text-dark font-black rounded-[2rem] shadow-2xl hover:bg-gray-100 hover:scale-110 active:scale-95 transition-all flex items-center gap-3 group/heart"
-              >
-                Support a Child
-                <Heart className="w-5 h-5 text-primary-600 group-hover/heart:fill-primary-600 transition-all" />
-              </Link>
-            </div>
-
-            {/* Trust Markers */}
-            <div className="pt-16 flex flex-wrap items-center justify-center gap-12 border-t border-white/5 opacity-30">
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white">
-                <ShieldCheck size={16} className="text-primary-500" />
-                Bank-Grade Encryption
-              </div>
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white">
-                <Globe size={16} className="text-primary-500" />
-                Global Impact Network
-              </div>
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white">
-                <Sparkles size={16} className="text-primary-500" />
-                Transparency Protocol
-              </div>
-            </div>
-          </div>
-
-          {/* Decorative Corner */}
-          <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-primary-500/10 rounded-full blur-[80px]" />
-        </div>
-      </section>
     </div>
   );
 };

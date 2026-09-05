@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   ChevronDown,
   MessageSquare,
@@ -6,42 +7,41 @@ import {
   ShieldCheck,
   Globe,
   Award,
-  Sparkles,
   Heart,
 } from "lucide-react";
 import { motion as Motion, AnimatePresence } from "framer-motion";
-import { fadeIn, staggerContainer, scaleIn } from "../utils/animations";
+import { fadeIn, staggerContainer } from "../utils/animations";
 
 const faqs = [
   {
     question: "How can I volunteer with Sabo Youth Foundation?",
     icon: Heart,
     answer:
-      "Join our strategic vanguard by filling out the 'Get Involved' transmission or contacting our coordinators directly. We prioritize specialists in structural education and community healthcare.",
+      "You can join our volunteer team by filling out the 'Get Involved' form or contacting our coordinators directly. We welcome specialists in education, healthcare, and community development.",
   },
   {
     question: "Are donor contributions strictly managed?",
     icon: ShieldCheck,
     answer:
-      "Absolute transparency is our protocol. 100% of public capital is deployed to program operations, with administrative overhead sustained by our executive board members and private endowment.",
+      "Absolute transparency is our protocol. 100% of public donations are deployed to programme operations, with administrative costs covered by our board members and private endowment.",
   },
   {
-    question: "Does the foundation offer recurring engagement?",
+    question: "Does the foundation offer recurring donations?",
     icon: Award,
     answer:
-      "Yes, the 'Impact Vanguard' is our recurring commitment program. Monthly contributions provide the stability needed for multi-year educational infrastructure projects in Ibadan.",
+      "Yes! Our recurring giving programme provides the stability needed for multi-year educational infrastructure projects in Ibadan. You can set up monthly contributions through our donation page.",
   },
   {
-    question: "Can I allocate capital to specific pillars?",
+    question: "Can I direct funds to a specific cause?",
     icon: Globe,
     answer:
-      "Major strategists may designate funds for specific impact modules—Education, Health, or Infrastructure. General contributions are allocated to the quadrant with highest priority need.",
+      "Yes, donors may designate funds for specific impact areas — Education, Health, or Infrastructure. General contributions are allocated to the area with highest priority need.",
   },
   {
     question: "Is the foundation a registered legal entity?",
     icon: HelpCircle,
     answer:
-      "The Sabo Youth Foundation is a fully sanctioned NGO. We issue verified documentation for all contributions exceeding 5,000 Naira for fiscal record-keeping.",
+      "The Sabo Youth Foundation is a fully registered NGO with the Corporate Affairs Commission (CAC). We issue verified documentation for all contributions exceeding ₦5,000.",
   },
 ];
 
@@ -49,90 +49,73 @@ const FAQ = () => {
   const [openIndex, setOpenIndex] = useState(0);
 
   return (
-    <section className="relative bg-dark py-20 sm:py-32 px-4 overflow-hidden border-t border-white/5">
-      {/* Abstract Background Elements */}
-      <Motion.div
-        className="absolute top-0 right-0 w-[1000px] h-[1000px] bg-primary-900/10 rounded-full blur-[140px] -translate-y-1/2 translate-x-1/4 pointer-events-none"
-        animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }}
-        transition={{ duration: 12, repeat: Infinity }}
-      />
-      <Motion.div
-        className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-secondary-900/5 rounded-full blur-[120px] translate-y-1/2 -translate-x-1/4 pointer-events-none"
-        animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
-        transition={{ duration: 15, repeat: Infinity }}
-      />
-
+    <section className="py-24 sm:py-32 bg-gray-900 px-4 border-t border-white/5">
       <div className="max-w-7xl mx-auto">
-        <div className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-start">
-          {/* Left Block: Identity & Context */}
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-start">
+          {/* Left: Header + CTA */}
           <Motion.div
-            className="space-y-8 sm:space-y-12 lg:sticky lg:top-32"
+            className="space-y-10 lg:sticky lg:top-32"
             variants={staggerContainer(0.1, 0)}
             initial="hidden"
             whileInView="show"
             viewport={{ once: true }}
           >
-            <div className="space-y-6">
+            <div className="space-y-5">
               <Motion.div
-                className="flex items-center gap-3"
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-emerald-400 text-xs font-semibold uppercase tracking-wider"
                 variants={fadeIn("right", 0.2)}
               >
-                <span className="w-10 h-0.5 bg-secondary-500" />
-                <span className="text-secondary-400 font-bold uppercase tracking-[0.3em] text-[10px]">
-                  Intelligence Center
-                </span>
+                <HelpCircle size={14} />
+                FAQ
               </Motion.div>
               <Motion.h2
-                className="text-5xl sm:text-6xl md:text-8xl font-black text-white tracking-tighter leading-[0.9]"
+                className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight"
                 variants={fadeIn("up", 0.3)}
               >
-                Protocol <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-primary-600 underline decoration-white/5">
-                  Clarity.
+                Frequently Asked{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">
+                  Questions
                 </span>
               </Motion.h2>
               <Motion.p
-                className="text-lg sm:text-xl text-primary-100/60 font-medium leading-relaxed max-w-lg italic"
+                className="text-base sm:text-lg text-gray-400 leading-relaxed max-w-lg"
                 variants={fadeIn("up", 0.4)}
               >
-                Complete transparency is the cornerstone of our mission. Explore
-                the data points most vital to our supporters.
+                Complete transparency is the cornerstone of our mission. Find
+                answers to the most common questions from our supporters.
               </Motion.p>
             </div>
 
-            {/* Support Card - Dark Glass */}
+            {/* Contact Card */}
             <Motion.div
-              className="relative group max-w-md"
-              variants={scaleIn(0.5)}
+              className="p-8 rounded-2xl bg-white/5 border border-white/10 space-y-5"
+              variants={fadeIn("up", 0.5)}
             >
-              <div className="absolute inset-0 bg-primary-500 rounded-[3rem] blur-2xl opacity-10 group-hover:opacity-20 transition-opacity" />
-              <div className="relative glass-card-dark p-8 sm:p-12 rounded-[3.5rem] border border-white/5 space-y-6 sm:space-y-8 overflow-hidden">
-                <div className="absolute top-0 right-0 p-8 opacity-5">
-                  <Sparkles size={120} />
-                </div>
-                <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-secondary-500 border border-white/10">
-                  <MessageSquare size={32} />
-                </div>
-                <div className="space-y-2">
-                  <h4 className="text-2xl font-black text-white">
-                    Direct Inquiry?
-                  </h4>
-                  <p className="text-primary-100/40 text-sm font-medium">
-                    Our strategic team monitors communications 24/7 for
-                    high-impact partnerships.
-                  </p>
-                </div>
-                <button className="w-full py-5 bg-white text-dark font-black rounded-2xl hover:bg-secondary-500 hover:text-white transition-all transform active:scale-95 shadow-2xl">
-                  Open Sequence
-                </button>
+              <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-emerald-400">
+                <MessageSquare size={22} />
               </div>
+              <div>
+                <h4 className="text-lg font-bold text-white mb-1">
+                  Still have questions?
+                </h4>
+                <p className="text-sm text-gray-400 leading-relaxed">
+                  Our team is happy to help with any inquiries about donations,
+                  partnerships, or programmes.
+                </p>
+              </div>
+              <Link
+                to="/contact"
+                className="block w-full py-3.5 bg-white text-gray-900 font-semibold text-sm rounded-xl text-center hover:bg-emerald-500 hover:text-white transition-colors"
+              >
+                Contact Us
+              </Link>
             </Motion.div>
           </Motion.div>
 
-          {/* Right Block: Accordion Grid */}
+          {/* Right: Accordion */}
           <Motion.div
-            className="space-y-4"
-            variants={staggerContainer(0.1, 0.4)}
+            className="space-y-2"
+            variants={staggerContainer(0.08, 0.3)}
             initial="hidden"
             whileInView="show"
             viewport={{ once: true }}
@@ -140,33 +123,31 @@ const FAQ = () => {
             {faqs.map((faq, i) => (
               <Motion.div
                 key={i}
-                variants={fadeIn("up", 0.5 + i * 0.1)}
-                className={`group transition-all duration-700 rounded-[2.5rem] sm:rounded-[3rem] border border-white/5 ${
+                variants={fadeIn("up", 0.1 * i)}
+                className={`rounded-2xl transition-all duration-300 ${
                   openIndex === i
-                    ? "bg-white/5 border-white/10 shadow-2xl p-6 sm:p-10"
-                    : "hover:bg-white/5 p-6 sm:p-8"
+                    ? "bg-white/5 border border-white/10 p-6"
+                    : "border border-transparent hover:bg-white/[0.03] p-5"
                 }`}
               >
                 <button
                   onClick={() => setOpenIndex(openIndex === i ? -1 : i)}
-                  className="w-full flex items-start gap-4 sm:gap-8 text-left focus:outline-none"
+                  className="w-full flex items-start gap-4 text-left"
                 >
                   <div
-                    className={`mt-1 flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-500 ${
+                    className={`mt-0.5 w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ${
                       openIndex === i
-                        ? "bg-primary-500 text-white shadow-[0_0_30px_rgba(16,185,129,0.4)]"
-                        : "bg-white/5 text-primary-200/40 group-hover:text-primary-400 group-hover:border-white/10 border border-transparent"
+                        ? "bg-emerald-500 text-white"
+                        : "bg-white/5 text-gray-500"
                     }`}
                   >
-                    <faq.icon size={24} />
+                    <faq.icon size={18} />
                   </div>
 
-                  <div className="flex-1 space-y-4">
+                  <div className="flex-1">
                     <h3
-                      className={`text-xl sm:text-2xl font-black tracking-tight leading-tight transition-colors duration-500 ${
-                        openIndex === i
-                          ? "text-white"
-                          : "text-primary-100/40 group-hover:text-white"
+                      className={`text-base font-semibold leading-snug transition-colors ${
+                        openIndex === i ? "text-white" : "text-gray-400"
                       }`}
                     >
                       {faq.question}
@@ -178,13 +159,10 @@ const FAQ = () => {
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
-                          transition={{
-                            duration: 0.5,
-                            ease: [0.22, 1, 0.36, 1],
-                          }}
+                          transition={{ duration: 0.3, ease: "easeInOut" }}
                           className="overflow-hidden"
                         >
-                          <p className="text-base sm:text-lg text-primary-100/60 font-medium leading-relaxed pr-8 pt-4">
+                          <p className="text-sm text-gray-400 leading-relaxed mt-3 pr-4">
                             {faq.answer}
                           </p>
                         </Motion.div>
@@ -194,29 +172,16 @@ const FAQ = () => {
 
                   <Motion.div
                     animate={{ rotate: openIndex === i ? 180 : 0 }}
-                    transition={{ duration: 0.5 }}
-                    className={`mt-2 ${
-                      openIndex === i
-                        ? "text-secondary-500"
-                        : "text-white/10 group-hover:text-white/30"
+                    transition={{ duration: 0.3 }}
+                    className={`mt-1 shrink-0 ${
+                      openIndex === i ? "text-emerald-400" : "text-gray-600"
                     }`}
                   >
-                    <ChevronDown size={28} />
+                    <ChevronDown size={18} />
                   </Motion.div>
                 </button>
               </Motion.div>
             ))}
-
-            {/* Footer Stamp */}
-            <Motion.div
-              className="pt-12 flex items-center gap-6 px-10 opacity-20"
-              variants={fadeIn("up", 1)}
-            >
-              <div className="w-16 h-px bg-white" />
-              <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white">
-                Trust Layer Verified
-              </span>
-            </Motion.div>
           </Motion.div>
         </div>
       </div>
