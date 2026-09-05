@@ -7,27 +7,15 @@ import {
   ArrowRight,
   ShieldCheck,
   Users,
-  Sparkles,
+  TrendingUp,
 } from "lucide-react";
 import { motion as Motion } from "framer-motion";
-import {
-  fadeIn,
-  staggerContainer,
-  textVariant,
-} from "../utils/animations";
+import { fadeIn, staggerContainer, textVariant } from "../utils/animations";
 import heroImg from "../assets/hero_img.png";
 
 const HeroModern = () => {
   const dispatch = useDispatch();
   const { overviewStats } = useSelector((state) => state.analytics);
-  const [mousePos, setMousePos] = React.useState({ x: 0, y: 0 });
-
-  const handleMouseMove = (e) => {
-    setMousePos({
-      x: (e.clientX / window.innerWidth - 0.5) * 40,
-      y: (e.clientY / window.innerHeight - 0.5) * 40,
-    });
-  };
 
   useEffect(() => {
     dispatch(fetchOverviewAnalytics());
@@ -36,259 +24,204 @@ const HeroModern = () => {
   const livesImpacted = overviewStats
     ? `${Math.floor(overviewStats.livesImpacted).toLocaleString()}+`
     : "5,000+";
-  const annualGoal = overviewStats
+  const totalRaised = overviewStats
     ? `₦${(overviewStats.totalRaised / 1000000).toFixed(1)}M+`
     : "₦12.5M+";
 
   return (
-    <section 
-      onMouseMove={handleMouseMove}
-      className="relative min-h-[110vh] flex items-center bg-paper overflow-hidden"
-    >
-      {/* Background Polish */}
-      <Motion.div
-        className="absolute top-0 right-0 w-full lg:w-3/4 h-full bg-gradient-to-l from-primary-50/60 via-transparent to-transparent pointer-events-none"
-        animate={{ 
-          opacity: [0.4, 0.7, 0.4],
-          x: mousePos.x * 0.5,
-          y: mousePos.y * 0.5
-        }}
-        transition={{ duration: 5, repeat: Infinity }}
-      />
-
-      {/* Floating Particles */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {[...Array(6)].map((_, i) => (
-          <Motion.div
-            key={i}
-            className="absolute w-1 h-1 bg-primary-400 rounded-full"
-            initial={{
-              x: Math.random() * 100 + "%",
-              y: Math.random() * 100 + "%",
-              opacity: 0,
-            }}
-            animate={{
-              y: [null, "-20vh"],
-              opacity: [0, 1, 0],
-              scale: [1, 2, 1],
-            }}
-            transition={{
-              duration: 5 + Math.random() * 5,
-              repeat: Infinity,
-              delay: Math.random() * 5,
-            }}
-          />
-        ))}
+    <section className="relative min-h-screen flex items-center bg-white overflow-hidden">
+      {/* Background Image with Overlay */}
+      <div className="absolute inset-0">
+        <img
+          src={heroImg}
+          alt="Sabo Community"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-white/70 lg:to-white/40" />
+        <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-white/50" />
       </div>
 
-      {/* Floating Abstract Shapes */}
-      <Motion.div
-        className="absolute top-20 right-[15%] w-64 h-64 bg-secondary-200/20 rounded-full blur-[100px] pointer-events-none"
-        animate={{
-          y: [0, 50, 0],
-          scale: [1, 1.2, 1],
-        }}
-        transition={{ duration: 15, repeat: Infinity }}
-      />
-
-      <Motion.div
-        className="absolute bottom-40 left-[10%] w-96 h-96 bg-primary-200/20 rounded-full blur-[120px] pointer-events-none"
-        animate={{
-          x: [0, -30, 0],
-          opacity: [0.2, 0.4, 0.2],
-        }}
-        transition={{ duration: 12, repeat: Infinity }}
-      />
-
-      {/* Grid Overlay */}
-      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.02] pointer-events-none" />
-      <div className="scan-line opacity-[0.02]" />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32 relative z-10 w-full min-h-[90vh] flex flex-col items-center justify-center text-center">
-        {/* CENTRAL HUB: Narrative focal point */}
-        <Motion.div
-          className="relative z-20 space-y-12 max-w-4xl mx-auto"
-          variants={staggerContainer(0.1, 0)}
-          initial="hidden"
-          animate="show"
-        >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32 relative z-10 w-full">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          {/* Left: Content */}
           <Motion.div
-            className="inline-flex items-center gap-3 px-6 py-2 rounded-full glass-card-neon-primary border-primary-500/30 text-primary-900 font-black text-[10px] uppercase tracking-[0.3em] shadow-[0_20px_50px_-10px_rgba(16,185,129,0.2)] group/protocol overflow-hidden mx-auto"
-            variants={fadeIn("down", 0.2)}
+            className="space-y-8 max-w-xl"
+            variants={staggerContainer(0.1, 0)}
+            initial="hidden"
+            animate="show"
           >
-            <div className="absolute inset-0 bg-shimmer-fast opacity-0 group-hover/protocol:opacity-20 transition-opacity" />
-            <Sparkles
-              size={14}
-              className="text-primary-600 animate-pulse relative z-10"
-            />
-            <span className="relative z-10">Empowering Sabo Youth</span>
-          </Motion.div>
-
-          <div className="space-y-6">
-            <Motion.h1
-              className="text-5xl sm:text-7xl md:text-8xl xl:text-[9rem] font-black tracking-[-0.05em] text-dark leading-[0.85] text-balance"
-              variants={textVariant(0.3)}
+            {/* Badge */}
+            <Motion.div
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold"
+              variants={fadeIn("down", 0.1)}
             >
-              Spark <br />
-              <span className="text-glow-primary text-primary-600">
-                Change.
-              </span>
-              <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-800 via-primary-500 to-secondary-500 pb-4">
-                Drive Hope.
-              </span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              Empowering Sabo Youth Since 2020
+            </Motion.div>
+
+            {/* Headline */}
+            <Motion.h1
+              className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold text-gray-900 tracking-tight leading-[1.1]"
+              variants={textVariant(0.2)}
+            >
+              Building a{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">
+                Brighter Future
+              </span>{" "}
+              for Every Child
             </Motion.h1>
 
+            {/* Subtext */}
             <Motion.p
-              className="text-lg sm:text-xl lg:text-2xl text-gray-500 max-w-2xl mx-auto leading-relaxed font-semibold italic border-y-2 border-primary-500/20 py-6"
+              className="text-lg text-gray-600 leading-relaxed max-w-lg"
+              variants={fadeIn("up", 0.3)}
+            >
+              We don't just give aid — we build lasting independence. Connecting
+              hearts worldwide to transform lives through education, healthcare,
+              and empowerment in Sabo, Ibadan.
+            </Motion.p>
+
+            {/* CTAs */}
+            <Motion.div
+              className="flex flex-col sm:flex-row items-start gap-4"
               variants={fadeIn("up", 0.4)}
             >
-              "We don't just give aid — we build lasting independence.
-               Connecting hearts worldwide to transform lives in Sabo, Ibadan."
-            </Motion.p>
-          </div>
+              <Link
+                to="/make-donation"
+                className="group inline-flex items-center gap-3 px-8 py-4 bg-gray-900 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all duration-200 shadow-lg shadow-gray-900/20 hover:shadow-emerald-700/30"
+              >
+                <Heart className="w-5 h-5 fill-emerald-400 text-emerald-400 group-hover:scale-110 transition-transform" />
+                Donate Now
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
 
-          <Motion.div
-            className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-6"
-            variants={fadeIn("up", 0.5)}
-          >
-            <Link
-              to="/make-donation"
-              className="group relative w-full sm:w-auto overflow-hidden px-12 py-6 bg-dark text-white font-black rounded-[2.5rem] hover:scale-105 active:scale-95 transition-all duration-500 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.4)]"
-            >
-              <div className="absolute inset-0 bg-shimmer-fast opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <span className="relative z-10 flex items-center justify-center gap-3 text-lg sm:text-xl">
-                Empower Sabo Youth{" "}
-                <Heart className="w-5 h-5 fill-primary-500 text-primary-500 group-hover:scale-125 transition-transform" />
-              </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-primary-600 via-primary-800 to-dark opacity-0 group-hover:opacity-50 transition-opacity duration-700" />
-            </Link>
+              <Link
+                to="/about"
+                className="group inline-flex items-center gap-2 px-8 py-4 bg-white text-gray-900 font-semibold rounded-xl border-2 border-gray-200 hover:border-gray-900 transition-all duration-200"
+              >
+                Learn Our Story
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </Motion.div>
 
-            <Link
-              to="/about"
-              className="group relative w-full sm:w-auto px-12 py-6 bg-white text-dark font-black rounded-[2.5rem] border-4 border-gray-100 hover:border-dark transition-all duration-500 text-center text-lg sm:text-xl overflow-hidden"
+            {/* Trust Badges */}
+            <Motion.div
+              className="flex items-center gap-6 pt-4"
+              variants={fadeIn("up", 0.5)}
             >
-              <div className="absolute inset-0 bg-shimmer-fast opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <span className="relative z-10">
-                Our Strategic Vision
-                <ArrowRight className="inline-flex ml-3 w-5 h-5 group-hover:translate-x-3 transition-transform" />
-              </span>
-            </Link>
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <ShieldCheck size={16} className="text-emerald-600" />
+                <span className="font-medium">CAC Registered</span>
+              </div>
+              <div className="w-px h-4 bg-gray-200" />
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <ShieldCheck size={16} className="text-emerald-600" />
+                <span className="font-medium">100% Transparent</span>
+              </div>
+            </Motion.div>
           </Motion.div>
 
-          {/* Mobile & Tablet Inline Stats Bar */}
-          <div className="grid grid-cols-2 gap-4 pt-8 xl:hidden w-full max-w-xl mx-auto">
-            <div className="p-4 rounded-2xl bg-white/80 border border-gray-100 shadow-lg text-center">
-              <div className="text-2xl font-black text-dark tracking-tight">{livesImpacted}</div>
-              <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5">Lives Impacted</div>
-            </div>
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-primary-600 to-primary-800 text-white shadow-lg text-center">
-              <div className="text-2xl font-black tracking-tight">{annualGoal}</div>
-              <div className="text-[9px] font-black text-primary-200 uppercase tracking-widest mt-0.5">Annual Target</div>
-            </div>
-          </div>
-        </Motion.div>
-
-        {/* DATA NODES: Symmetrical Floating Interface (Desktop XL only) */}
-        <div className="hidden xl:block absolute inset-0 pointer-events-none">
-          {/* Top Left: Lives Impacted */}
+          {/* Right: Stats Cards (visible on lg+) */}
           <Motion.div
-            className="absolute left-[3%] top-[22%] pointer-events-auto"
-            animate={{ 
-              x: mousePos.x * -1.2,
-              y: mousePos.y * -1.2,
-            }}
+            className="hidden lg:flex flex-col gap-5 items-end"
+            variants={staggerContainer(0.15, 0.4)}
+            initial="hidden"
+            animate="show"
           >
-            <div className="glass-card-premium p-6 rounded-[2.5rem] shadow-2xl border-white group/widget overflow-hidden relative">
+            {/* Stats Card 1 */}
+            <Motion.div
+              variants={fadeIn("left", 0.1)}
+              className="bg-white/90 backdrop-blur-sm border border-gray-200 rounded-2xl p-6 shadow-lg w-72"
+            >
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-primary-600 text-white flex items-center justify-center shadow-lg shadow-primary-500/30">
-                  <Users size={24} />
+                <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
+                  <Users size={22} className="text-emerald-600" />
                 </div>
                 <div>
-                  <div className="text-2xl font-black text-dark tracking-tighter">
+                  <div className="text-2xl font-bold text-gray-900">
                     {livesImpacted}
                   </div>
-                  <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
+                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Lives Impacted
                   </div>
                 </div>
               </div>
-            </div>
-          </Motion.div>
+            </Motion.div>
 
-          {/* Top Right: Annual Goal */}
-          <Motion.div
-            className="absolute right-[3%] top-[22%] pointer-events-auto"
-            animate={{ 
-              x: mousePos.x * 1.2,
-              y: mousePos.y * -1.2,
-            }}
-          >
-            <div className="glass-card-neon-secondary p-6 rounded-[2.5rem] shadow-2xl overflow-hidden relative min-w-[180px]">
-              <div className="space-y-3">
-                <div className="text-2xl font-black text-white text-glow-secondary leading-none">
-                  {annualGoal}
+            {/* Stats Card 2 */}
+            <Motion.div
+              variants={fadeIn("left", 0.2)}
+              className="bg-gray-900 text-white rounded-2xl p-6 shadow-lg w-72"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                  <TrendingUp size={22} className="text-emerald-400" />
                 </div>
-                <div className="text-[9px] font-black text-secondary-400 uppercase tracking-widest">
-                  Annual Target
-                </div>
-                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-secondary-500 shadow-[0_0_15px_#f59e0b]" style={{ width: "85%" }} />
+                <div>
+                  <div className="text-2xl font-bold">{totalRaised}</div>
+                  <div className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                    Total Raised
+                  </div>
                 </div>
               </div>
-            </div>
-          </Motion.div>
+              <div className="mt-4 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <Motion.div
+                  className="h-full bg-gradient-to-r from-emerald-400 to-teal-400 rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: "78%" }}
+                  transition={{ duration: 1.5, delay: 1 }}
+                />
+              </div>
+            </Motion.div>
 
-          {/* Bottom Left: Transparency */}
-          <Motion.div
-            className="absolute left-[3%] bottom-[22%] pointer-events-auto"
-            animate={{ 
-              x: mousePos.x * -1,
-              y: mousePos.y * 1,
-            }}
-          >
-            <div className="glass-card-premium p-5 rounded-[2rem] shadow-xl border-white flex items-center gap-3">
-              <div className="p-2.5 bg-gray-50 rounded-xl text-primary-600">
-                <ShieldCheck size={18} />
-              </div>
-              <div className="text-left">
-                <div className="text-[8px] font-black text-gray-400 uppercase tracking-[0.3em]">Transparency</div>
-                <div className="text-[10px] font-black text-dark uppercase tracking-widest">100% Audited</div>
-              </div>
-            </div>
-          </Motion.div>
-
-          {/* Bottom Right: Community */}
-          <Motion.div
-            className="absolute right-[3%] bottom-[22%] pointer-events-auto"
-            animate={{ 
-              x: mousePos.x * 1,
-              y: mousePos.y * 1,
-            }}
-          >
-            <div className="glass-card-premium p-5 rounded-[2rem] shadow-xl border-white flex items-center gap-3">
-              <div className="p-2.5 bg-gray-50 rounded-xl text-secondary-500">
-                <Users size={18} />
-              </div>
-              <div className="text-left">
-                <div className="text-[8px] font-black text-gray-400 uppercase tracking-[0.3em]">Community</div>
-                <div className="text-[10px] font-black text-dark uppercase tracking-widest">Sabo Community</div>
-              </div>
-            </div>
-          </Motion.div>
-
-          {/* CENTER IMAGE Backdrop */}
-          <div className="absolute inset-0 -z-10 flex items-center justify-center opacity-30 select-none pointer-events-none">
-             <div className="relative w-[600px] h-[600px] lg:w-[800px] lg:h-[800px] rounded-full overflow-hidden grayscale contrast-125 border-[20px] border-white/40 shadow-inner">
-                <img src={heroImg} alt="Backdrop" className="w-full h-full object-cover scale-150" />
-                <div className="absolute inset-0 bg-gradient-to-b from-paper/80 via-transparent to-paper/80" />
-                <div className="absolute inset-0 bg-paper/20 backdrop-blur-3xl" />
-                <div className="absolute bottom-1/4 left-1/2 -translate-x-1/2 text-primary-900/40 text-[10px] font-black uppercase tracking-[0.8em]">
-                  Community Empowerment
+            {/* Stats Card 3 */}
+            <Motion.div
+              variants={fadeIn("left", 0.3)}
+              className="bg-white/90 backdrop-blur-sm border border-gray-200 rounded-2xl p-6 shadow-lg w-72"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
+                  <ShieldCheck size={22} className="text-amber-600" />
                 </div>
-             </div>
-          </div>
+                <div>
+                  <div className="text-2xl font-bold text-gray-900">100%</div>
+                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Transparency
+                  </div>
+                </div>
+              </div>
+            </Motion.div>
+          </Motion.div>
         </div>
+
+        {/* Mobile Stats Bar */}
+        <Motion.div
+          className="grid grid-cols-3 gap-3 mt-12 lg:hidden"
+          variants={fadeIn("up", 0.6)}
+          initial="hidden"
+          animate="show"
+        >
+          <div className="p-4 rounded-xl bg-white border border-gray-200 shadow-sm text-center">
+            <div className="text-lg font-bold text-gray-900">
+              {livesImpacted}
+            </div>
+            <div className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mt-0.5">
+              Lives Impacted
+            </div>
+          </div>
+          <div className="p-4 rounded-xl bg-gray-900 text-white text-center shadow-sm">
+            <div className="text-lg font-bold">{totalRaised}</div>
+            <div className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mt-0.5">
+              Total Raised
+            </div>
+          </div>
+          <div className="p-4 rounded-xl bg-white border border-gray-200 shadow-sm text-center">
+            <div className="text-lg font-bold text-gray-900">100%</div>
+            <div className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mt-0.5">
+              Transparent
+            </div>
+          </div>
+        </Motion.div>
       </div>
     </section>
   );

@@ -3,13 +3,21 @@ import { useDispatch, useSelector } from "react-redux";
 import { subscribeNewsletter } from "../features/newsletter/newsletterSlice";
 import { motion as Motion } from "framer-motion";
 import { fadeIn, staggerContainer } from "../utils/animations";
-import { Send, CheckCircle, Loader, Mail, Heart, Bell } from "lucide-react";
+import {
+  Send,
+  CheckCircle,
+  Loader2,
+  Mail,
+  Bell,
+  Heart,
+  ArrowRight,
+} from "lucide-react";
 import toast from "react-hot-toast";
 
-const features = [
-  { icon: Bell, text: "Event & program alerts" },
+const benefits = [
+  { icon: Bell, text: "Event & programme alerts" },
   { icon: Heart, text: "Impact stories from the field" },
-  { icon: Mail, text: "Monthly mission briefings" },
+  { icon: Mail, text: "Monthly community updates" },
 ];
 
 const NewsletterCTA = () => {
@@ -33,67 +41,58 @@ const NewsletterCTA = () => {
   };
 
   return (
-    <section className="py-20 sm:py-32 bg-gradient-to-br from-primary-50 via-paper to-secondary-50 relative overflow-hidden">
-      {/* Background Shapes */}
-      <Motion.div
-        className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary-100/60 rounded-full blur-[120px] translate-x-1/3 -translate-y-1/3 pointer-events-none"
-        animate={{ scale: [1, 1.15, 1], opacity: [0.6, 0.8, 0.6] }}
-        transition={{ duration: 10, repeat: Infinity }}
-      />
-      <Motion.div
-        className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-secondary-100/60 rounded-full blur-[100px] -translate-x-1/4 translate-y-1/4 pointer-events-none"
-        animate={{ scale: [1, 1.2, 1] }}
-        transition={{ duration: 14, repeat: Infinity, delay: 2 }}
-      />
+    <section className="py-20 sm:py-28 bg-gradient-to-br from-emerald-50 via-white to-teal-50 relative overflow-hidden">
+      {/* Subtle Background Shapes */}
+      <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-100/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-80 h-80 bg-teal-100/40 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4 pointer-events-none" />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <Motion.div
-          className="glass-card-neon-primary rounded-[4rem] p-12 sm:p-16 lg:p-24 shadow-[0_60px_150px_-20px_rgba(16,185,129,0.2)] border-primary-500/20 text-center relative overflow-hidden"
+          className="bg-white rounded-3xl border border-gray-200 shadow-xl p-8 sm:p-12 lg:p-16 text-center"
           variants={staggerContainer(0.1, 0)}
           initial="hidden"
           whileInView="show"
           viewport={{ once: true }}
         >
-          {/* Badge */}
+          {/* Icon */}
           <Motion.div
-            className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-primary-50 border border-primary-200 text-primary-700 text-[10px] font-black uppercase tracking-[0.3em] mb-10"
+            className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-100 mb-6"
             variants={fadeIn("down", 0.1)}
           >
-            <Mail size={12} />
-            Stay Informed
+            <Mail size={24} className="text-emerald-600" />
           </Motion.div>
 
-          {/* Headline */}
+          {/* Heading */}
           <Motion.h2
-            className="text-4xl sm:text-5xl lg:text-7xl font-black text-dark tracking-tighter leading-[0.9] mb-6"
+            className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 tracking-tight mb-4"
             variants={fadeIn("up", 0.2)}
           >
-            Don't Miss &<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-secondary-600">
-              Moment of Impact.
+            Stay Connected with{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">
+              Our Impact
             </span>
           </Motion.h2>
 
           <Motion.p
-            className="text-lg sm:text-xl text-dark/70 font-medium leading-relaxed max-w-2xl mx-auto mb-12 italic border-l-4 border-primary-500 pl-8 py-2"
-            variants={fadeIn("up", 0.3)}
+            className="text-base sm:text-lg text-gray-500 max-w-xl mx-auto leading-relaxed mb-8"
+            variants={fadeIn("up", 0.25)}
           >
-            "Stay connected with the Sabo community. Get real-time updates 
-            on our programmes, events, and the impact your support creates."
+            Get real-time updates on our programmes, events, and the difference
+            your support is making in Sabo.
           </Motion.p>
 
-          {/* Feature Pills */}
+          {/* Benefits */}
           <Motion.div
-            className="flex flex-wrap items-center justify-center gap-4 mb-12"
-            variants={fadeIn("up", 0.35)}
+            className="flex flex-wrap items-center justify-center gap-3 mb-10"
+            variants={fadeIn("up", 0.3)}
           >
-            {features.map((f, i) => (
+            {benefits.map((b, i) => (
               <div
                 key={i}
-                className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-50 border border-gray-200 text-gray-600 text-sm font-semibold"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-50 border border-gray-100 text-gray-600 text-sm font-medium"
               >
-                <f.icon size={14} className="text-primary-600" />
-                {f.text}
+                <b.icon size={14} className="text-emerald-600" />
+                {b.text}
               </div>
             ))}
           </Motion.div>
@@ -101,8 +100,8 @@ const NewsletterCTA = () => {
           {/* Form */}
           <Motion.form
             onSubmit={handleSubmit}
-            className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto"
-            variants={fadeIn("up", 0.4)}
+            className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
+            variants={fadeIn("up", 0.35)}
           >
             <input
               type="email"
@@ -111,34 +110,36 @@ const NewsletterCTA = () => {
               disabled={loading || subscribed}
               placeholder="your@email.com"
               required
-              className="flex-1 px-6 py-5 bg-white border-2 border-gray-200 rounded-2xl text-dark placeholder-gray-400 text-sm font-medium outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+              className="flex-1 px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 text-sm font-medium outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <button
               type="submit"
               disabled={loading || subscribed}
-              className="group relative px-10 py-5 bg-dark text-white font-black text-[10px] uppercase tracking-[0.4em] rounded-[2rem] hover:shadow-[0_20px_60px_rgba(0,0,0,0.4)] hover:scale-110 active:scale-95 transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 whitespace-nowrap overflow-hidden"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shadow-sm"
             >
-              <div className="absolute inset-0 bg-shimmer-fast opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               {loading ? (
                 <>
-                  <Loader size={16} className="animate-spin relative z-10" /> <span className="relative z-10">Subscribing...</span>
+                  <Loader2 size={16} className="animate-spin" />
+                  Subscribing...
                 </>
               ) : subscribed ? (
                 <>
-                  <CheckCircle size={16} className="relative z-10 text-primary-400" /> <span className="relative z-10">Subscribed!</span>
+                  <CheckCircle size={16} className="text-emerald-400" />
+                  Subscribed!
                 </>
               ) : (
                 <>
-                  <Send size={16} className="relative z-10" /> <span className="relative z-10">Subscribe</span>
+                  <Send size={16} />
+                  Subscribe
                 </>
               )}
             </button>
           </Motion.form>
 
-          {/* Trust */}
+          {/* Privacy Note */}
           <Motion.p
-            className="text-xs text-gray-400 font-medium mt-6"
-            variants={fadeIn("up", 0.45)}
+            className="text-xs text-gray-400 mt-4"
+            variants={fadeIn("up", 0.4)}
           >
             No spam, ever. Unsubscribe anytime. We respect your privacy.
           </Motion.p>
