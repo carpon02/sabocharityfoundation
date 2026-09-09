@@ -80,7 +80,7 @@ const Login = () => {
       if (!user.isEmailVerified && mode === "register") {
         navigate("/verify", { replace: true });
       } else {
-        const from = location.state?.from?.pathname || "/user/dashboard";
+        const from = location.state?.from?.pathname || "/";
         navigate(from, { replace: true });
       }
     }
