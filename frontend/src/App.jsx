@@ -122,7 +122,7 @@ const App = () => {
               <Route
                 path="/login"
                 element={
-                  user ? <Navigate to="/user/dashboard" replace /> : <Login />
+                  user ? <Navigate to="/" replace /> : <Login />
                 }
               />
 
