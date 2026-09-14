@@ -42,9 +42,10 @@ import { getDaysLeft } from "../../utils/getDaysLeft";
 
 const getCampaignStatus = (campaign) => {
   if (campaign.status === "rejected") return "rejected";
-  if (campaign.status === "active" && campaign.approved) return "active";
-  if (campaign.status === "pending") return "pending";
-  return campaign.status || "pending";
+  // Only truly active if backend says active AND admin has approved it
+  if (campaign.status === "active" && campaign.approved === true) return "active";
+  // Everything else (pending, active-but-unapproved, unknown) = pending
+  return "pending";
 };
 
 const getStatusConfig = (status) => {
@@ -53,14 +54,14 @@ const getStatusConfig = (status) => {
       icon: CheckCircle,
       color: "text-emerald-500",
       bg: "bg-emerald-500/10",
-      label: "Active Project",
+      label: "Active Campaign",
       border: "border-emerald-500/20",
     },
     pending: {
       icon: Clock,
       color: "text-amber-500",
       bg: "bg-amber-500/10",
-      label: "Under Verification",
+      label: "Awaiting Approval",
       border: "border-amber-500/20",
     },
     rejected: {
@@ -91,9 +92,9 @@ const BusinessStat = ({
     <MotionComponent
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.5 }}
-      whileHover={{ y: -5 }}
-      className={`relative overflow-hidden rounded-2xl border p-6 flex flex-col justify-between min-h-[150px] transition-all duration-300 group ${
+      transition={{ delay, duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] }}
+      whileHover={{ y: -3, transition: { type: "spring", stiffness: 500, damping: 30 } }}
+      className={`relative overflow-hidden rounded-2xl border p-6 flex flex-col justify-between min-h-[150px] transition-all duration-150 group ${
         darkMode
           ? "bg-gray-950 border-gray-800 shadow-2xl shadow-emerald-500/5"
           : "bg-white border-gray-100 shadow-xl shadow-gray-200/20"
@@ -161,14 +162,15 @@ const DeleteConfirmationModal = ({
     <AnimatePresence>
       <div className="fixed inset-0 bg-gray-950/80 backdrop-blur-xl flex items-center justify-center z-[var(--z-modal)] p-4">
         <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 40 }}
+          initial={{ opacity: 0, scale: 0.96, y: 16 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 40 }}
+          exit={{ opacity: 0, scale: 0.96, y: 16 }}
+          transition={{ type: "spring", stiffness: 500, damping: 35 }}
           className={`flex flex-col items-center ${
             darkMode
               ? "bg-gray-950 border-gray-800 shadow-2xl"
               : "bg-white border-gray-100 shadow-xl shadow-gray-200/20"
-          } rounded-2xl py-12 px-10 max-w-[480px] w-full border transition-all duration-500`}
+          } rounded-2xl py-12 px-10 max-w-[480px] w-full border transition-all duration-150`}
         >
           <div className="w-20 h-20 bg-rose-500/10 rounded-2xl flex items-center justify-center mb-8 border border-rose-500/20">
             <Trash2 size={32} className="text-rose-500" />
@@ -242,6 +244,22 @@ const CampaignModal = ({
   const [imageFiles, setImageFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [submitting, setSubmitting] = useState(false);
+  const [submitStep, setSubmitStep] = useState(0);
+
+  const submitSteps = [
+    "Validating your campaign...",
+    "Uploading images...",
+    "Saving campaign details...",
+    "Submitting for review...",
+  ];
+
+  useEffect(() => {
+    if (!submitting) { setSubmitStep(0); return; }
+    const interval = setInterval(() => {
+      setSubmitStep((prev) => (prev < submitSteps.length - 1 ? prev + 1 : prev));
+    }, 1100);
+    return () => clearInterval(interval);
+  }, [submitting]);
 
   const categories = [
     "Education",
@@ -316,14 +334,37 @@ const CampaignModal = ({
     setImagePreviews(files.map((file) => URL.createObjectURL(file)));
   };
 
+  const today = new Date().toISOString().split("T")[0];
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Explicit date validation
+    // NOTE: We use plain strings in toast icon to avoid potential JSX-in-toast silent errors
+    if (!formData.startDate) {
+      toast.error("Please select a campaign start date.");
+      return;
+    }
+    if (!formData.endDate) {
+      toast.error("Please select a campaign end date.");
+      return;
+    }
+    if (new Date(formData.endDate) <= new Date(formData.startDate)) {
+      toast.error("End date must be after the start date.");
+      return;
+    }
+
     setSubmitting(true);
     try {
       await onSubmit(
         { ...formData, imageFiles },
         campaign?._id || campaign?.id,
       );
+      // Only close after the submission fully resolves — keeps the overlay visible
+      onClose();
+    } catch (err) {
+      // onSubmit re-throws on failure, so the error toast is shown
+      // Don't close the modal on error
     } finally {
       setSubmitting(false);
     }
@@ -335,29 +376,75 @@ const CampaignModal = ({
     <AnimatePresence>
       <div className="fixed inset-0 bg-gray-950/90 backdrop-blur-xl flex items-center justify-center z-[var(--z-modal)] p-4 md:p-8">
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 50 }}
+          initial={{ opacity: 0, scale: 0.97, y: 24 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 50 }}
+          exit={{ opacity: 0, scale: 0.97, y: 24 }}
+          transition={{ type: "spring", stiffness: 500, damping: 36 }}
           className={`${
             darkMode
               ? "bg-gray-950 border-gray-800 shadow-2xl"
               : "bg-white border-gray-100 shadow-xl shadow-gray-200/20"
-          } border rounded-2xl max-w-4xl w-full max-h-[92vh] overflow-hidden relative flex flex-col transition-all duration-700`}
+          } border rounded-2xl max-w-4xl w-full max-h-[92vh] overflow-hidden relative flex flex-col transition-all duration-150`}
         >
           {/* Submitting Overlay */}
           {submitting && (
-            <div className="absolute inset-0 bg-gray-950/80 backdrop-blur-md flex items-center justify-center z-[160]">
+            <div className="absolute inset-0 bg-gray-950/95 backdrop-blur-sm flex items-center justify-center z-[160]">
               <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="text-center"
+                initial={{ opacity: 0, scale: 0.92, y: 12 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                className="text-center px-10 max-w-xs"
               >
-                <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-6 shadow-lg shadow-emerald-500/20"></div>
-                <h3 className="text-white text-xl font-bold">
-                  {mode === "create"
-                    ? "Submitting Mission..."
-                    : "Updating Mission..."}
+                {/* Spinner with Heart */}
+                <div className="relative w-20 h-20 mx-auto mb-8">
+                  <div className="w-20 h-20 border-4 border-emerald-500/15 rounded-full absolute inset-0" />
+                  <div className="w-20 h-20 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin absolute inset-0" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Heart className="w-7 h-7 text-emerald-500 animate-pulse" />
+                  </div>
+                </div>
+
+                <h3 className="text-white text-xl font-bold tracking-tight mb-2">
+                  {mode === "create" ? "Submitting Campaign" : "Saving Changes"}
                 </h3>
+
+                {/* Animated step label */}
+                <AnimatePresence mode="wait">
+                  <motion.p
+                    key={submitStep}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                    className="text-emerald-400 text-[10px] font-bold uppercase tracking-widest mb-8"
+                  >
+                    {submitSteps[submitStep]}
+                  </motion.p>
+                </AnimatePresence>
+
+                {/* Progress dots */}
+                <div className="flex items-center justify-center gap-2 mb-8">
+                  {submitSteps.map((_, i) => (
+                    <motion.div
+                      key={i}
+                      animate={{
+                        scale: i === submitStep ? 1.3 : 1,
+                        opacity: i <= submitStep ? 1 : 0.25,
+                      }}
+                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                      className={`w-2 h-2 rounded-full ${
+                        i <= submitStep ? "bg-emerald-500" : "bg-gray-700"
+                      }`}
+                    />
+                  ))}
+                </div>
+
+                {mode === "create" && (
+                  <p className="text-gray-500 text-[10px] font-semibold leading-relaxed">
+                    Your campaign will be reviewed by the Sabo Charity Foundation
+                    team within 24 hours before going live to donors.
+                  </p>
+                )}
               </motion.div>
             </div>
           )}
@@ -369,7 +456,7 @@ const CampaignModal = ({
                 <h4
                   className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? "text-gray-500" : "text-gray-400"}`}
                 >
-                  Community Empowerment Hub
+                  Sabo Charity Foundation
                 </h4>
               </div>
               <h3
@@ -378,8 +465,8 @@ const CampaignModal = ({
                 }`}
               >
                 {mode === "create"
-                  ? "Launch Impact Project"
-                  : "Update Project Details"}
+                  ? "Start a Fundraising Campaign"
+                  : "Edit Your Campaign"}
               </h3>
             </div>
             <button
@@ -402,8 +489,9 @@ const CampaignModal = ({
             >
               {mode === "create" && (
                 <motion.div
-                  initial={{ opacity: 0, x: -10 }}
+                  initial={{ opacity: 0, x: -6 }}
                   animate={{ opacity: 1, x: 0 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 35 }}
                   className={`p-5 rounded-xl border flex items-start gap-4 ${
                     darkMode
                       ? "bg-emerald-500/5 border-emerald-500/10 text-emerald-400"
@@ -413,14 +501,14 @@ const CampaignModal = ({
                   <Shield className="w-5 h-5 shrink-0 mt-0.5" />
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-widest mb-1">
-                      Verification Protocol
+                      Under Review Before Going Live
                     </p>
                     <p className="text-xs font-semibold leading-relaxed opacity-90">
-                      New projects are reviewed by the foundation to ensure
-                      alignment with community goals. Standard verification
-                      time:{" "}
+                      Your campaign will be reviewed by the Sabo Charity Foundation
+                      team before it appears publicly. Donors will be able to
+                      contribute once it is approved. Typical review time:{" "}
                       <span className="underline decoration-emerald-500/30 underline-offset-4">
-                        12-24 Hours
+                        12–24 Hours
                       </span>
                       .
                     </p>
@@ -431,19 +519,22 @@ const CampaignModal = ({
               <div className="space-y-8">
                 <div className="group">
                   <label
-                    className={`block text-[10px] font-bold uppercase tracking-widest mb-3 transition-colors group-focus-within:text-emerald-500 ${
+                    className={`block text-[10px] font-bold uppercase tracking-widest mb-1 transition-colors group-focus-within:text-emerald-500 ${
                       darkMode ? "text-gray-500" : "text-gray-400"
                     }`}
                   >
-                    Project Title *
+                    Campaign Title *
                   </label>
+                  <p className={`text-[10px] mb-3 ${darkMode ? "text-gray-600" : "text-gray-400"}`}>
+                    Give your fundraising campaign a clear, meaningful name.
+                  </p>
                   <input
                     type="text"
                     name="title"
                     value={formData.title}
                     onChange={handleInputChange}
                     required
-                    placeholder="E.g., Sabo Vocational Training Center"
+                    placeholder="E.g., Help Build a School in Sabo, Ibadan"
                     className={`w-full px-6 py-4 rounded-xl border font-bold text-sm transition-all outline-none ${
                       darkMode
                         ? "bg-gray-900/50 border-gray-800 text-white focus:border-emerald-500/50"
@@ -459,7 +550,7 @@ const CampaignModal = ({
                         darkMode ? "text-gray-500" : "text-gray-400"
                       }`}
                     >
-                      Impact Category *
+                      Donation Category *
                     </label>
                     <div className="relative">
                       <select
@@ -511,19 +602,22 @@ const CampaignModal = ({
 
                 <div className="group">
                   <label
-                    className={`block text-[10px] font-bold uppercase tracking-widest mb-3 transition-colors group-focus-within:text-emerald-500 ${
+                    className={`block text-[10px] font-bold uppercase tracking-widest mb-1 transition-colors group-focus-within:text-emerald-500 ${
                       darkMode ? "text-gray-500" : "text-gray-400"
                     }`}
                   >
-                    Short Summary
+                    Brief Campaign Summary
                   </label>
+                  <p className={`text-[10px] mb-3 ${darkMode ? "text-gray-600" : "text-gray-400"}`}>
+                    A short one-liner shown to donors on the campaign card.
+                  </p>
                   <textarea
                     name="shortDescription"
                     value={formData.shortDescription}
                     onChange={handleInputChange}
                     rows={2}
                     maxLength={200}
-                    placeholder="Briefly describe the core mission..."
+                    placeholder="E.g., Raising funds to provide clean water for 500 families in Sabo."
                     className={`w-full px-6 py-4 rounded-xl border font-semibold text-sm leading-relaxed transition-all outline-none resize-none ${
                       darkMode
                         ? "bg-gray-900 border-gray-800 text-white focus:border-emerald-500/50"
@@ -534,12 +628,15 @@ const CampaignModal = ({
 
                 <div className="group">
                   <label
-                    className={`block text-[10px] font-bold uppercase tracking-widest mb-3 transition-colors group-focus-within:text-emerald-500 ${
+                    className={`block text-[10px] font-bold uppercase tracking-widest mb-1 transition-colors group-focus-within:text-emerald-500 ${
                       darkMode ? "text-gray-500" : "text-gray-400"
                     }`}
                   >
-                    Impact Story *
+                    Why Are You Raising Funds? *
                   </label>
+                  <p className={`text-[10px] mb-3 ${darkMode ? "text-gray-600" : "text-gray-400"}`}>
+                    Explain the cause, who it helps, and how donations will be used. The more detail, the more donors will trust your campaign.
+                  </p>
                   <textarea
                     name="description"
                     value={formData.description}
@@ -548,7 +645,7 @@ const CampaignModal = ({
                     rows={6}
                     minLength={50}
                     maxLength={2000}
-                    placeholder="Describe the problem, solution, and the impact this project will create..."
+                    placeholder="E.g., We are raising funds to build a new classroom block for over 200 children in Sabo who currently study outdoors. Your donation will cover construction materials, furniture, and teacher salaries for the first year..."
                     className={`w-full px-6 py-4 rounded-xl border font-semibold text-sm leading-relaxed transition-all outline-none ${
                       darkMode
                         ? "bg-gray-900 border-gray-800 text-white focus:border-emerald-500/50"
@@ -568,84 +665,203 @@ const CampaignModal = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="group">
-                    <label
-                      className={`block text-[10px] font-bold uppercase tracking-widest mb-3 transition-colors group-focus-within:text-emerald-500 ${
+                {/* Fundraising Goal */}
+                <div className="group">
+                  <label
+                    className={`block text-[10px] font-bold uppercase tracking-widest mb-1 transition-colors group-focus-within:text-emerald-500 ${
+                      darkMode ? "text-gray-500" : "text-gray-400"
+                    }`}
+                  >
+                    Fundraising Goal (₦) *
+                  </label>
+                  <p className={`text-[10px] mb-3 ${darkMode ? "text-gray-600" : "text-gray-400"}`}>
+                    How much do you need to raise? Enter amount in Naira. Minimum ₦1,000.
+                  </p>
+                  <div className="relative">
+                    <span className="absolute left-5 top-1/2 -translate-y-1/2 text-emerald-500 font-black text-base select-none">₦</span>
+                    <input
+                      type="text"
+                      name="target"
+                      inputMode="numeric"
+                      value={
+                        formData.target
+                          ? Number(formData.target).toLocaleString("en-NG")
+                          : ""
+                      }
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/,/g, "");
+                        if (raw === "" || /^\d+$/.test(raw)) {
+                          setFormData((prev) => ({ ...prev, target: raw }));
+                        }
+                      }}
+                      required
+                      placeholder="e.g. 500,000"
+                      className={`w-full pl-10 pr-6 py-4 rounded-xl border font-bold text-lg transition-all outline-none ${
+                        darkMode
+                          ? "bg-gray-900 border-gray-800 text-white focus:border-emerald-500/50"
+                          : "bg-gray-50 border-gray-100 text-gray-950 focus:border-emerald-500/50"
+                      }`}
+                    />
+                  </div>
+                  {formData.target && Number(formData.target) >= 1000 && (
+                    <p className="text-[10px] text-emerald-500 font-bold mt-2 uppercase tracking-widest">
+                      Goal: ₦{Number(formData.target).toLocaleString("en-NG")}
+                    </p>
+                  )}
+                  {formData.target && Number(formData.target) > 0 && Number(formData.target) < 1000 && (
+                    <p className="text-[10px] text-rose-400 font-bold mt-2 uppercase tracking-widest flex items-center gap-1">
+                      <AlertCircle size={11} /> Minimum fundraising goal is ₦1,000
+                    </p>
+                  )}
+                </div>
+
+                {/* Campaign Duration — redesigned date picker */}
+                <div>
+                  <div className="flex items-center gap-3 mb-1">
+                    <Calendar className="w-4 h-4 text-emerald-500" />
+                    <span
+                      className={`text-[10px] font-bold uppercase tracking-widest ${
                         darkMode ? "text-gray-500" : "text-gray-400"
                       }`}
                     >
-                      Contribution Goal (₦) *
-                    </label>
-                    <div className="relative">
-                      <Wallet className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />
+                      Campaign Duration *
+                    </span>
+                  </div>
+                  <p className={`text-[10px] mb-5 ${darkMode ? "text-gray-600" : "text-gray-400"}`}>
+                    Set the start and end dates for your donation campaign. Donors can contribute within this period.
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    {/* Start Date */}
+                    <div
+                      className={`rounded-2xl border p-5 transition-all group/date ${
+                        darkMode
+                          ? "bg-gray-900 border-gray-800 hover:border-emerald-500/40"
+                          : "bg-gray-50 border-gray-100 hover:border-emerald-300"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                          <Calendar className="w-3.5 h-3.5 text-emerald-500" />
+                        </div>
+                        <div>
+                          <p
+                            className={`text-[9px] font-bold uppercase tracking-widest ${
+                              darkMode ? "text-gray-500" : "text-gray-400"
+                            }`}
+                          >
+                            Start Date
+                          </p>
+                          <p
+                            className={`text-[9px] ${
+                              darkMode ? "text-gray-700" : "text-gray-300"
+                            }`}
+                          >
+                            When donations open
+                          </p>
+                        </div>
+                      </div>
                       <input
-                        type="number"
-                        name="target"
-                        value={formData.target}
+                        type="date"
+                        name="startDate"
+                        value={formData.startDate}
+                        min={today}
                         onChange={handleInputChange}
                         required
-                        min="1000"
-                        placeholder="0.00"
-                        className={`w-full pl-14 pr-6 py-4 rounded-xl border font-bold text-lg transition-all outline-none ${
+                        className={`w-full px-4 py-3 rounded-xl border font-bold text-sm outline-none transition-all cursor-pointer ${
                           darkMode
-                            ? "bg-gray-900 border-gray-800 text-white focus:border-emerald-500/50"
-                            : "bg-gray-50 border-gray-100 text-gray-950 focus:border-emerald-500/50"
+                            ? "bg-gray-800 border-gray-700 text-white focus:border-emerald-500 [color-scheme:dark]"
+                            : "bg-white border-gray-200 text-gray-800 focus:border-emerald-500 [color-scheme:light]"
+                        } ${
+                          !formData.startDate
+                            ? darkMode ? "text-gray-500" : "text-gray-400"
+                            : ""
                         }`}
                       />
+                      {formData.startDate && (
+                        <p className="text-[9px] text-emerald-500 font-bold mt-2 uppercase tracking-widest">
+                          ✓ Start date selected
+                        </p>
+                      )}
                     </div>
-                  </div>
-                  <div className="group">
-                    <label
-                      className={`block text-[10px] font-bold uppercase tracking-widest mb-3 transition-colors group-focus-within:text-emerald-500 ${
-                        darkMode ? "text-gray-500" : "text-gray-400"
+
+                    {/* End Date */}
+                    <div
+                      className={`rounded-2xl border p-5 transition-all group/date ${
+                        darkMode
+                          ? "bg-gray-900 border-gray-800 hover:border-emerald-500/40"
+                          : "bg-gray-50 border-gray-100 hover:border-emerald-300"
                       }`}
                     >
-                      Timeline
-                    </label>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="relative">
-                        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />
-                        <input
-                          type="date"
-                          name="startDate"
-                          value={formData.startDate}
-                          onChange={handleInputChange}
-                          required
-                          className={`w-full pl-10 pr-4 py-3.5 rounded-xl border font-bold text-[10px] outline-none ${
-                            darkMode
-                              ? "bg-gray-900 border-gray-800 text-gray-400 focus:text-white"
-                              : "bg-gray-50 border-gray-100 text-gray-500 focus:text-gray-950"
-                          }`}
-                        />
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-7 h-7 rounded-lg bg-rose-500/10 flex items-center justify-center">
+                          <Clock className="w-3.5 h-3.5 text-rose-400" />
+                        </div>
+                        <div>
+                          <p
+                            className={`text-[9px] font-bold uppercase tracking-widest ${
+                              darkMode ? "text-gray-500" : "text-gray-400"
+                            }`}
+                          >
+                            End Date
+                          </p>
+                          <p
+                            className={`text-[9px] ${
+                              darkMode ? "text-gray-700" : "text-gray-300"
+                            }`}
+                          >
+                            When donations close
+                          </p>
+                        </div>
                       </div>
-                      <div className="relative">
-                        <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />
-                        <input
-                          type="date"
-                          name="endDate"
-                          value={formData.endDate}
-                          onChange={handleInputChange}
-                          required
-                          className={`w-full pl-10 pr-4 py-3.5 rounded-xl border font-bold text-[10px] outline-none ${
-                            darkMode
-                              ? "bg-gray-900 border-gray-800 text-gray-400 focus:text-white"
-                              : "bg-gray-50 border-gray-100 text-gray-500 focus:text-gray-950"
-                          }`}
-                        />
-                      </div>
+                      <input
+                        type="date"
+                        name="endDate"
+                        value={formData.endDate}
+                        min={
+                          formData.startDate
+                            ? new Date(new Date(formData.startDate).getTime() + 86400000)
+                                .toISOString()
+                                .split("T")[0]
+                            : today
+                        }
+                        onChange={handleInputChange}
+                        required
+                        className={`w-full px-4 py-3 rounded-xl border font-bold text-sm outline-none transition-all cursor-pointer ${
+                          darkMode
+                            ? "bg-gray-800 border-gray-700 text-white focus:border-emerald-500 [color-scheme:dark]"
+                            : "bg-white border-gray-200 text-gray-800 focus:border-emerald-500 [color-scheme:light]"
+                        } ${
+                          !formData.endDate
+                            ? darkMode ? "text-gray-500" : "text-gray-400"
+                            : ""
+                        }`}
+                      />
+                      {formData.endDate && formData.startDate && (
+                        <p className="text-[9px] text-emerald-500 font-bold mt-2 uppercase tracking-widest">
+                          ✓{" "}
+                          {Math.ceil(
+                            (new Date(formData.endDate) - new Date(formData.startDate)) /
+                              86400000,
+                          )}{" "}
+                          day campaign
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 <div className="group">
                   <label
-                    className={`block text-[10px] font-bold uppercase tracking-widest mb-4 ${
+                    className={`block text-[10px] font-bold uppercase tracking-widest mb-1 ${
                       darkMode ? "text-gray-500" : "text-gray-400"
                     }`}
                   >
-                    Project Media (Max 3)
+                    Campaign Photos (Max 3)
                   </label>
+                  <p className={`text-[10px] mb-4 ${darkMode ? "text-gray-600" : "text-gray-400"}`}>
+                    Add photos that show the cause. Campaigns with images receive up to 3× more donations.
+                  </p>
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                     <label
                       className={`sm:col-span-1 h-32 rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${
@@ -674,6 +890,7 @@ const CampaignModal = ({
                           key={i}
                           initial={{ opacity: 0, scale: 0.9 }}
                           animate={{ opacity: 1, scale: 1 }}
+                          transition={{ type: "spring", stiffness: 500, damping: 32 }}
                           className="relative w-28 h-28 group shrink-0"
                         >
                           <img
@@ -732,12 +949,12 @@ const CampaignModal = ({
                   : "hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 active:scale-95"
               }`}
             >
-              <Rocket size={16} className={submitting ? "animate-spin" : ""} />
+              <Heart size={16} className={submitting ? "animate-pulse" : ""} />
               {submitting
-                ? "Submitting..."
+                ? "Submitting Campaign..."
                 : mode === "create"
-                  ? "Launch Project"
-                  : "Update Project"}
+                  ? "Submit Campaign for Review"
+                  : "Save Changes"}
             </button>
           </div>
         </motion.div>
@@ -777,8 +994,8 @@ const CampaignCard = ({
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      transition={{ delay: idx * 0.05, duration: 0.5 }}
-      className={`group relative flex flex-col overflow-hidden rounded-2xl border transition-all duration-300 ${
+      transition={{ delay: idx * 0.03, type: "spring", stiffness: 500, damping: 36 }}
+      className={`group relative flex flex-col overflow-hidden rounded-2xl border transition-all duration-150 ${
         darkMode
           ? "bg-gray-950 border-gray-800 hover:border-emerald-500/50 shadow-2xl shadow-emerald-500/5"
           : "bg-white border-gray-100 shadow-xl shadow-gray-200/20 hover:border-emerald-200"
@@ -793,7 +1010,7 @@ const CampaignCard = ({
             "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=600&h=400&auto=format&fit=crop"
           }
           alt={campaign.title}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
 
         <div className="absolute top-4 left-4 z-20">
@@ -843,7 +1060,7 @@ const CampaignCard = ({
             <motion.div
               initial={{ width: 0 }}
               whileInView={{ width: `${progress}%` }}
-              transition={{ duration: 1, ease: "easeOut" }}
+              transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
               className="h-full bg-emerald-500 rounded-full"
             />
           </div>
@@ -908,7 +1125,7 @@ const CampaignCard = ({
 
           <div className="flex gap-2">
             {isOwnCampaign ? (
-              <>
+                          <>
                 <button
                   onClick={() => onEdit(campaign)}
                   className={`flex-1 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all border ${
@@ -917,12 +1134,12 @@ const CampaignCard = ({
                       : "border-gray-100 text-gray-400 hover:text-gray-950"
                   }`}
                 >
-                  Edit Project
+                  Edit Campaign
                 </button>
                 <button
                   onClick={() => onRequestDelete(campaign)}
                   className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all bg-rose-500/5 text-rose-500/50 hover:text-rose-500 hover:bg-rose-500/10 border border-rose-500/10`}
-                  title="Remove Project"
+                  title="Delete Campaign"
                 >
                   <Trash2 size={16} />
                 </button>
@@ -949,6 +1166,36 @@ const CampaignCard = ({
           </div>
         </div>
       </div>
+
+      {/* Pending approval banner for own campaigns */}
+      {isOwnCampaign && status === "pending" && (
+        <motion.div
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 500, damping: 35 }}
+          className="px-6 py-3 border-t border-amber-500/10 bg-amber-500/5 flex items-center gap-2"
+        >
+          <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+          <p className="text-[9px] font-bold uppercase tracking-widest text-amber-500">
+            Awaiting admin approval
+          </p>
+          <span className={`ml-auto text-[9px] font-semibold ${
+            darkMode ? "text-gray-600" : "text-gray-400"
+          }`}>
+            Usually within 24 hrs
+          </span>
+        </motion.div>
+      )}
+
+      {/* Rejected banner */}
+      {isOwnCampaign && status === "rejected" && (
+        <div className="px-6 py-3 border-t border-rose-500/10 bg-rose-500/5 flex items-center gap-2">
+          <XCircle size={12} className="text-rose-400 shrink-0" />
+          <p className="text-[9px] font-bold uppercase tracking-widest text-rose-400">
+            Campaign not approved — contact support
+          </p>
+        </div>
+      )}
     </MotionDiv>
   );
 };
@@ -1003,40 +1250,35 @@ const MyCampaigns = () => {
 
   const handleCampaignSubmit = useCallback(
     async (formData, campaignId = null) => {
-      try {
-        if (campaignId) {
-          await dispatch(
-            updateUserCampaign({ id: campaignId, campaignData: formData }),
-          ).unwrap();
-          toast.success("Project Details Updated", {
-            style: {
-              borderRadius: "1rem",
-              background: "#333",
-              color: "#fff",
-              fontFamily: "black",
-              textTransform: "uppercase",
-              fontSize: "10px",
-              letterSpacing: "0.2em",
-            },
-          });
-        } else {
-          await dispatch(createUserCampaign(formData)).unwrap();
-          toast.success("Project Submitted for Review", {
-            style: {
-              borderRadius: "1rem",
-              background: "#333",
-              color: "#fff",
-              fontFamily: "black",
-              textTransform: "uppercase",
-              fontSize: "10px",
-              letterSpacing: "0.2em",
-            },
-          });
-        }
-        setIsModalOpen(false);
-      } catch (err) {
-        toast.error(err || "Process Failed");
+      if (campaignId) {
+        await dispatch(
+          updateUserCampaign({ id: campaignId, campaignData: formData }),
+        ).unwrap();
+        toast.success("Campaign updated successfully!", {
+          style: {
+            borderRadius: "1rem",
+            background: "#333",
+            color: "#fff",
+            textTransform: "uppercase",
+            fontSize: "10px",
+            letterSpacing: "0.2em",
+          },
+        });
+      } else {
+        await dispatch(createUserCampaign(formData)).unwrap();
+        toast.success("Campaign submitted! We'll review it within 24 hours.", {
+          style: {
+            borderRadius: "1rem",
+            background: "#333",
+            color: "#fff",
+            textTransform: "uppercase",
+            fontSize: "10px",
+            letterSpacing: "0.2em",
+          },
+        });
       }
+      // NOTE: Do NOT call setIsModalOpen(false) here.
+      // The modal controls its own closing after the submit resolves.
     },
     [dispatch],
   );
@@ -1048,11 +1290,11 @@ const MyCampaigns = () => {
       await dispatch(
         deleteUserCampaign(campaignToDelete._id || campaignToDelete.id),
       ).unwrap();
-      toast.success("Project Removed Successfully");
+      toast.success("Campaign deleted successfully.");
       setShowDeleteModal(false);
       setCampaignToDelete(null);
     } catch (err) {
-      toast.error(err || "Removal Protocol Failed");
+      toast.error(err || "Could not delete campaign. Please try again.");
     }
   }, [dispatch, campaignToDelete]);
 
@@ -1112,15 +1354,16 @@ const MyCampaigns = () => {
 
   return (
     <div
-      className={`min-h-screen transition-colors duration-500 pb-12 pt-10 px-4 sm:px-6 lg:px-8 ${
+      className={`min-h-screen transition-colors duration-150 pb-12 pt-10 px-4 sm:px-6 lg:px-8 ${
         darkMode ? "bg-gray-950 text-white" : "bg-gray-50 text-gray-950"
       }`}
     >
       <div className="max-w-7xl mx-auto space-y-12">
         {/* Header Section */}
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
+          initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 500, damping: 36 }}
           className="flex flex-col lg:flex-row lg:items-end justify-between gap-8"
         >
           <div>
@@ -1129,7 +1372,7 @@ const MyCampaigns = () => {
               <span
                 className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? "text-gray-500" : "text-gray-400"}`}
               >
-                Foundation Hub • Project Center
+                Sabo Charity Foundation • Campaign Center
               </span>
             </div>
             <h1
@@ -1137,23 +1380,23 @@ const MyCampaigns = () => {
                 darkMode ? "text-white" : "text-gray-950"
               }`}
             >
-              Impact Dashboard
+              My Fundraising Campaigns
             </h1>
             <p
               className={`mt-4 text-sm font-semibold max-w-2xl leading-relaxed ${
                 darkMode ? "text-gray-400" : "text-gray-500"
               }`}
             >
-              Manage your community projects, track real-time impact, and
-              connect with supporters.
+              Create and manage your donation campaigns, track how much has been
+              raised, and connect with donors who care about your cause.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-6">
             <div className="flex bg-gray-900/5 p-1 rounded-xl">
               {[
-                { id: "my", label: "My Missions" },
-                { id: "all", label: "Public Feed" },
+                { id: "my", label: "My Campaigns" },
+                { id: "all", label: "All Campaigns" },
               ].map((t) => (
                 <button
                   key={t.id}
@@ -1171,7 +1414,7 @@ const MyCampaigns = () => {
               ))}
             </div>
 
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <motion.div whileHover={{ scale: 1.02, transition: { type: "spring", stiffness: 600, damping: 28 } }} whileTap={{ scale: 0.97 }}>
               <button
                 onClick={() => {
                   setModalMode("create");
@@ -1180,7 +1423,7 @@ const MyCampaigns = () => {
                 }}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-xl font-bold uppercase tracking-widest text-[10px] shadow-lg shadow-emerald-500/20 active:scale-95 transition-all flex items-center gap-3"
               >
-                <Plus size={16} /> Launch Project
+                <Plus size={16} /> Start a Campaign
               </button>
             </motion.div>
           </div>
@@ -1190,36 +1433,36 @@ const MyCampaigns = () => {
         {tab === "my" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <BusinessStat
-              title="Active Missions"
+              title="Active Campaigns"
               value={stats.active}
-              subtitle="Live project protocols"
-              icon={Rocket}
+              subtitle="Accepting donations now"
+              icon={Heart}
               color="text-emerald-500"
               darkMode={darkMode}
               delay={0.1}
             />
             <BusinessStat
-              title="Under Review"
+              title="Awaiting Approval"
               value={stats.pending}
-              subtitle="Verification in progress"
+              subtitle="Under admin review"
               icon={Shield}
               color="text-amber-500"
               darkMode={darkMode}
               delay={0.2}
             />
             <BusinessStat
-              title="Total Impact"
+              title="Total Donations Raised"
               value={formatCurrency(stats.raised)}
-              subtitle="Verified contributions"
+              subtitle="Across all your campaigns"
               icon={Wallet}
               color="text-blue-500"
               darkMode={darkMode}
               delay={0.3}
             />
             <BusinessStat
-              title="Success Target"
+              title="Total Campaigns"
               value={stats.total}
-              subtitle="Initiated projects"
+              subtitle="Created by you"
               icon={Target}
               color="text-purple-500"
               darkMode={darkMode}
@@ -1239,7 +1482,7 @@ const MyCampaigns = () => {
                 />
                 <input
                   type="text"
-                  placeholder="Search mission projects..."
+                  placeholder="Search campaigns by name or cause..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className={`w-full pl-14 pr-6 py-4 rounded-xl border-2 font-bold text-[11px] uppercase tracking-widest outline-none transition-all ${
@@ -1262,10 +1505,10 @@ const MyCampaigns = () => {
                         : "bg-white border-gray-100 text-gray-500 focus:text-gray-950 focus:border-emerald-500/50"
                     }`}
                   >
-                    <option value="all">All Channels</option>
-                    <option value="active">Active Projects</option>
-                    <option value="pending">Under Review</option>
-                    <option value="rejected">Cancelled</option>
+                    <option value="all">All Campaigns</option>
+                    <option value="active">Active – Accepting Donations</option>
+                    <option value="pending">Awaiting Approval</option>
+                    <option value="rejected">Declined</option>
                   </select>
                 </div>
 
@@ -1334,27 +1577,27 @@ const MyCampaigns = () => {
                 }`}
               >
                 <div className="w-20 h-20 bg-emerald-500/10 rounded-2xl flex items-center justify-center mb-8 border border-emerald-500/20">
-                  <Rocket className="w-10 h-10 text-emerald-500 opacity-50" />
+                  <Heart className="w-10 h-10 text-emerald-500 opacity-50" />
                 </div>
                 <h3
                   className={`text-xl font-bold tracking-tight mb-3 ${darkMode ? "text-white" : "text-gray-950"}`}
                 >
-                  No active missions found
+                  No campaigns found
                 </h3>
                 <p
                   className={`text-sm font-semibold mb-10 max-w-sm text-center ${darkMode ? "text-gray-500" : "text-gray-400"}`}
                 >
-                  Your impact journey starts here. Launch your first community
-                  project or support existing initiatives.
+                  You haven't created any fundraising campaigns yet. Start one
+                  today and begin collecting donations for your cause.
                 </p>
                 <button
                   onClick={() => {
                     setModalMode("create");
                     setIsModalOpen(true);
                   }}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-10 py-4 rounded-xl font-bold uppercase tracking-widest text-[10px] shadow-lg shadow-emerald-500/20 active:scale-95 transition-all"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-10 py-4 rounded-xl font-bold uppercase tracking-widest text-[10px] shadow-lg shadow-emerald-500/20 active:scale-95 transition-all flex items-center gap-3"
                 >
-                  Launch Primary Mission
+                  <Plus size={14} /> Start Your First Campaign
                 </button>
               </motion.div>
             )}
@@ -1364,28 +1607,28 @@ const MyCampaigns = () => {
         {/* CTA Section */}
         <div className="mt-24 mb-12 flex flex-col items-center text-center">
           <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-8 border border-emerald-500/20">
-            <Zap size={28} className="text-emerald-500" />
+            <Heart size={28} className="text-emerald-500" />
           </div>
           <h3
             className={`text-2xl font-bold tracking-tight mb-4 ${
               darkMode ? "text-white" : "text-gray-950"
             }`}
           >
-            Strategic Impact Oversight
+            Need Help With Your Campaign?
           </h3>
           <p
             className={`text-sm font-medium mb-10 max-w-xl mx-auto leading-relaxed ${
               darkMode ? "text-gray-500" : "text-gray-400"
             }`}
           >
-            Request comprehensive data reports on your campaign performance and
-            impact metrics across the community.
+            Our team is here to support you. Reach out if you need help setting
+            up your campaign, understanding donation data, or getting more donors.
           </p>
           <Link
-            to="/contact?subject=Impact Report"
+            to="/contact?subject=Campaign Support"
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-10 py-4 rounded-xl font-bold uppercase tracking-widest text-[10px] shadow-lg shadow-emerald-500/20 active:scale-95 transition-all flex items-center gap-3"
           >
-            <TrendingUp size={16} /> Access Impact Analytics
+            <ArrowRight size={16} /> Contact Our Team
           </Link>
         </div>
       </div>

@@ -9,31 +9,29 @@ const TopDonorsTable = ({ donors, isRefreshing }) => {
   return (
     <div
       className={`${
-        darkMode ? "bg-gray-950 border-gray-800" : "bg-white border-gray-200"
-      } border rounded-xl p-4 sm:p-6 ${isRefreshing ? "animate-pulse" : ""}`}
+        darkMode ? "bg-dark-lighter border-gray-800/70" : "bg-white border-gray-200/80 shadow-sm"
+      } border rounded-xl p-5 ${isRefreshing ? "animate-pulse" : ""}`}
     >
-      <h3
-        className={`text-lg font-bold mb-4 ${
-          darkMode ? "text-white" : "text-gray-900"
-        }`}
-      >
-        Top Donors
-      </h3>
+      <div className="mb-5">
+        <h3 className={`text-sm font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>
+          Top Donors
+        </h3>
+      </div>
       {donors.length > 0 ? (
-        <div className="space-y-4 max-h-96 overflow-y-auto">
+        <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
           {donors.map((donor, index) => (
-            <div key={index} className="flex items-center gap-3">
+            <div key={index} className={`flex items-center gap-3 p-2.5 rounded-lg border transition-colors ${darkMode ? "bg-gray-800/40 border-gray-800 hover:bg-gray-800/70" : "bg-gray-50 border-gray-100 hover:bg-gray-100"}`}>
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                className={`w-6 h-6 rounded flex items-center justify-center font-bold text-[10px] ${
                   index === 0
-                    ? "bg-amber-500 text-white"
+                    ? "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-500"
                     : index === 1
-                      ? "bg-gray-400 text-white"
+                      ? "bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
                       : index === 2
-                        ? "bg-orange-600 text-white"
+                        ? "bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-500"
                         : darkMode
-                          ? "bg-gray-800 text-gray-400"
-                          : "bg-gray-200 text-gray-600"
+                          ? "bg-gray-800 text-gray-500"
+                          : "bg-gray-100 text-gray-400"
                 }`}
               >
                 {index + 1}
@@ -41,12 +39,12 @@ const TopDonorsTable = ({ donors, isRefreshing }) => {
               <img
                 src={
                   donor.avatar ||
-                  `https://ui-avatars.com/api/?name=${
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
                     donor.fullName || donor.name || "U"
-                  }&background=indigo&color=fff`
+                  )}&background=10b981&color=fff`
                 }
                 alt={donor.fullName || donor.name}
-                className="w-10 h-10 rounded-full flex-shrink-0"
+                className="w-8 h-8 rounded-lg flex-shrink-0 object-cover"
                 loading="lazy"
               />
               <div className="flex-1 min-w-0">
@@ -58,15 +56,15 @@ const TopDonorsTable = ({ donors, isRefreshing }) => {
                   {donor.fullName || donor.name || "Anonymous Donor"}
                 </p>
                 <p
-                  className={`text-xs ${
-                    darkMode ? "text-gray-400" : "text-gray-600"
+                  className={`text-[11px] ${
+                    darkMode ? "text-gray-400" : "text-gray-500"
                   }`}
                 >
                   {donor.donationCount} donations
                 </p>
               </div>
               <div
-                className={`font-bold text-sm ${
+                className={`font-semibold text-sm ${
                   darkMode ? "text-emerald-400" : "text-emerald-600"
                 }`}
               >
@@ -76,18 +74,11 @@ const TopDonorsTable = ({ donors, isRefreshing }) => {
           ))}
         </div>
       ) : (
-        <div className="text-center py-12">
-          <Users
-            size={48}
-            className={`mx-auto mb-4 ${
-              darkMode ? "text-gray-600" : "text-gray-400"
-            }`}
-          />
-          <p
-            className={`text-sm ${
-              darkMode ? "text-gray-400" : "text-gray-600"
-            }`}
-          >
+        <div className={`text-center py-16 flex flex-col items-center justify-center border border-dashed rounded-xl ${darkMode ? "border-gray-800" : "border-gray-200"}`}>
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 ${darkMode ? "bg-gray-800/50" : "bg-gray-50"}`}>
+            <Users size={16} className={darkMode ? "text-gray-500" : "text-gray-400"} />
+          </div>
+          <p className={`text-xs ${darkMode ? "text-gray-500" : "text-gray-500"}`}>
             No donor data available
           </p>
         </div>

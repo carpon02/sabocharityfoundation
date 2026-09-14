@@ -1,8 +1,8 @@
-// admin/src/component/pages/Campaigns.jsx - Sabo Ibadan Youth Charity Foundation
+// admin/src/component/pages/Campaigns.jsx — Clerk-Style UI
 import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Search,
   Plus,
@@ -11,16 +11,17 @@ import {
   X,
   Upload,
   Target,
-  TrendingUp,
+  Activity,
   Users,
   DollarSign,
   AlertTriangle,
   CheckCircle2,
   ExternalLink,
-  Activity,
   Clock,
   XCircle,
-  Image as ImageIcon,
+  Eye,
+  ShieldCheck,
+  ShieldX,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import {
@@ -32,45 +33,68 @@ import {
 } from "../../features/campaign/adminCampaignSlice";
 import { StatsCard } from "../shared";
 
-// Status Configuration
 const getStatusConfig = (status) => {
   const configs = {
     pending: {
-      label: "Pending Review",
+      label: "Pending",
       color: "text-amber-600",
-      bg: "bg-amber-100 dark:bg-amber-950/30",
+      bg: "bg-amber-50 dark:bg-amber-950/20",
+      border: "border-amber-200 dark:border-amber-900/40",
       icon: Clock,
     },
     active: {
       label: "Active",
       color: "text-primary-600",
-      bg: "bg-primary-100 dark:bg-primary-950/30",
+      bg: "bg-primary-50 dark:bg-primary-950/20",
+      border: "border-primary-200 dark:border-primary-900/40",
       icon: CheckCircle2,
     },
     rejected: {
       label: "Rejected",
       color: "text-red-600",
-      bg: "bg-red-100 dark:bg-red-950/30",
+      bg: "bg-red-50 dark:bg-red-950/20",
+      border: "border-red-200 dark:border-red-900/40",
       icon: XCircle,
     },
     completed: {
       label: "Completed",
-      color: "text-green-600",
-      bg: "bg-green-100 dark:bg-green-950/30",
+      color: "text-emerald-600",
+      bg: "bg-emerald-50 dark:bg-emerald-950/20",
+      border: "border-emerald-200 dark:border-emerald-900/40",
       icon: CheckCircle2,
     },
   };
   return configs[status] || configs.pending;
 };
 
+// ── Reusable form field ───────────────────────────────────────────────────────
+const Field = ({ label, darkMode, children }) => (
+  <div>
+    <label className={`block text-xs font-medium mb-1.5 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
+      {label}
+    </label>
+    {children}
+  </div>
+);
+
+const inputCls = (darkMode) =>
+  `w-full px-3 py-2 rounded-lg border text-sm outline-none transition-all ${
+    darkMode
+      ? "bg-gray-800/60 border-gray-700/60 text-white placeholder-gray-500 focus:border-primary-500/50"
+      : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-primary-400"
+  }`;
+
 const Campaigns = () => {
   const { darkMode } = useTheme();
   const dispatch = useDispatch();
 
-  const { campaigns, loading } = useSelector((state) => state.adminCampaigns);
+  const { campaigns, loading } = useSelector((s) => s.adminCampaigns);
+  const adminUser = useSelector((s) => s.adminAuth?.admin || s.adminAuth?.user);
+  const adminId = adminUser?._id || adminUser?.id;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState("create");
   const [selectedCampaign, setSelectedCampaign] = useState(null);
@@ -78,32 +102,25 @@ const Campaigns = () => {
   const [imagePreviews, setImagePreviews] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [campaignToDelete, setCampaignToDelete] = useState(null);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [campaignToReject, setCampaignToReject] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [approving, setApproving] = useState(null);
 
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    shortDescription: "",
-    category: "education",
-    location: "",
-    target: "",
-    startDate: "",
-    endDate: "",
-    beneficiariesTarget: "",
-    currency: "NGN",
-    featured: false,
-    urgent: false,
-    tags: "",
-  });
+  const emptyForm = {
+    title: "", description: "", shortDescription: "",
+    category: "education", location: "", target: "",
+    startDate: "", endDate: "", beneficiariesTarget: "",
+    currency: "NGN", featured: false, urgent: false, tags: "",
+  };
+  const [formData, setFormData] = useState(emptyForm);
 
   useEffect(() => {
-    dispatch(
-      fetchCampaigns({
-        category: filterCategory === "all" ? "" : filterCategory,
-        search: searchQuery,
-      })
-    );
+    dispatch(fetchCampaigns({
+      category: filterCategory === "all" ? "" : filterCategory,
+      search: searchQuery,
+    }));
   }, [dispatch, filterCategory, searchQuery]);
 
   const stats = useMemo(() => {
@@ -113,61 +130,28 @@ const Campaigns = () => {
     const totalRaised = campaigns
       .filter((c) => c.status === "active")
       .reduce((sum, c) => sum + (c.raisedAmount || 0), 0);
-
     return [
-      {
-        label: "Total Campaigns",
-        value: total.toString(),
-        subtitle: "All campaigns",
-        icon: Target,
-        bgColor: "from-primary-600 to-primary-700",
-      },
-      {
-        label: "Active Campaigns",
-        value: active.toString(),
-        subtitle: "Currently running",
-        icon: Activity,
-        bgColor: "from-primary-500 to-primary-600",
-      },
-      {
-        label: "Pending Review",
-        value: pending.toString(),
-        subtitle: "Awaiting approval",
-        icon: Clock,
-        bgColor: "from-amber-500 to-orange-600",
-      },
-      {
-        label: "Total Raised",
-        value: `₦${(totalRaised / 1000000).toFixed(1)}M`,
-        subtitle: "Funds collected",
-        icon: DollarSign,
-        bgColor: "from-primary-700 to-primary-800",
-      },
+      { label: "Total Campaigns", value: total.toString(), subtitle: "All campaigns", icon: Target, bgColor: "from-primary-600 to-primary-700" },
+      { label: "Active Campaigns", value: active.toString(), subtitle: "Currently running", icon: Activity, bgColor: "from-primary-500 to-primary-600" },
+      { label: "Pending Review", value: pending.toString(), subtitle: "Awaiting approval", icon: Clock, bgColor: "from-amber-500 to-orange-600" },
+      { label: "Total Raised", value: `₦${(totalRaised / 1000000).toFixed(1)}M`, subtitle: "Funds collected", icon: DollarSign, bgColor: "from-primary-700 to-primary-800" },
     ];
   }, [campaigns]);
 
-  const formatCurrency = (amount) =>
-    new Intl.NumberFormat("en-NG", {
-      style: "currency",
-      currency: "NGN",
-      minimumFractionDigits: 0,
-    }).format(amount);
+  const fmt = (n) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", minimumFractionDigits: 0 }).format(n);
+  const pct = (raised, target) => Math.min(Math.round(((raised || 0) / (target || 1)) * 100), 100);
 
-  const calculatePercentage = (raised, target) =>
-    Math.min(Math.round((raised / target) * 100), 100);
-
-  const filteredCampaigns = useMemo(() => {
-    let result = [...campaigns];
-    if (searchQuery) {
-      result = result.filter((c) =>
-        c.title.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+  const filtered = useMemo(() => {
+    let r = [...campaigns];
+    if (searchQuery) r = r.filter((c) => c.title.toLowerCase().includes(searchQuery.toLowerCase()));
+    if (filterCategory !== "all") r = r.filter((c) => c.category === filterCategory);
+    if (statusFilter !== "all") {
+      if (statusFilter === "pending") r = r.filter((c) => c.status === "pending" || !c.approved);
+      else if (statusFilter === "active") r = r.filter((c) => c.status === "active" && c.approved);
+      else r = r.filter((c) => c.status === statusFilter);
     }
-    if (filterCategory !== "all") {
-      result = result.filter((c) => c.category === filterCategory);
-    }
-    return result;
-  }, [campaigns, searchQuery, filterCategory]);
+    return r;
+  }, [campaigns, searchQuery, filterCategory, statusFilter]);
 
   const openModal = (mode, campaign = null) => {
     setModalMode(mode);
@@ -178,12 +162,9 @@ const Campaigns = () => {
         description: campaign.description || "",
         shortDescription: campaign.shortDescription || "",
         category: campaign.category || "education",
-        location:
-          campaign.location?.city || campaign.location?.state
-            ? `${campaign.location.city || ""}, ${campaign.location.state || ""}`
-                .trim()
-                .replace(/^,\s*|,\s*$/g, "")
-            : "",
+        location: campaign.location?.city || campaign.location?.state
+          ? `${campaign.location.city || ""}, ${campaign.location.state || ""}`.trim().replace(/^,\s*|,\s*$/g, "")
+          : "",
         target: campaign.targetAmount?.toString() || "",
         startDate: campaign.startDate ? campaign.startDate.split("T")[0] : "",
         endDate: campaign.endDate ? campaign.endDate.split("T")[0] : "",
@@ -194,21 +175,7 @@ const Campaigns = () => {
         tags: Array.isArray(campaign.tags) ? campaign.tags.join(", ") : "",
       });
     } else {
-      setFormData({
-        title: "",
-        description: "",
-        shortDescription: "",
-        category: "education",
-        location: "",
-        target: "",
-        startDate: "",
-        endDate: "",
-        beneficiariesTarget: "",
-        currency: "NGN",
-        featured: false,
-        urgent: false,
-        tags: "",
-      });
+      setFormData(emptyForm);
     }
     setImageFiles([]);
     setImagePreviews([]);
@@ -222,151 +189,111 @@ const Campaigns = () => {
     setImagePreviews([]);
   };
 
-  const handleInputChange = (e) => {
+  const handleInput = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+    setFormData((p) => ({ ...p, [name]: type === "checkbox" ? checked : value }));
   };
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
-    if (files.length > 3) {
-      alert("Maximum 3 images allowed");
-      return;
-    }
+    if (files.length > 3) { alert("Maximum 3 images allowed"); return; }
     setImageFiles(files);
-    setImagePreviews(files.map((file) => URL.createObjectURL(file)));
+    setImagePreviews(files.map((f) => URL.createObjectURL(f)));
   };
 
   const confirmDelete = async () => {
-    if (campaignToDelete) {
-      try {
-        setDeleting(true);
-        await dispatch(deleteCampaign(campaignToDelete.id)).unwrap();
-        setShowDeleteModal(false);
-        setCampaignToDelete(null);
-      } catch (err) {
-        console.error("Failed to delete campaign:", err);
-      } finally {
-        setDeleting(false);
-      }
-    }
+    if (!campaignToDelete) return;
+    setDeleting(true);
+    try {
+      await dispatch(deleteCampaign(campaignToDelete.id)).unwrap();
+      setShowDeleteModal(false);
+      setCampaignToDelete(null);
+    } catch (err) { console.error(err); }
+    finally { setDeleting(false); }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     try {
-      setSubmitting(true);
-      const campaignData = { ...formData, imageFiles };
+      const data = { ...formData, imageFiles };
       if (modalMode === "create") {
-        await dispatch(createCampaign(campaignData)).unwrap();
+        await dispatch(createCampaign(data)).unwrap();
       } else {
-        await dispatch(
-          updateCampaign({
-            id: selectedCampaign._id || selectedCampaign.id,
-            campaignData,
-          })
-        ).unwrap();
+        await dispatch(updateCampaign({ id: selectedCampaign._id || selectedCampaign.id, campaignData: data })).unwrap();
       }
       closeModal();
-    } catch (err) {
-      console.error("Error submitting campaign:", err);
-    } finally {
-      setSubmitting(false);
-    }
+    } catch (err) { console.error(err); }
+    finally { setSubmitting(false); }
   };
 
   const handleApprove = async (id) => {
-    await dispatch(approveCampaign({ id, status: "active" }));
+    setApproving(id);
+    try { await dispatch(approveCampaign({ id, status: "active" })).unwrap(); }
+    finally { setApproving(null); }
   };
 
-  const handleReject = async (id) => {
-    if (window.confirm("Are you sure you want to reject this campaign?")) {
-      await dispatch(approveCampaign({ id, status: "rejected" }));
-    }
+  const handleReject = async () => {
+    if (!campaignToReject) return;
+    setApproving(campaignToReject._id);
+    try {
+      await dispatch(approveCampaign({ id: campaignToReject._id, status: "rejected" })).unwrap();
+      setShowRejectModal(false);
+      setCampaignToReject(null);
+    } finally { setApproving(null); }
   };
+
+  const pendingCount = campaigns.filter((c) => c.status === "pending" || !c.approved).length;
+
+  // ── Shared card base ─────────────────────────────────────────────────────
+  const cardBase = `rounded-xl border ${darkMode ? "bg-dark-lighter border-gray-800/70" : "bg-white border-gray-200/80 shadow-sm"}`;
+  const modalBase = `rounded-xl border shadow-xl ${darkMode ? "bg-[#111] border-gray-800" : "bg-white border-gray-200"}`;
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+    <div className="space-y-6 pb-10">
+
+      {/* ── Page Header ──────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between">
         <div>
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-1 bg-primary-500 rounded-full" />
-            <span className="text-xs font-bold text-primary-600 uppercase tracking-wider">
-              Campaign Management
-            </span>
-          </div>
-          <h1
-            className={`text-3xl lg:text-4xl font-bold mb-2 ${
-              darkMode ? "text-white" : "text-dark"
-            }`}
-          >
-            Fundraising Campaigns
+          <h1 className={`text-xl font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>
+            Campaigns
           </h1>
-          <p
-            className={`text-base ${
-              darkMode ? "text-gray-400" : "text-gray-600"
-            }`}
-          >
-            Manage and track fundraising campaigns for community projects
+          <p className={`text-sm mt-0.5 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+            {campaigns.length} total · {pendingCount > 0 && <span className="text-amber-500 font-medium">{pendingCount} pending review</span>}
           </p>
         </div>
-
         <button
           onClick={() => openModal("create")}
-          className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 shadow-lg shadow-primary-500/25 transition-all w-fit"
+          className="px-3 py-2 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium flex items-center gap-1.5 transition-all shadow-sm"
         >
-          <Plus size={20} /> Create Campaign
+          <Plus size={15} /> Create Campaign
         </button>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, i) => (
-          <StatsCard key={i} {...stat} index={i} />
-        ))}
+      {/* ── Stats ────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((s, i) => <StatsCard key={i} {...s} index={i} />)}
       </div>
 
-      {/* Filters Section */}
-      <div
-        className={`p-6 rounded-2xl border ${
-          darkMode
-            ? "bg-dark-lighter border-gray-800"
-            : "bg-white border-gray-200 shadow-lg"
-        }`}
-      >
-        <div className="flex flex-col lg:flex-row gap-4">
+      {/* ── Filters ──────────────────────────────────────────────────── */}
+      <div className={`${cardBase} p-4`}>
+        <div className="flex flex-col sm:flex-row gap-3 mb-3">
           {/* Search */}
           <div className="relative flex-1">
-            <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-              size={20}
-            />
+            <Search className={`absolute left-3 top-1/2 -translate-y-1/2 ${darkMode ? "text-gray-500" : "text-gray-400"}`} size={15} />
             <input
               type="text"
-              placeholder="Search campaigns by title..."
+              placeholder="Search campaigns..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className={`w-full pl-12 pr-4 py-3 rounded-xl border-2 outline-none transition-all text-sm font-medium ${
-                darkMode
-                  ? "bg-gray-800 border-gray-700 text-white focus:border-primary-500"
-                  : "bg-gray-50 border-gray-200 text-dark focus:border-primary-500"
-              }`}
+              className={`${inputCls(darkMode)} pl-9`}
             />
           </div>
-
-          {/* Category Filter */}
+          {/* Category */}
           <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
-            className={`px-6 py-3 rounded-xl border-2 outline-none cursor-pointer text-sm font-semibold ${
-              darkMode
-                ? "bg-gray-800 border-gray-700 text-white"
-                : "bg-gray-50 border-gray-200 text-dark"
-            }`}
+            className={inputCls(darkMode)}
           >
             <option value="all">All Categories</option>
             <option value="education">Education</option>
@@ -376,188 +303,181 @@ const Campaigns = () => {
             <option value="emergency">Emergency Relief</option>
           </select>
         </div>
+
+        {/* Status tabs */}
+        <div className="flex flex-wrap gap-1.5">
+          {[
+            { key: "all", label: "All" },
+            { key: "pending", label: `Pending (${pendingCount})` },
+            { key: "active", label: "Active" },
+            { key: "completed", label: "Completed" },
+            { key: "rejected", label: "Rejected" },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setStatusFilter(tab.key)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                statusFilter === tab.key
+                  ? tab.key === "pending"
+                    ? "bg-amber-500 text-white"
+                    : tab.key === "rejected"
+                    ? "bg-red-500 text-white"
+                    : "bg-primary-500 text-white"
+                  : darkMode
+                  ? "bg-gray-800/60 text-gray-400 hover:text-white border border-gray-700/50"
+                  : "bg-gray-100 text-gray-500 hover:text-gray-800 border border-gray-200"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Campaigns Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {/* ── Campaign Grid ─────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         <AnimatePresence mode="wait">
           {loading ? (
-            // Loading Skeletons
             Array.from({ length: 8 }).map((_, i) => (
               <div
                 key={i}
-                className={`h-[420px] rounded-2xl animate-pulse ${
-                  darkMode ? "bg-gray-800" : "bg-gray-100"
-                }`}
+                className={`h-80 rounded-xl animate-pulse ${darkMode ? "bg-gray-800/60" : "bg-gray-100"}`}
               />
             ))
-          ) : filteredCampaigns.length > 0 ? (
-            filteredCampaigns.map((campaign, i) => {
-              const percentage = calculatePercentage(
-                campaign.raisedAmount || 0,
-                campaign.targetAmount || 1
-              );
-              const statusConfig = getStatusConfig(campaign.status);
-              const primaryImage =
-                campaign.images?.find((img) => img.isPrimary) ||
-                campaign.images?.[0];
+          ) : filtered.length > 0 ? (
+            filtered.map((campaign, i) => {
+              const p = pct(campaign.raisedAmount, campaign.targetAmount);
+              const sc = getStatusConfig(campaign.status);
+              const img = campaign.images?.find((x) => x.isPrimary) || campaign.images?.[0];
+              const isOwner = adminId && (campaign.createdBy?._id === adminId || campaign.createdBy === adminId);
+              const isPending = campaign.status === "pending" || !campaign.approved;
 
               return (
                 <motion.div
                   key={campaign._id || campaign.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className={`group relative flex flex-col overflow-hidden rounded-2xl border transition-all hover:shadow-2xl ${
+                  transition={{ delay: i * 0.04 }}
+                  className={`group flex flex-col overflow-hidden rounded-xl border transition-all hover:shadow-md ${
                     darkMode
-                      ? "bg-dark-lighter border-gray-800 hover:border-primary-500/50"
-                      : "bg-white border-gray-200 hover:border-primary-300 shadow-lg"
+                      ? "bg-dark-lighter border-gray-800/70 hover:border-gray-700"
+                      : "bg-white border-gray-200/80 shadow-sm hover:border-gray-300"
                   }`}
                 >
-                  {/* Campaign Image */}
-                  <div className="relative h-48 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10" />
+                  {/* Image */}
+                  <div className="relative h-40 overflow-hidden bg-gray-100 dark:bg-gray-800">
                     <img
-                      src={
-                        primaryImage?.url ||
-                        "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=600&fit=crop"
-                      }
+                      src={img?.url || "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=600&fit=crop"}
                       alt={campaign.title}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
-
-                    {/* Status Badge */}
-                    <div className="absolute top-4 left-4 z-20">
-                      <span
-                        className={`${statusConfig.bg} ${statusConfig.color} px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm`}
-                      >
-                        <statusConfig.icon size={14} />
-                        {statusConfig.label}
+                    {/* Status badge */}
+                    <div className="absolute top-2.5 left-2.5">
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold border ${sc.bg} ${sc.color} ${sc.border}`}>
+                        <sc.icon size={11} />{sc.label}
                       </span>
                     </div>
-
-                    {/* Action Buttons */}
-                    <div className="absolute top-4 right-4 z-20 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => openModal("edit", campaign)}
-                        className="p-2 bg-white/90 rounded-lg hover:bg-white transition-all shadow-lg"
-                        title="Edit campaign"
+                    {/* Hover actions */}
+                    <div className="absolute top-2.5 right-2.5 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {isOwner && (
+                        <button
+                          onClick={() => openModal("edit", campaign)}
+                          className="p-1.5 bg-white/95 rounded-lg hover:bg-white shadow-sm"
+                          title="Edit campaign"
+                        >
+                          <Edit size={13} className="text-gray-700" />
+                        </button>
+                      )}
+                      <a
+                        href={`/campaigns/${campaign._id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1.5 bg-white/95 rounded-lg hover:bg-white shadow-sm"
+                        title="View live"
                       >
-                        <Edit size={16} className="text-dark" />
-                      </button>
+                        <Eye size={13} className="text-gray-700" />
+                      </a>
                       <button
-                        onClick={() => {
-                          setCampaignToDelete({
-                            id: campaign._id,
-                            title: campaign.title,
-                          });
-                          setShowDeleteModal(true);
-                        }}
-                        className="p-2 bg-red-500 rounded-lg hover:bg-red-600 transition-all shadow-lg"
-                        title="Delete campaign"
+                        onClick={() => { setCampaignToDelete({ id: campaign._id, title: campaign.title }); setShowDeleteModal(true); }}
+                        className="p-1.5 bg-red-500 rounded-lg hover:bg-red-600 shadow-sm"
+                        title="Delete"
                       >
-                        <Trash2 size={16} className="text-white" />
+                        <Trash2 size={13} className="text-white" />
                       </button>
-                    </div>
-
-                    {/* Campaign Title */}
-                    <div className="absolute bottom-4 left-4 right-4 z-20">
-                      <h3 className="text-white text-base font-bold leading-tight line-clamp-2">
-                        {campaign.title}
-                      </h3>
                     </div>
                   </div>
 
-                  {/* Campaign Details */}
-                  <div className="p-5 flex flex-col flex-1 space-y-4">
-                    {/* Progress */}
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-baseline">
-                        <div>
-                          <p
-                            className={`text-xs font-medium ${
-                              darkMode ? "text-gray-500" : "text-gray-600"
-                            }`}
-                          >
-                            Raised
-                          </p>
-                          <p
-                            className={`text-lg font-bold ${
-                              darkMode ? "text-primary-400" : "text-primary-600"
-                            }`}
-                          >
-                            {formatCurrency(campaign.raisedAmount || 0)}
-                          </p>
-                        </div>
-                        <span
-                          className={`text-sm font-bold ${
-                            darkMode ? "text-gray-500" : "text-gray-600"
-                          }`}
-                        >
-                          {percentage}%
-                        </span>
-                      </div>
-
-                      <div
-                        className={`h-2 w-full rounded-full overflow-hidden ${
-                          darkMode ? "bg-gray-800" : "bg-gray-200"
-                        }`}
-                      >
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${percentage}%` }}
-                          transition={{ duration: 1, ease: "easeOut" }}
-                          className="h-full bg-gradient-to-r from-primary-500 to-primary-600"
-                        />
-                      </div>
-
-                      <p
-                        className={`text-xs font-medium ${
-                          darkMode ? "text-gray-500" : "text-gray-600"
-                        }`}
-                      >
-                        Goal: {formatCurrency(campaign.targetAmount || 0)}
+                  {/* Content */}
+                  <div className="p-4 flex flex-col flex-1 gap-3">
+                    <div>
+                      <h3 className={`text-sm font-semibold leading-snug line-clamp-2 mb-1 ${darkMode ? "text-white" : "text-gray-900"}`}>
+                        {campaign.title}
+                      </h3>
+                      <p className={`text-xs capitalize ${darkMode ? "text-gray-500" : "text-gray-400"}`}>
+                        {campaign.category}
                       </p>
                     </div>
 
-                    {/* Action Buttons */}
-                    {campaign.status === "pending" ? (
-                      <div className="grid grid-cols-2 gap-2 mt-auto pt-4 border-t border-gray-200 dark:border-gray-800">
-                        <button
-                          onClick={() => handleApprove(campaign._id)}
-                          className="py-2.5 rounded-lg bg-primary-500 text-white font-semibold text-sm hover:bg-primary-600 transition-all"
-                        >
-                          Approve
-                        </button>
-                        <button
-                          onClick={() => handleReject(campaign._id)}
-                          className="py-2.5 rounded-lg bg-red-500 text-white font-semibold text-sm hover:bg-red-600 transition-all"
-                        >
-                          Reject
-                        </button>
+                    {/* Progress */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-baseline justify-between">
+                        <span className={`text-sm font-semibold ${darkMode ? "text-primary-400" : "text-primary-600"}`}>
+                          {fmt(campaign.raisedAmount || 0)}
+                        </span>
+                        <span className={`text-xs ${darkMode ? "text-gray-500" : "text-gray-400"}`}>{p}%</span>
+                      </div>
+                      <div className={`h-1.5 w-full rounded-full overflow-hidden ${darkMode ? "bg-gray-800" : "bg-gray-100"}`}>
+                        <div
+                          className="h-full bg-primary-500 rounded-full transition-all duration-700"
+                          style={{ width: `${p}%` }}
+                        />
+                      </div>
+                      <p className={`text-[11px] ${darkMode ? "text-gray-600" : "text-gray-400"}`}>
+                        Goal: {fmt(campaign.targetAmount || 0)}
+                      </p>
+                    </div>
+
+                    {/* Actions */}
+                    {isPending ? (
+                      <div className={`mt-auto pt-3 border-t ${darkMode ? "border-gray-800/60" : "border-gray-100"} space-y-2`}>
+                        <p className="text-[11px] font-medium text-amber-500 flex items-center gap-1">
+                          <Clock size={10} className="animate-pulse" /> Awaiting admin approval
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            onClick={() => handleApprove(campaign._id)}
+                            disabled={approving === campaign._id}
+                            className="py-2 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-xs font-medium transition-all flex items-center justify-center gap-1.5 disabled:opacity-60"
+                          >
+                            {approving === campaign._id ? (
+                              <><span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> Approving...</>
+                            ) : (
+                              <><ShieldCheck size={12} /> Approve</>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => { setCampaignToReject(campaign); setShowRejectModal(true); }}
+                            disabled={approving === campaign._id}
+                            className="py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-medium transition-all flex items-center justify-center gap-1.5 disabled:opacity-60"
+                          >
+                            <ShieldX size={12} /> Reject
+                          </button>
+                        </div>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-200 dark:border-gray-800">
-                        <div className="flex items-center gap-2">
-                          <Users size={16} className="text-primary-500" />
-                          <span
-                            className={`text-sm font-semibold ${
-                              darkMode ? "text-gray-300" : "text-gray-700"
-                            }`}
-                          >
-                            {campaign.donorCount || 0} Donors
+                      <div className={`mt-auto pt-3 border-t flex items-center justify-between ${darkMode ? "border-gray-800/60" : "border-gray-100"}`}>
+                        <div className="flex items-center gap-1.5">
+                          <Users size={13} className="text-primary-500" />
+                          <span className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
+                            {campaign.donorCount || 0} donors
                           </span>
                         </div>
                         <Link
                           to={`/admin/campaigns/${campaign._id}`}
-                          className={`p-2 rounded-lg transition-all ${
-                            darkMode
-                              ? "bg-gray-800 text-gray-400 hover:text-white"
-                              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                          }`}
+                          className={`p-1.5 rounded-lg transition-all ${darkMode ? "text-gray-400 hover:text-white hover:bg-gray-800" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"}`}
                           title="View details"
                         >
-                          <ExternalLink size={16} />
+                          <ExternalLink size={14} />
                         </Link>
                       </div>
                     )}
@@ -567,101 +487,55 @@ const Campaigns = () => {
             })
           ) : (
             <div className="col-span-full py-20 text-center">
-              <div
-                className={`flex flex-col items-center gap-4 ${
-                  darkMode ? "text-gray-500" : "text-gray-400"
-                }`}
-              >
-                <Target size={48} />
-                <p className="text-lg font-semibold">No campaigns found</p>
-                <p className="text-sm">
-                  {searchQuery || filterCategory !== "all"
-                    ? "Try adjusting your filters"
-                    : "Create your first campaign to get started"}
-                </p>
-              </div>
+              <Target size={36} className={`mx-auto mb-3 ${darkMode ? "text-gray-600" : "text-gray-300"}`} />
+              <p className={`text-sm font-medium ${darkMode ? "text-gray-400" : "text-gray-500"}`}>No campaigns found</p>
+              <p className={`text-xs mt-1 ${darkMode ? "text-gray-600" : "text-gray-400"}`}>
+                {searchQuery || filterCategory !== "all" ? "Try adjusting your filters" : "Create your first campaign to get started"}
+              </p>
             </div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* Delete Confirmation Modal */}
+      {/* ── Delete Modal ─────────────────────────────────────────────── */}
       <AnimatePresence>
         {showDeleteModal && (
           <>
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => !deleting && setShowDeleteModal(false)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
             />
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.97 }}
               className="fixed inset-0 z-50 flex items-center justify-center p-4"
             >
-              <div
-                className={`relative w-full max-w-md rounded-2xl shadow-2xl p-6 ${
-                  darkMode ? "bg-dark-lighter" : "bg-white"
-                }`}
-              >
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-950/30 flex items-center justify-center">
-                    <AlertTriangle size={24} className="text-red-600" />
+              <div className={`w-full max-w-sm ${modalBase} p-6`}>
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="w-9 h-9 rounded-lg bg-red-50 dark:bg-red-950/30 flex items-center justify-center flex-shrink-0">
+                    <AlertTriangle size={18} className="text-red-600" />
                   </div>
                   <div>
-                    <h3
-                      className={`text-xl font-bold ${
-                        darkMode ? "text-white" : "text-dark"
-                      }`}
-                    >
-                      Delete Campaign?
-                    </h3>
-                    <p
-                      className={`text-sm ${
-                        darkMode ? "text-gray-400" : "text-gray-600"
-                      }`}
-                    >
-                      This action cannot be undone
+                    <h3 className={`text-sm font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>Delete Campaign?</h3>
+                    <p className={`text-xs mt-0.5 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                      This will permanently delete <span className="font-medium text-red-600">"{campaignToDelete?.title}"</span> and all associated data.
                     </p>
                   </div>
                 </div>
-
-                <p
-                  className={`text-sm mb-6 ${
-                    darkMode ? "text-gray-400" : "text-gray-600"
-                  }`}
-                >
-                  Are you sure you want to delete{" "}
-                  <span className="font-semibold text-red-600">
-                    "{campaignToDelete?.title}"
-                  </span>
-                  ? All campaign data and donations will be permanently removed.
-                </p>
-
-                <div className="flex gap-3">
+                <div className="flex gap-2">
                   <button
-                    onClick={() => {
-                      setShowDeleteModal(false);
-                      setCampaignToDelete(null);
-                    }}
+                    onClick={() => { setShowDeleteModal(false); setCampaignToDelete(null); }}
                     disabled={deleting}
-                    className={`flex-1 py-3 rounded-xl font-semibold transition-all ${
-                      darkMode
-                        ? "bg-gray-800 text-white hover:bg-gray-700"
-                        : "bg-gray-100 text-dark hover:bg-gray-200"
-                    }`}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-all ${darkMode ? "border-gray-700 text-gray-300 hover:bg-gray-800" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
                   >
                     Cancel
                   </button>
                   <button
                     onClick={confirmDelete}
                     disabled={deleting}
-                    className="flex-1 py-3 rounded-xl font-semibold bg-red-600 text-white hover:bg-red-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 py-2 rounded-lg text-sm font-medium bg-red-600 hover:bg-red-700 text-white transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
                   >
-                    {deleting ? "Deleting..." : "Delete Campaign"}
+                    {deleting ? <><span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Deleting...</> : "Delete"}
                   </button>
                 </div>
               </div>
@@ -670,357 +544,196 @@ const Campaigns = () => {
         )}
       </AnimatePresence>
 
-      {/* Create/Edit Campaign Modal */}
+      {/* ── Reject Modal ─────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showRejectModal && campaignToReject && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => { setShowRejectModal(false); setCampaignToReject(null); }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.97 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            >
+              <div className={`w-full max-w-sm ${modalBase} p-6`}>
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="w-9 h-9 rounded-lg bg-red-50 dark:bg-red-950/30 flex items-center justify-center flex-shrink-0">
+                    <ShieldX size={18} className="text-red-600" />
+                  </div>
+                  <div>
+                    <h3 className={`text-sm font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>Reject Campaign?</h3>
+                    <p className={`text-xs mt-0.5 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                      <span className="font-medium text-red-600">"{campaignToReject.title}"</span> will not go live. The creator will be notified.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setShowRejectModal(false); setCampaignToReject(null); }}
+                    disabled={!!approving}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-all ${darkMode ? "border-gray-700 text-gray-300 hover:bg-gray-800" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleReject}
+                    disabled={!!approving}
+                    className="flex-1 py-2 rounded-lg text-sm font-medium bg-red-600 hover:bg-red-700 text-white transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
+                  >
+                    {approving ? <><span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Rejecting...</> : <><ShieldX size={13} /> Reject</>}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ── Create / Edit Modal ───────────────────────────────────────── */}
       <AnimatePresence>
         {showModal && (
           <>
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => !submitting && closeModal()}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
             />
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              initial={{ opacity: 0, scale: 0.97, y: 16 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              exit={{ opacity: 0, scale: 0.97, y: 16 }}
               className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
             >
-              <div
-                className={`relative w-full max-w-3xl my-8 rounded-2xl shadow-2xl ${
-                  darkMode ? "bg-dark-lighter" : "bg-white"
-                }`}
-              >
-                {/* Modal Header */}
-                <div
-                  className={`p-6 border-b flex items-center justify-between ${
-                    darkMode ? "border-gray-800" : "border-gray-200"
-                  }`}
-                >
+              <div className={`relative w-full max-w-2xl my-8 ${modalBase}`}>
+                {/* Header */}
+                <div className={`px-6 py-4 border-b flex items-center justify-between ${darkMode ? "border-gray-800/60" : "border-gray-100"}`}>
                   <div>
-                    <h2
-                      className={`text-2xl font-bold ${
-                        darkMode ? "text-white" : "text-dark"
-                      }`}
-                    >
-                      {modalMode === "create"
-                        ? "Create Campaign"
-                        : "Edit Campaign"}
+                    <h2 className={`text-base font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>
+                      {modalMode === "create" ? "Create Campaign" : "Edit Campaign"}
                     </h2>
-                    <p
-                      className={`text-sm mt-1 ${
-                        darkMode ? "text-gray-400" : "text-gray-600"
-                      }`}
-                    >
-                      {modalMode === "create"
-                        ? "Create a new fundraising campaign"
-                        : "Update campaign details"}
+                    <p className={`text-xs mt-0.5 ${darkMode ? "text-gray-500" : "text-gray-400"}`}>
+                      {modalMode === "create" ? "Add a new fundraising campaign" : "Update campaign details"}
                     </p>
                   </div>
                   <button
                     onClick={closeModal}
                     disabled={submitting}
-                    className={`p-2 rounded-lg transition-colors ${
-                      darkMode
-                        ? "hover:bg-gray-800 text-gray-400"
-                        : "hover:bg-gray-100 text-gray-600"
-                    }`}
+                    className={`p-1.5 rounded-lg transition-colors ${darkMode ? "text-gray-400 hover:bg-gray-800" : "text-gray-400 hover:bg-gray-100"}`}
                   >
-                    <X size={24} />
+                    <X size={18} />
                   </button>
                 </div>
 
-                {/* Modal Body */}
-                <form
-                  onSubmit={handleSubmit}
-                  className="p-6 space-y-6 max-h-[70vh] overflow-y-auto"
-                >
-                  {/* Campaign Title */}
-                  <div>
-                    <label
-                      className={`block text-sm font-medium mb-2 ${
-                        darkMode ? "text-gray-300" : "text-gray-700"
-                      }`}
-                    >
-                      Campaign Title *
-                    </label>
-                    <input
-                      type="text"
-                      name="title"
-                      value={formData.title}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="Enter campaign title"
-                      className={`w-full px-4 py-3 rounded-xl border-2 outline-none transition-all ${
-                        darkMode
-                          ? "bg-gray-800 border-gray-700 text-white focus:border-primary-500"
-                          : "bg-gray-50 border-gray-200 text-dark focus:border-primary-500"
-                      }`}
-                    />
-                  </div>
+                {/* Form */}
+                <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[65vh] overflow-y-auto">
+                  <Field label="Campaign Title *" darkMode={darkMode}>
+                    <input type="text" name="title" value={formData.title} onChange={handleInput} required placeholder="Enter campaign title" className={inputCls(darkMode)} />
+                  </Field>
 
-                  {/* Category and Target Amount */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label
-                        className={`block text-sm font-medium mb-2 ${
-                          darkMode ? "text-gray-300" : "text-gray-700"
-                        }`}
-                      >
-                        Category *
-                      </label>
-                      <select
-                        name="category"
-                        value={formData.category}
-                        onChange={handleInputChange}
-                        required
-                        className={`w-full px-4 py-3 rounded-xl border-2 outline-none cursor-pointer ${
-                          darkMode
-                            ? "bg-gray-800 border-gray-700 text-white focus:border-primary-500"
-                            : "bg-gray-50 border-gray-200 text-dark focus:border-primary-500"
-                        }`}
-                      >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Field label="Category *" darkMode={darkMode}>
+                      <select name="category" value={formData.category} onChange={handleInput} required className={inputCls(darkMode)}>
                         <option value="education">Education</option>
                         <option value="health">Health</option>
                         <option value="poverty">Poverty Relief</option>
                         <option value="infrastructure">Infrastructure</option>
                         <option value="emergency">Emergency Relief</option>
                       </select>
-                    </div>
-
-                    <div>
-                      <label
-                        className={`block text-sm font-medium mb-2 ${
-                          darkMode ? "text-gray-300" : "text-gray-700"
-                        }`}
-                      >
-                        Target Amount (₦) *
-                      </label>
-                      <input
-                        type="number"
-                        name="target"
-                        value={formData.target}
-                        onChange={handleInputChange}
-                        required
-                        min="1"
-                        placeholder="0"
-                        className={`w-full px-4 py-3 rounded-xl border-2 outline-none transition-all ${
-                          darkMode
-                            ? "bg-gray-800 border-gray-700 text-white focus:border-primary-500"
-                            : "bg-gray-50 border-gray-200 text-dark focus:border-primary-500"
-                        }`}
-                      />
-                    </div>
+                    </Field>
+                    <Field label="Target Amount (₦) *" darkMode={darkMode}>
+                      <input type="number" name="target" value={formData.target} onChange={handleInput} required min="1" placeholder="0" className={inputCls(darkMode)} />
+                    </Field>
                   </div>
 
-                  {/* Short Description */}
-                  <div>
-                    <label
-                      className={`block text-sm font-medium mb-2 ${
-                        darkMode ? "text-gray-300" : "text-gray-700"
-                      }`}
-                    >
-                      Short Description
-                    </label>
-                    <input
-                      type="text"
-                      name="shortDescription"
-                      value={formData.shortDescription}
-                      onChange={handleInputChange}
-                      placeholder="Brief summary (optional)"
-                      maxLength={200}
-                      className={`w-full px-4 py-3 rounded-xl border-2 outline-none transition-all ${
-                        darkMode
-                          ? "bg-gray-800 border-gray-700 text-white focus:border-primary-500"
-                          : "bg-gray-50 border-gray-200 text-dark focus:border-primary-500"
-                      }`}
-                    />
+                  <Field label="Short Description" darkMode={darkMode}>
+                    <input type="text" name="shortDescription" value={formData.shortDescription} onChange={handleInput} placeholder="Brief summary (optional)" maxLength={200} className={inputCls(darkMode)} />
+                  </Field>
+
+                  <Field label="Full Description *" darkMode={darkMode}>
+                    <textarea name="description" value={formData.description} onChange={handleInput} required rows={4} placeholder="Describe your campaign in detail..." className={`${inputCls(darkMode)} resize-none`} />
+                  </Field>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Field label="Location" darkMode={darkMode}>
+                      <input type="text" name="location" value={formData.location} onChange={handleInput} placeholder="e.g., Ibadan, Oyo State" className={inputCls(darkMode)} />
+                    </Field>
+                    <Field label="Beneficiaries Target" darkMode={darkMode}>
+                      <input type="number" name="beneficiariesTarget" value={formData.beneficiariesTarget} onChange={handleInput} placeholder="Number of beneficiaries" className={inputCls(darkMode)} />
+                    </Field>
                   </div>
 
-                  {/* Full Description */}
-                  <div>
-                    <label
-                      className={`block text-sm font-medium mb-2 ${
-                        darkMode ? "text-gray-300" : "text-gray-700"
-                      }`}
-                    >
-                      Full Description *
-                    </label>
-                    <textarea
-                      name="description"
-                      value={formData.description}
-                      onChange={handleInputChange}
-                      required
-                      rows={5}
-                      placeholder="Describe your campaign in detail..."
-                      className={`w-full px-4 py-3 rounded-xl border-2 outline-none transition-all resize-none ${
-                        darkMode
-                          ? "bg-gray-800 border-gray-700 text-white focus:border-primary-500"
-                          : "bg-gray-50 border-gray-200 text-dark focus:border-primary-500"
-                      }`}
-                    />
-                  </div>
-
-                  {/* Location */}
-                  <div>
-                    <label
-                      className={`block text-sm font-medium mb-2 ${
-                        darkMode ? "text-gray-300" : "text-gray-700"
-                      }`}
-                    >
-                      Location
-                    </label>
-                    <input
-                      type="text"
-                      name="location"
-                      value={formData.location}
-                      onChange={handleInputChange}
-                      placeholder="e.g., Ibadan, Oyo State"
-                      className={`w-full px-4 py-3 rounded-xl border-2 outline-none transition-all ${
-                        darkMode
-                          ? "bg-gray-800 border-gray-700 text-white focus:border-primary-500"
-                          : "bg-gray-50 border-gray-200 text-dark focus:border-primary-500"
-                      }`}
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Field label="Start Date" darkMode={darkMode}>
+                      <input type="date" name="startDate" value={formData.startDate} onChange={handleInput} className={inputCls(darkMode)} />
+                    </Field>
+                    <Field label="End Date" darkMode={darkMode}>
+                      <input type="date" name="endDate" value={formData.endDate} onChange={handleInput} className={inputCls(darkMode)} />
+                    </Field>
                   </div>
 
                   {/* Images */}
-                  <div>
-                    <label
-                      className={`block text-sm font-medium mb-2 ${
-                        darkMode ? "text-gray-300" : "text-gray-700"
-                      }`}
-                    >
-                      Campaign Images (Max 3)
-                    </label>
-                    <div className="grid grid-cols-3 gap-4">
-                      <label
-                        className={`aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all ${
-                          darkMode
-                            ? "bg-gray-800 border-gray-700 hover:border-primary-500"
-                            : "bg-gray-50 border-gray-300 hover:border-primary-500"
-                        }`}
-                      >
-                        <Upload size={24} className="text-primary-500 mb-2" />
-                        <span
-                          className={`text-xs font-medium ${
-                            darkMode ? "text-gray-400" : "text-gray-600"
-                          }`}
-                        >
-                          Upload
-                        </span>
-                        <input
-                          type="file"
-                          multiple
-                          accept="image/*"
-                          onChange={handleImageChange}
-                          className="hidden"
-                        />
+                  <Field label="Campaign Images (Max 3)" darkMode={darkMode}>
+                    <div className="flex flex-wrap gap-3 mt-1">
+                      <label className={`w-20 h-20 rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all ${darkMode ? "border-gray-700 hover:border-primary-500/60" : "border-gray-200 hover:border-primary-400"}`}>
+                        <Upload size={18} className="text-primary-500 mb-1" />
+                        <span className={`text-[10px] ${darkMode ? "text-gray-500" : "text-gray-400"}`}>Upload</span>
+                        <input type="file" multiple accept="image/*" onChange={handleImageChange} className="hidden" />
                       </label>
-
-                      {imagePreviews.map((preview, index) => (
-                        <div
-                          key={index}
-                          className="relative aspect-square rounded-xl overflow-hidden group"
-                        >
-                          <img
-                            src={preview}
-                            alt={`Preview ${index + 1}`}
-                            className="w-full h-full object-cover"
-                          />
+                      {imagePreviews.map((src, idx) => (
+                        <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden group">
+                          <img src={src} alt="" className="w-full h-full object-cover" />
                           <button
                             type="button"
                             onClick={() => {
-                              setImageFiles((prev) =>
-                                prev.filter((_, i) => i !== index)
-                              );
-                              setImagePreviews((prev) =>
-                                prev.filter((_, i) => i !== index)
-                              );
+                              setImageFiles((p) => p.filter((_, i) => i !== idx));
+                              setImagePreviews((p) => p.filter((_, i) => i !== idx));
                             }}
-                            className="absolute inset-0 bg-red-600/80 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                            className="absolute inset-0 bg-red-600/75 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                           >
-                            <Trash2 size={20} />
+                            <Trash2 size={16} />
                           </button>
                         </div>
                       ))}
-
-                      {modalMode === "edit" &&
-                        imagePreviews.length === 0 &&
-                        selectedCampaign?.images?.map((img, index) => (
-                          <div
-                            key={`existing-${index}`}
-                            className="relative aspect-square rounded-xl overflow-hidden"
-                          >
-                            <img
-                              src={img.url}
-                              alt={`Current ${index + 1}`}
-                              className="w-full h-full object-cover opacity-60"
-                            />
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                              <span className="text-xs font-semibold text-white">
-                                Current
-                              </span>
-                            </div>
+                      {modalMode === "edit" && imagePreviews.length === 0 && selectedCampaign?.images?.map((img, idx) => (
+                        <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden">
+                          <img src={img.url} alt="" className="w-full h-full object-cover opacity-60" />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-[10px] text-white font-medium">Current</span>
                           </div>
-                        ))}
+                        </div>
+                      ))}
                     </div>
-                  </div>
+                  </Field>
 
-                  {/* Checkboxes */}
-                  <div className="flex gap-6">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        name="featured"
-                        checked={formData.featured}
-                        onChange={handleInputChange}
-                        className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                      />
-                      <span
-                        className={`text-sm font-medium ${
-                          darkMode ? "text-gray-300" : "text-gray-700"
-                        }`}
-                      >
-                        Featured Campaign
-                      </span>
-                    </label>
-
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        name="urgent"
-                        checked={formData.urgent}
-                        onChange={handleInputChange}
-                        className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                      />
-                      <span
-                        className={`text-sm font-medium ${
-                          darkMode ? "text-gray-300" : "text-gray-700"
-                        }`}
-                      >
-                        Urgent Campaign
-                      </span>
-                    </label>
+                  {/* Flags */}
+                  <div className="flex gap-5">
+                    {[
+                      { name: "featured", label: "Featured" },
+                      { name: "urgent", label: "Urgent" },
+                    ].map(({ name, label }) => (
+                      <label key={name} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          name={name}
+                          checked={formData[name]}
+                          onChange={handleInput}
+                          className="w-3.5 h-3.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                        />
+                        <span className={`text-sm ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{label}</span>
+                      </label>
+                    ))}
                   </div>
                 </form>
 
-                {/* Modal Footer */}
-                <div
-                  className={`p-6 border-t flex gap-3 ${
-                    darkMode ? "border-gray-800" : "border-gray-200"
-                  }`}
-                >
+                {/* Footer */}
+                <div className={`px-6 py-4 border-t flex gap-2 ${darkMode ? "border-gray-800/60" : "border-gray-100"}`}>
                   <button
                     type="button"
                     onClick={closeModal}
                     disabled={submitting}
-                    className={`flex-1 py-3 rounded-xl font-semibold transition-all ${
-                      darkMode
-                        ? "bg-gray-800 text-white hover:bg-gray-700"
-                        : "bg-gray-100 text-dark hover:bg-gray-200"
-                    }`}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-all ${darkMode ? "border-gray-700 text-gray-300 hover:bg-gray-800" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
                   >
                     Cancel
                   </button>
@@ -1028,13 +741,11 @@ const Campaigns = () => {
                     type="submit"
                     onClick={handleSubmit}
                     disabled={submitting}
-                    className="flex-1 py-3 rounded-xl font-semibold bg-primary-500 text-white hover:bg-primary-600 transition-all shadow-lg shadow-primary-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 py-2 rounded-lg text-sm font-medium bg-primary-500 hover:bg-primary-600 text-white transition-all shadow-sm disabled:opacity-50 flex items-center justify-center gap-1.5"
                   >
-                    {submitting
-                      ? "Saving..."
-                      : modalMode === "create"
-                      ? "Create Campaign"
-                      : "Save Changes"}
+                    {submitting ? (
+                      <><span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Saving...</>
+                    ) : modalMode === "create" ? "Create Campaign" : "Save Changes"}
                   </button>
                 </div>
               </div>

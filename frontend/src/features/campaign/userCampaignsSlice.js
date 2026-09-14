@@ -84,13 +84,19 @@ export const createUserCampaign = createAsyncThunk(
       // Category - lowercase
       formData.append("category", campaignData.category.toLowerCase());
 
-      // Target amount
-      formData.append(
-        "targetAmount",
-        campaignData.target || campaignData.targetAmount,
-      );
+      // Target amount — strip commas from Naira-formatted input (e.g. "500,000" → 500000)
+      const rawTarget = String(
+        campaignData.target || campaignData.targetAmount || ""
+      ).replace(/,/g, "");
+      formData.append("targetAmount", rawTarget);
 
-      // Dates
+      // Dates — only append if present; throw early so bad data never reaches the backend
+      if (!campaignData.startDate || String(campaignData.startDate).trim() === "") {
+        return rejectWithValue("Please select a campaign start date.");
+      }
+      if (!campaignData.endDate || String(campaignData.endDate).trim() === "") {
+        return rejectWithValue("Please select a campaign end date.");
+      }
       formData.append("startDate", campaignData.startDate);
       formData.append("endDate", campaignData.endDate);
 
@@ -173,10 +179,20 @@ export const updateUserCampaign = createAsyncThunk(
       }
 
       formData.append("category", campaignData.category.toLowerCase());
-      formData.append(
-        "targetAmount",
-        campaignData.target || campaignData.targetAmount,
-      );
+
+      // Strip commas from Naira-formatted input (e.g. "500,000" → 500000)
+      const rawTarget = String(
+        campaignData.target || campaignData.targetAmount || ""
+      ).replace(/,/g, "");
+      formData.append("targetAmount", rawTarget);
+
+      // Only append dates if present — never send empty strings to backend
+      if (!campaignData.startDate || String(campaignData.startDate).trim() === "") {
+        return rejectWithValue("Please select a campaign start date.");
+      }
+      if (!campaignData.endDate || String(campaignData.endDate).trim() === "") {
+        return rejectWithValue("Please select a campaign end date.");
+      }
       formData.append("startDate", campaignData.startDate);
       formData.append("endDate", campaignData.endDate);
 

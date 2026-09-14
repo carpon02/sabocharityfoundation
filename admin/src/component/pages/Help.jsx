@@ -1,30 +1,20 @@
-// admin/src/component/pages/Help.jsx - Foundation Resource Center
+// admin/src/component/pages/Help.jsx - Help Center — Clerk-Style UI
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Search,
-  Mail,
   Phone,
-  Book,
-  FileText,
-  ChevronDown,
-  ChevronUp,
-  ExternalLink,
-  Send,
-  HelpCircle,
-  Rocket,
   Shield,
   Target,
   Users,
   DollarSign,
-  BarChart3,
-  MessageCircle,
-  Clock,
-  AlertCircle,
+  HelpCircle,
+  ChevronDown,
+  ChevronUp,
   CheckCircle,
-  Zap,
+  Clock,
   Activity,
-  Info,
+  ExternalLink,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 
@@ -33,201 +23,256 @@ const Help = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedFaq, setExpandedFaq] = useState(null);
 
-  const doctrineProtocols = [
+  const categories = [
     {
-      title: "Project Expansion",
+      title: "Campaigns",
       icon: Target,
-      desc: "Scaling community impact through project optimization.",
-      color: "from-emerald-600 to-teal-600",
+      desc: "Managing and scaling community campaigns.",
     },
     {
-      title: "Donation Hub",
+      title: "Donations",
       icon: DollarSign,
-      desc: "Managing donation records and transparency.",
-      color: "from-emerald-500 to-teal-400",
+      desc: "Processing and verifying donation records.",
     },
     {
-      title: "Donor Relations",
+      title: "Donors",
       icon: Users,
-      desc: "Building relationships with our community supporters.",
-      color: "from-emerald-400 to-teal-500",
+      desc: "Donor relationships and account management.",
     },
     {
       title: "Data Privacy",
       icon: Shield,
-      desc: "Ensuring security of foundation and donor data.",
-      color: "from-teal-600 to-emerald-700",
+      desc: "Security and compliance guidelines.",
     },
   ];
 
   const adminFaqs = [
     {
       id: 1,
-      question: "How to Pause a Project?",
+      question: "How do I pause a campaign?",
       answer:
-        "Navigate to Projects, find the specific project, and use the status toggle to deactivate it. This keeps the data for your records while stopping new donations.",
+        "Navigate to Campaigns, find the specific campaign, and use the status toggle or edit modal to deactivate it. This preserves all data while stopping new donations from being accepted.",
     },
     {
       id: 2,
-      question: "How to Verify a Donation?",
+      question: "How do I verify a donation?",
       answer:
-        "Go to the Donation Management Hub and look for 'Awaiting Verification'. Cross-reference the transaction details to ensure transparency.",
+        "Go to Donations and filter by 'Pending Review'. Open the donation details, cross-reference the transaction ID, then click Approve or Reject.",
     },
     {
       id: 3,
-      question: "Managing Admin Permissions?",
+      question: "How are admin permissions managed?",
       answer:
-        "Permissions are managed by the main admin. To add or change access for other team members, contact the technical support team.",
+        "Permissions are managed by the super admin. To add or change access for other team members, contact the technical support team or use the Settings page.",
+    },
+    {
+      id: 4,
+      question: "How do I export a report?",
+      answer:
+        "Go to Analytics and click 'Export CSV'. This downloads a complete donations report for the selected time period, suitable for stakeholder presentations.",
+    },
+    {
+      id: 5,
+      question: "Who can approve campaigns?",
+      answer:
+        "Only super admins and admins with the appropriate role can approve or reject campaigns. Campaign creators can edit their own campaigns but not approve them.",
     },
   ];
 
+  const filteredFaqs = adminFaqs.filter(
+    (faq) =>
+      !searchQuery ||
+      faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const contacts = [
+    {
+      label: "Technical Support",
+      contact: "tech@saboyouth.org",
+      time: "4h response",
+      icon: Activity,
+    },
+    {
+      label: "Finance Team",
+      contact: "finance@saboyouth.org",
+      time: "8h response",
+      icon: Shield,
+    },
+    {
+      label: "Emergency Line",
+      contact: "+234 803 SYF OPS",
+      time: "Immediate",
+      icon: Phone,
+    },
+  ];
+
+  const cardBase = `rounded-xl border ${
+    darkMode
+      ? "bg-dark-lighter border-gray-800/70"
+      : "bg-white border-gray-200/80 shadow-sm"
+  }`;
+
   return (
-    <div className="space-y-16 pb-20">
-      {/* Support Header */}
-      <div className="flex flex-col lg:flex-row justify-between lg:items-end gap-6 lg:gap-8">
+    <div className="space-y-6 pb-10">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1
-            className={`text-3xl lg:text-5xl font-black tracking-tighter ${
-              darkMode ? "text-white" : "text-gray-950"
+            className={`text-xl font-semibold ${
+              darkMode ? "text-white" : "text-gray-900"
             }`}
           >
-            Resource Center
+            Help Center
           </h1>
           <p
-            className={`text-[10px] lg:text-xs font-black uppercase tracking-widest mt-2 flex items-center gap-3 ${
-              darkMode ? "text-gray-600" : "text-gray-400"
+            className={`text-sm mt-0.5 ${
+              darkMode ? "text-gray-400" : "text-gray-500"
             }`}
           >
-            <span className="w-8 lg:w-10 h-0.5 bg-emerald-500" /> Administrative
-            Help & Foundation Resources
+            Admin resources, FAQs, and support contacts
           </p>
         </div>
-        <div className="flex gap-4 w-full lg:w-auto">
-          <div className="relative group flex-1 lg:min-w-[300px]">
-            <Search className="absolute left-4 lg:left-6 top-1/2 -translate-y-1/2 w-4 lg:w-5 h-4 lg:h-5 text-gray-500" />
-            <input
-              type="text"
-              placeholder="Search help resources..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={`w-full pl-12 lg:pl-14 pr-6 lg:pr-8 py-3 lg:py-4 rounded-2xl lg:rounded-[2rem] border font-black text-[10px] lg:text-xs outline-none transition-all ${
-                darkMode
-                  ? "bg-gray-950 border-gray-800 text-white focus:border-emerald-500/50 shadow-xl"
-                  : "bg-white border-gray-100 text-gray-950 focus:border-emerald-500/50 shadow-lg"
-              }`}
-            />
-          </div>
+
+        {/* Search */}
+        <div className="relative sm:w-64">
+          <Search
+            className={`absolute left-3 top-1/2 -translate-y-1/2 ${
+              darkMode ? "text-gray-500" : "text-gray-400"
+            }`}
+            size={15}
+          />
+          <input
+            type="text"
+            placeholder="Search help..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className={`w-full pl-9 pr-4 py-2 rounded-lg border text-sm outline-none transition-all ${
+              darkMode
+                ? "bg-gray-800/60 border-gray-700/50 text-white placeholder-gray-500 focus:border-primary-500/50"
+                : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-primary-500/50"
+            }`}
+          />
         </div>
       </div>
 
-      {/* Doctrine Protocols Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
-        {doctrineProtocols.map((protocol, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: i * 0.1 }}
-            whileHover={{ y: -10 }}
-            className={`p-6 lg:p-8 rounded-[2.5rem] lg:rounded-[3rem] border backdrop-blur-md transition-all duration-500 flex flex-col items-center text-center ${
-              darkMode
-                ? "bg-gray-950 border-gray-800"
-                : "bg-white border-gray-100 shadow-xl shadow-gray-200/20"
-            }`}
-          >
+      {/* Category Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {categories.map((cat, i) => {
+          const Icon = cat.icon;
+          return (
             <div
-              className={`w-14 h-14 lg:w-16 lg:h-16 rounded-2xl lg:rounded-3xl bg-gradient-to-br ${protocol.color} flex items-center justify-center text-white shadow-xl mb-4 lg:mb-6`}
-            >
-              <protocol.icon size={24} className="lg:w-7 lg:h-7" />
-            </div>
-            <h3
-              className={`text-xs lg:text-sm font-black uppercase tracking-widest mb-2 ${
-                darkMode ? "text-white" : "text-gray-900"
+              key={i}
+              className={`p-5 rounded-xl border flex items-start gap-4 transition-all hover:shadow-md cursor-default ${
+                darkMode
+                  ? "bg-dark-lighter border-gray-800/70 hover:border-gray-700"
+                  : "bg-white border-gray-200/80 shadow-sm hover:border-gray-300"
               }`}
             >
-              {protocol.title}
-            </h3>
-            <p className="text-[9px] lg:text-[10px] font-bold text-gray-500 leading-relaxed">
-              {protocol.desc}
-            </p>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Main Support Area */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
-        <div className="xl:col-span-2 space-y-10">
-          <div
-            className={`p-10 lg:p-14 rounded-[4rem] border ${
-              darkMode
-                ? "bg-gray-950 border-gray-800"
-                : "bg-white border-gray-100 shadow-2xl"
-            }`}
-          >
-            <div className="flex items-center gap-6 mb-12">
-              <div className="p-5 rounded-3xl bg-emerald-500/10">
-                <HelpCircle size={32} className="text-emerald-500" />
+              <div
+                className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                  darkMode ? "bg-gray-800" : "bg-gray-50"
+                }`}
+              >
+                <Icon size={18} className="text-primary-600" />
               </div>
               <div>
-                <h3
-                  className={`text-2xl font-black tracking-tight ${
-                    darkMode ? "text-white" : "text-gray-950"
+                <p
+                  className={`text-sm font-semibold mb-0.5 ${
+                    darkMode ? "text-white" : "text-gray-900"
                   }`}
                 >
-                  Operational FAQs
-                </h3>
-                <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mt-1">
-                  Answers to Common Questions
+                  {cat.title}
+                </p>
+                <p
+                  className={`text-xs leading-relaxed ${
+                    darkMode ? "text-gray-500" : "text-gray-400"
+                  }`}
+                >
+                  {cat.desc}
                 </p>
               </div>
             </div>
+          );
+        })}
+      </div>
 
-            <div className="space-y-4">
-              {adminFaqs.map((faq) => (
-                <div
-                  key={faq.id}
-                  className={`rounded-[2rem] border transition-all duration-500 ${
-                    expandedFaq === faq.id
-                      ? darkMode
-                        ? "bg-gray-900 border-emerald-500/30 shadow-2xl shadow-emerald-500/5"
-                        : "bg-emerald-50 border-emerald-500/20"
-                      : darkMode
-                        ? "bg-gray-950 border-gray-800"
-                        : "bg-white border-gray-100"
+      {/* Main Content */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* FAQs */}
+        <div className={`xl:col-span-2 ${cardBase} overflow-hidden`}>
+          <div
+            className={`px-5 py-4 border-b flex items-center gap-2.5 ${
+              darkMode ? "border-gray-800/60" : "border-gray-100"
+            }`}
+          >
+            <HelpCircle size={17} className="text-primary-500" />
+            <h2
+              className={`text-sm font-semibold ${
+                darkMode ? "text-white" : "text-gray-900"
+              }`}
+            >
+              Frequently Asked Questions
+            </h2>
+            <span
+              className={`ml-auto px-2 py-0.5 rounded-full text-xs font-medium ${
+                darkMode
+                  ? "bg-gray-800 text-gray-400"
+                  : "bg-gray-100 text-gray-500"
+              }`}
+            >
+              {filteredFaqs.length}
+            </span>
+          </div>
+
+          <div className="divide-y divide-gray-100 dark:divide-gray-800/50">
+            {filteredFaqs.length === 0 ? (
+              <div className="px-5 py-10 text-center">
+                <p
+                  className={`text-sm ${
+                    darkMode ? "text-gray-500" : "text-gray-400"
                   }`}
                 >
+                  No FAQs match your search
+                </p>
+              </div>
+            ) : (
+              filteredFaqs.map((faq) => (
+                <div key={faq.id}>
                   <button
                     onClick={() =>
                       setExpandedFaq(expandedFaq === faq.id ? null : faq.id)
                     }
-                    className="w-full p-8 flex items-center justify-between text-left"
+                    className={`w-full px-5 py-4 flex items-center justify-between text-left transition-colors ${
+                      darkMode ? "hover:bg-gray-800/30" : "hover:bg-gray-50/50"
+                    }`}
                   >
                     <span
-                      className={`text-xs font-black uppercase tracking-widest ${
+                      className={`text-sm font-medium pr-4 ${
                         expandedFaq === faq.id
                           ? darkMode
                             ? "text-white"
-                            : "text-emerald-600"
+                            : "text-primary-700"
                           : darkMode
-                            ? "text-gray-400"
-                            : "text-gray-600"
+                          ? "text-gray-200"
+                          : "text-gray-800"
                       }`}
                     >
                       {faq.question}
                     </span>
                     <div
-                      className={`p-2 rounded-xl transition-all ${
+                      className={`flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center ${
                         expandedFaq === faq.id
-                          ? "bg-emerald-600 text-white"
+                          ? "bg-primary-500 text-white"
                           : darkMode
-                            ? "bg-gray-900 text-gray-600"
-                            : "bg-gray-100 text-gray-400"
+                          ? "bg-gray-800 text-gray-400"
+                          : "bg-gray-100 text-gray-400"
                       }`}
                     >
                       {expandedFaq === faq.id ? (
-                        <ChevronUp size={16} />
+                        <ChevronUp size={14} />
                       ) : (
-                        <ChevronDown size={16} />
+                        <ChevronDown size={14} />
                       )}
                     </div>
                   </button>
@@ -237,10 +282,11 @@ const Help = () => {
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
                         className="overflow-hidden"
                       >
                         <div
-                          className={`px-8 pb-8 text-[11px] font-bold leading-relaxed ${
+                          className={`px-5 pb-4 text-sm leading-relaxed ${
                             darkMode ? "text-gray-400" : "text-gray-600"
                           }`}
                         >
@@ -250,139 +296,96 @@ const Help = () => {
                     )}
                   </AnimatePresence>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          <div
-            className={`p-12 rounded-[4rem] border relative overflow-hidden transition-all duration-500 ${
-              darkMode
-                ? "bg-emerald-950/20 border-emerald-500/20 shadow-2xl"
-                : "bg-emerald-50 border-emerald-100 shadow-xl shadow-emerald-200/20"
-            }`}
-          >
-            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-[100px] rounded-full -mr-20 -mt-20" />
-            <div className="flex flex-col md:flex-row items-center justify-between gap-10 relative z-10">
-              <div className="flex-1 space-y-4">
-                <div className="p-4 rounded-2xl bg-emerald-500/10 w-fit">
-                  <Zap size={32} className="text-emerald-500" />
-                </div>
-                <h2
-                  className={`text-3xl font-black tracking-tight ${
-                    darkMode ? "text-white" : "text-gray-900"
-                  }`}
-                >
-                  Foundation Support
-                </h2>
-                <p
-                  className={`text-sm font-bold leading-relaxed max-w-2xl ${
-                    darkMode
-                      ? "text-emerald-300/60"
-                      : "text-emerald-700 opacity-80"
-                  }`}
-                >
-                  Our resource center is optimized for administrative
-                  excellence. Every guide ensures the Sabo youth mission remains
-                  strong and effective.
-                </p>
-              </div>
-              <button className="bg-emerald-600 px-12 py-6 rounded-3xl font-black uppercase tracking-widest text-[11px] text-white shadow-2xl shadow-emerald-600/40 hover:bg-emerald-700 transition-all active:scale-95">
-                Full Resource Archive
-              </button>
-            </div>
+              ))
+            )}
           </div>
         </div>
 
-        <div className="space-y-10">
-          <div
-            className={`p-10 rounded-[3rem] border backdrop-blur-md ${
-              darkMode
-                ? "bg-gray-950 border-gray-800 shadow-2xl"
-                : "bg-white border-gray-100 shadow-2xl shadow-gray-200/20"
-            }`}
-          >
-            <h3
-              className={`text-xl font-black tracking-tight mb-8 ${
-                darkMode ? "text-white" : "text-gray-950"
+        {/* Right Sidebar */}
+        <div className="space-y-4">
+          {/* Support Contacts */}
+          <div className={cardBase}>
+            <div
+              className={`px-5 py-4 border-b ${
+                darkMode ? "border-gray-800/60" : "border-gray-100"
               }`}
             >
-              Support Team
-            </h3>
-            <div className="space-y-6">
-              {[
-                {
-                  label: "Technical Ops",
-                  contact: "tech@saboyouth.org",
-                  time: "4h Response",
-                  icon: Activity,
-                },
-                {
-                  label: "Fiscal Integrity",
-                  contact: "finance@saboyouth.org",
-                  time: "8h Response",
-                  icon: Shield,
-                },
-                {
-                  label: "Direct Emergency",
-                  contact: "+234 803 SYF OPS",
-                  time: "Immediate",
-                  icon: Phone,
-                },
-              ].map((contact, i) => (
-                <div
-                  key={i}
-                  className={`p-6 rounded-[2rem] border transition-all ${
-                    darkMode
-                      ? "bg-gray-900 border-gray-800 hover:border-emerald-500/30"
-                      : "bg-gray-50 border-gray-100 hover:border-emerald-500/20"
-                  }`}
-                >
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                      <contact.icon size={18} />
+              <h2
+                className={`text-sm font-semibold ${
+                  darkMode ? "text-white" : "text-gray-900"
+                }`}
+              >
+                Support Team
+              </h2>
+            </div>
+            <div className="divide-y divide-gray-100 dark:divide-gray-800/50">
+              {contacts.map((c, i) => {
+                const Icon = c.icon;
+                return (
+                  <div key={i} className="px-5 py-4">
+                    <div className="flex items-center gap-3 mb-1.5">
+                      <div
+                        className={`w-7 h-7 rounded-md flex items-center justify-center ${
+                          darkMode ? "bg-gray-800" : "bg-gray-50"
+                        }`}
+                      >
+                        <Icon size={14} className="text-primary-500" />
+                      </div>
+                      <span
+                        className={`text-xs font-semibold ${
+                          darkMode ? "text-gray-300" : "text-gray-700"
+                        }`}
+                      >
+                        {c.label}
+                      </span>
                     </div>
-                    <span
-                      className={`text-[10px] font-black uppercase tracking-widest ${
-                        darkMode ? "text-white" : "text-gray-900"
+                    <p
+                      className={`text-xs font-medium mb-1 pl-10 ${
+                        darkMode ? "text-primary-400" : "text-primary-600"
                       }`}
                     >
-                      {contact.label}
-                    </span>
+                      {c.contact}
+                    </p>
+                    <div className="flex items-center gap-1.5 pl-10">
+                      <Clock size={11} className="text-gray-400" />
+                      <span
+                        className={`text-[11px] ${
+                          darkMode ? "text-gray-500" : "text-gray-400"
+                        }`}
+                      >
+                        {c.time}
+                      </span>
+                    </div>
                   </div>
-                  <p
-                    className={`text-xs font-black truncate mb-2 ${
-                      darkMode ? "text-emerald-400" : "text-emerald-600"
-                    }`}
-                  >
-                    {contact.contact}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <Clock size={12} className="text-gray-500" />
-                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">
-                      {contact.time}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
+          {/* System Status */}
           <div
-            className={`p-10 rounded-[3rem] border backdrop-blur-md ${
+            className={`p-5 rounded-xl border ${
               darkMode
-                ? "bg-emerald-950/10 border-emerald-500/20"
-                : "bg-emerald-50 border-emerald-100 shadow-xl shadow-emerald-200/20"
+                ? "bg-emerald-950/10 border-emerald-900/30"
+                : "bg-emerald-50 border-emerald-100"
             }`}
           >
-            <div className="flex items-center gap-4 mb-6 text-emerald-500">
-              <CheckCircle size={24} />
-              <span className="text-[10px] font-black uppercase tracking-widest">
-                System Health: Nominal
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle size={16} className="text-emerald-500" />
+              <span
+                className={`text-sm font-semibold ${
+                  darkMode ? "text-emerald-400" : "text-emerald-700"
+                }`}
+              >
+                System Status: Nominal
               </span>
             </div>
-            <p className="text-[10px] font-bold text-gray-500 leading-relaxed translate-y-[-4px]">
-              Platform operational vectors are synchronized. Predictive uptime:
-              99.98%.
+            <p
+              className={`text-xs leading-relaxed ${
+                darkMode ? "text-gray-500" : "text-gray-500"
+              }`}
+            >
+              All platform services are operational. Predictive uptime: 99.98%.
             </p>
           </div>
         </div>

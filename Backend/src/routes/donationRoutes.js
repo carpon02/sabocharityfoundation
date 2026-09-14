@@ -16,6 +16,7 @@ import {
   downloadReceipt,
   regenerateReceiptController,
 } from "../controllers/donationController.js";
+import { verifyDonationController } from "../controllers/webhookController.js";
 import {
   protect,
   restrictTo,
@@ -84,6 +85,16 @@ router.post("/initialize-transfer", optionalAuth, initializeBankTransfer);
  * @access  Public
  */
 router.get("/transfer-status/:reference", checkTransferStatus);
+
+/**
+ * @route   POST /api/v1/donations/verify/:reference
+ * @desc    Client-triggered server-side verification fallback.
+ *          Called by frontend after Paystack popup onSuccess.
+ *          The backend calls Paystack's API directly — never trusts client.
+ *          Idempotent: safe to call even if webhook already confirmed it.
+ * @access  Public
+ */
+router.post("/verify/:reference", verifyDonationController);
 
 // --------- ADMIN ROUTES (BEFORE GENERIC :id ROUTES) ---------
 

@@ -13,34 +13,34 @@ const CategoryDistributionChart = ({ categoryData, isRefreshing }) => {
     <div
       className={`${
         darkMode
-          ? "bg-gray-950 border-gray-800"
-          : "bg-white border-gray-100 shadow-xl"
-      } border rounded-[2.5rem] p-6 lg:p-8 ${isRefreshing ? "animate-pulse" : ""}`}
+          ? "bg-dark-lighter border-gray-800/70"
+          : "bg-white border-gray-200/80 shadow-sm"
+      } border rounded-xl p-5 ${isRefreshing ? "animate-pulse" : ""}`}
     >
-      <div className="mb-8">
+      <div className="mb-6">
         <h3
-          className={`text-lg font-black tracking-tight ${
-            darkMode ? "text-white" : "text-gray-950"
+          className={`text-sm font-semibold ${
+            darkMode ? "text-white" : "text-gray-900"
           }`}
         >
           By Category
         </h3>
-        <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mt-1">
-          Impact Distribution
+        <p className={`text-xs mt-0.5 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+          Impact distribution
         </p>
       </div>
 
       {dataArray.length > 0 ? (
-        <div className="space-y-6 max-h-[22rem] overflow-y-auto pr-2 custom-scrollbar">
+        <div className="space-y-5 max-h-[19rem] overflow-y-auto pr-2 custom-scrollbar">
           {dataArray.map((cat, index) => (
-            <div key={index} className="space-y-2 group">
-              <div className="flex items-center justify-between text-[11px]">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div key={index} className="space-y-1.5 group">
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
                   <div
-                    className={`w-2 h-2 rounded-full bg-gradient-to-r ${cat.color} flex-shrink-0 shadow-[0_0_8px_currentColor]`}
+                    className={`w-2 h-2 rounded-full bg-gradient-to-r ${cat.color} flex-shrink-0`}
                   ></div>
                   <span
-                    className={`font-black uppercase tracking-widest truncate ${
+                    className={`font-medium truncate ${
                       darkMode ? "text-white" : "text-gray-900"
                     }`}
                   >
@@ -48,8 +48,8 @@ const CategoryDistributionChart = ({ categoryData, isRefreshing }) => {
                   </span>
                 </div>
                 <span
-                  className={`font-black ml-2 flex-shrink-0 ${
-                    darkMode ? "text-white" : "text-gray-900"
+                  className={`font-semibold ml-2 flex-shrink-0 ${
+                    darkMode ? "text-gray-200" : "text-gray-700"
                   }`}
                 >
                   {cat.percentage}%
@@ -57,25 +57,25 @@ const CategoryDistributionChart = ({ categoryData, isRefreshing }) => {
               </div>
               <div
                 className={`w-full ${
-                  darkMode ? "bg-gray-900" : "bg-gray-100"
+                  darkMode ? "bg-gray-800" : "bg-gray-100"
                 } rounded-full h-1.5 overflow-hidden`}
               >
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${cat.percentage}%` }}
                   transition={{
-                    duration: 1,
-                    delay: index * 0.1,
+                    duration: 0.8,
+                    delay: index * 0.05,
                     ease: "circOut",
                   }}
-                  className={`bg-gradient-to-r ${cat.color} h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_currentColor]`}
+                  className={`bg-gradient-to-r ${cat.color} h-full rounded-full transition-all duration-700`}
                 />
               </div>
               <div
-                className={`text-[9px] font-bold uppercase tracking-widest flex justify-between ${
+                className={`text-[10px] flex justify-between ${
                   darkMode
-                    ? "text-gray-600 group-hover:text-gray-400"
-                    : "text-gray-400 group-hover:text-gray-600"
+                    ? "text-gray-500 group-hover:text-gray-400"
+                    : "text-gray-500 group-hover:text-gray-700"
                 } transition-colors`}
               >
                 <span>{formatCurrency(cat.amount)}</span>
@@ -85,16 +85,16 @@ const CategoryDistributionChart = ({ categoryData, isRefreshing }) => {
           ))}
         </div>
       ) : (
-        <div className="text-center py-20 flex flex-col items-center justify-center border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-3xl">
-          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-900 rounded-full flex items-center justify-center mb-4">
+        <div className={`text-center py-16 flex flex-col items-center justify-center border border-dashed rounded-xl ${darkMode ? "border-gray-800" : "border-gray-200"}`}>
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 ${darkMode ? "bg-gray-800/50" : "bg-gray-50"}`}>
             <PieChart
-              size={24}
-              className={`${darkMode ? "text-gray-600" : "text-gray-400"}`}
+              size={16}
+              className={`${darkMode ? "text-gray-500" : "text-gray-400"}`}
             />
           </div>
           <p
-            className={`text-xs font-black uppercase tracking-widest ${
-              darkMode ? "text-gray-500" : "text-gray-400"
+            className={`text-xs ${
+              darkMode ? "text-gray-500" : "text-gray-500"
             }`}
           >
             No category data available

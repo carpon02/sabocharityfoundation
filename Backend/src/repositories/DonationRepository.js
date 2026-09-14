@@ -53,7 +53,7 @@ class DonationRepository extends BaseRepository {
     return await this.find(
       {
         approvalStatus: "pending",
-        status: { $in: ["verified", "processing"] },
+        status: "verified", // only webhook-confirmed payments need admin review
       },
       options,
     );

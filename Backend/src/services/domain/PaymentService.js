@@ -370,20 +370,18 @@ class PaymentService {
     const payment = await Donation.findById(id).populate("campaign donor");
     if (!payment) throw new Error("Payment not found");
 
-    // Allow approval when:
-    // - payment is already webhook-verified (paymentVerified = true), OR
-    // - it's a bank_transfer (no Paystack verification expected), OR
-    // - it's a card payment with a paystackReference (went through Paystack
-    //   checkout; webhook may have failed but admin is manually confirming)
-    const isApprovable =
-      payment.paymentVerified ||
-      payment.paymentMethod === 'bank_transfer' ||
-      (payment.paymentMethod === 'card' && payment.paystackReference);
+    // A payment can only be approved when Paystack has webhook-verified it.
+    // The bank_transfer exemption and the card+paystackReference shortcut have
+    // been intentionally removed: both allowed unverified (including failed)
+    // payments to be approved, which is the root cause of the processing bug.
+    // For genuinely offline manual transfers use paymentMethod="manual_transfer"
+    // with its own dedicated confirmation flow.
+    const isApprovable = payment.paymentVerified;
 
     if (!isApprovable) {
       throw new Error(
-        'Payment cannot be approved: no Paystack verification on record. ' +
-        'Ensure the donor completed checkout before approving.'
+        'Cannot approve: payment has not been verified by Paystack. ' +
+        'Only successfully verified payments can be approved.'
       );
     }
 

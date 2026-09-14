@@ -175,7 +175,7 @@ donationSchema.methods.canBeApproved = function () {
   return (
     this.paymentVerified &&
     this.approvalStatus === "pending" &&
-    (this.status === "verified" || this.status === "processing")
+    this.status === "verified" // only webhook-confirmed payments
   );
 };
 

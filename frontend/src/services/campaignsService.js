@@ -38,26 +38,26 @@ const getCampaignStats = async () => {
  * Create a new campaign (requires authentication)
  */
 const createCampaign = async (campaignData) => {
-  const formData = new FormData();
+  let payload;
 
-  // Append all campaign data to FormData
-  Object.keys(campaignData).forEach((key) => {
-    if (key === "images" && Array.isArray(campaignData[key])) {
-      campaignData[key].forEach((image) => {
-        formData.append("images", image);
-      });
-    } else {
-      formData.append(key, campaignData[key]);
-    }
+  if (campaignData instanceof FormData) {
+    // Slice already built the FormData — send it directly
+    payload = campaignData;
+  } else {
+    // Fallback: build FormData from a plain object
+    payload = new FormData();
+    Object.keys(campaignData).forEach((key) => {
+      if (key === "images" && Array.isArray(campaignData[key])) {
+        campaignData[key].forEach((image) => payload.append("images", image));
+      } else {
+        payload.append(key, campaignData[key]);
+      }
+    });
+  }
+
+  const response = await apiClient.post("/campaigns/create-campaign", payload, {
+    headers: { "Content-Type": "multipart/form-data" },
   });
-
-  const response = await apiClient.post(
-    "/campaigns/create-campaign",
-    formData,
-    {
-      headers: { "Content-Type": "multipart/form-data" },
-    },
-  );
   return response.data;
 };
 
@@ -65,19 +65,24 @@ const createCampaign = async (campaignData) => {
  * Update a campaign (requires authentication)
  */
 const updateCampaign = async (id, campaignData) => {
-  const formData = new FormData();
+  let payload;
 
-  Object.keys(campaignData).forEach((key) => {
-    if (key === "images" && Array.isArray(campaignData[key])) {
-      campaignData[key].forEach((image) => {
-        formData.append("images", image);
-      });
-    } else {
-      formData.append(key, campaignData[key]);
-    }
-  });
+  if (campaignData instanceof FormData) {
+    // Slice already built the FormData — send it directly
+    payload = campaignData;
+  } else {
+    // Fallback: build FormData from a plain object
+    payload = new FormData();
+    Object.keys(campaignData).forEach((key) => {
+      if (key === "images" && Array.isArray(campaignData[key])) {
+        campaignData[key].forEach((image) => payload.append("images", image));
+      } else {
+        payload.append(key, campaignData[key]);
+      }
+    });
+  }
 
-  const response = await apiClient.put(`/campaigns/${id}`, formData, {
+  const response = await apiClient.put(`/campaigns/${id}`, payload, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return response.data;

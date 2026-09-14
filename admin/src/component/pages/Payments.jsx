@@ -1,505 +1,336 @@
-// admin/src/component/pages/Payments.jsx - Donation Management Hub
+// admin/src/component/pages/Payments.jsx — Clerk-Style UI
 import React, { useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search,
-  Download,
-  CreditCard,
-  CheckCircle,
-  Clock,
-  Eye,
-  XCircle,
-  RefreshCw,
-  Check,
-  X,
-  Loader,
-  Wallet,
-  ShieldCheck,
-  ChevronLeft,
-  ChevronRight,
-  Shield,
-  Calendar,
-  User,
-  TrendingUp,
+  Search, Download, CreditCard, CheckCircle, Clock, Eye,
+  XCircle, RefreshCw, Check, X, Loader, Wallet, ShieldCheck,
+  ChevronLeft, ChevronRight, Shield, Calendar, User, TrendingUp,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
-
 import { StatsCard } from "../shared";
 import {
-  fetchPaymentStats,
-  fetchAllPayments,
-  approvePayment,
-  exportPayments,
-  setFilters,
-  fetchPaymentDetails,
-  rejectPayment,
+  fetchPaymentStats, fetchAllPayments, approvePayment,
+  exportPayments, setFilters, fetchPaymentDetails, rejectPayment,
 } from "../../features/payment/adminPaymentsSlice";
 
-const getStatusConfig = (status) => {
-  const configs = {
-    pending: {
-      label: "Awaiting Verification",
-      color: "text-amber-500",
-      bg: "bg-amber-100 dark:bg-amber-950/30",
-      border: "border-amber-200 dark:border-amber-800",
-      icon: Clock,
-    },
-    approved: {
-      label: "Donation Verified",
-      color: "text-emerald-500",
-      bg: "bg-emerald-100 dark:bg-emerald-950/30",
-      border: "border-emerald-200 dark:border-emerald-800",
-      icon: ShieldCheck,
-    },
-    rejected: {
-      label: "Donation Rejected",
-      color: "text-rose-500",
-      bg: "bg-rose-100 dark:bg-rose-950/30",
-      border: "border-rose-200 dark:border-rose-800",
-      icon: XCircle,
-    },
-  };
-  return configs[status] || configs.pending;
+/**
+ * Returns a display config based on the combined payment status + approval status.
+ * This makes the admin table unambiguous at a glance.
+ */
+const getPaymentDisplayConfig = (payment) => {
+  const { status, approvalStatus } = payment;
+  if (status === "verified" && approvalStatus === "approved")
+    return { label: "Confirmed",       color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/20", icon: ShieldCheck };
+  if (status === "verified" && approvalStatus === "rejected")
+    return { label: "Revoked",         color: "text-red-600",     bg: "bg-red-50 dark:bg-red-950/20",       icon: XCircle };
+  if (status === "verified" && approvalStatus === "pending")
+    return { label: "Awaiting Review", color: "text-blue-600",    bg: "bg-blue-50 dark:bg-blue-950/20",     icon: CheckCircle };
+  if (status === "processing")
+    return { label: "Awaiting Payment",color: "text-amber-600",   bg: "bg-amber-50 dark:bg-amber-950/20",   icon: Clock };
+  if (status === "failed")
+    return { label: "Payment Failed",  color: "text-red-600",     bg: "bg-red-50 dark:bg-red-950/20",       icon: XCircle };
+  if (status === "pending")
+    return { label: "Not Started",     color: "text-gray-500",    bg: "bg-gray-100 dark:bg-gray-800",       icon: Clock };
+  // Fallback
+  return { label: approvalStatus || status, color: "text-gray-500", bg: "bg-gray-100", icon: Clock };
 };
+
+const fmt = (n) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", minimumFractionDigits: 0 }).format(n);
 
 const Payments = () => {
   const dispatch = useDispatch();
   const { darkMode } = useTheme();
-
-  const { payments, stats, pagination, filters, loading } = useSelector(
-    (state) => state.adminPayments,
-  );
+  const { payments, stats, pagination, filters, loading } = useSelector((s) => s.adminPayments);
 
   const [showApproveModal, setShowApproveModal] = useState(false);
-  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [showRejectModal,  setShowRejectModal]  = useState(false);
+  const [showRevokeModal,  setShowRevokeModal]  = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState(null);
-  const [rejectionReason, setRejectionReason] = useState("");
-  const [initiateRefund, setInitiateRefund] = useState(false);
-  const [isApproving, setIsApproving] = useState(false);
-  const [isRejecting, setIsRejecting] = useState(false);
+  const [selectedPayment,  setSelectedPayment]  = useState(null);
+  const [rejectionReason,  setRejectionReason]  = useState("");
+  const [revokeReason,     setRevokeReason]     = useState("");
+  const [initiateRefund,   setInitiateRefund]   = useState(false);
+  const [isApproving,      setIsApproving]      = useState(false);
+  const [isRejecting,      setIsRejecting]      = useState(false);
+  const [isRevoking,       setIsRevoking]       = useState(false);
 
   useEffect(() => {
     dispatch(fetchPaymentStats({ period: "30days" }));
     dispatch(fetchAllPayments(filters));
   }, [dispatch, filters]);
 
-  const internalStats = useMemo(
-    () => [
-      {
-        label: "Total Donations",
-        value: new Intl.NumberFormat("en-NG", {
-          style: "currency",
-          currency: "NGN",
-          minimumFractionDigits: 0,
-        }).format(stats.overview?.totalPayments || 0),
-        subtitle: "Foundation Impact",
-        icon: Wallet,
-        bgColor: "from-emerald-600 to-teal-600",
-        trend: "+15%",
-        trendUp: true,
-      },
-      {
-        label: "Verified Donations",
-        value: (stats.overview?.successful?.count || 0).toString(),
-        subtitle: "Verified Support",
-        icon: ShieldCheck,
-        bgColor: "from-emerald-500 to-teal-500",
-        trend: "+8.2%",
-        trendUp: true,
-      },
-      {
-        label: "Pending Payments",
-        value: (stats.overview?.pending?.count || 0).toString(),
-        subtitle: "Needs Review",
-        icon: Clock,
-        bgColor: "from-amber-500 to-orange-600",
-      },
-      {
-        label: "Success Rate",
-        value: "98.2%",
-        subtitle: "System Reliability",
-        icon: TrendingUp,
-        bgColor: "from-rose-500 to-pink-600",
-      },
-    ],
-    [stats],
-  );
+  const internalStats = useMemo(() => [
+    { label: "Total Donations",    value: fmt(stats.overview?.totalPayments || 0),              subtitle: "Foundation Impact",  icon: Wallet,     bgColor: "from-emerald-600 to-teal-600" },
+    { label: "Verified Donations", value: (stats.overview?.successful?.count || 0).toString(),  subtitle: "Verified Support",   icon: ShieldCheck, bgColor: "from-emerald-500 to-teal-500" },
+    { label: "Pending Payments",   value: (stats.overview?.pending?.count || 0).toString(),     subtitle: "Needs Review",       icon: Clock,      bgColor: "from-amber-500 to-orange-600" },
+    { label: "Success Rate",       value: "98.2%",                                              subtitle: "System Reliability", icon: TrendingUp, bgColor: "from-rose-500 to-pink-600" },
+  ], [stats]);
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 },
-  };
-
-  const handleApprove = (payment) => {
-    setSelectedPayment(payment);
-    setShowApproveModal(true);
-  };
-
-  const handleReject = (payment) => {
-    setSelectedPayment(payment);
-    setRejectionReason("");
-    setInitiateRefund(false);
-    setShowRejectModal(true);
-  };
-
-  const handleViewDetails = async (payment) => {
-    await dispatch(fetchPaymentDetails(payment._id));
-    setSelectedPayment(payment);
+  const handleApprove = (p) => { setSelectedPayment(p); setShowApproveModal(true); };
+  const handleReject  = (p) => { setSelectedPayment(p); setRejectionReason(""); setInitiateRefund(false); setShowRejectModal(true); };
+  const handleRevoke  = (p) => { setSelectedPayment(p); setRevokeReason(""); setShowRevokeModal(true); };
+  const handleViewDetails = async (p) => {
+    await dispatch(fetchPaymentDetails(p._id));
+    setSelectedPayment(p);
     setShowDetailsModal(true);
   };
 
+  const confirmApprove = async () => {
+    setIsApproving(true);
+    try {
+      await dispatch(approvePayment({ paymentId: selectedPayment._id }));
+      setShowApproveModal(false);
+      dispatch(fetchAllPayments(filters));
+      dispatch(fetchPaymentStats({ period: "30days" }));
+    } finally { setIsApproving(false); }
+  };
+
+  const confirmReject = async () => {
+    setIsRejecting(true);
+    try {
+      await dispatch(rejectPayment({ paymentId: selectedPayment._id, rejectionReason, initiateRefund }));
+      setShowRejectModal(false);
+      dispatch(fetchAllPayments(filters));
+      dispatch(fetchPaymentStats({ period: "30days" }));
+    } finally { setIsRejecting(false); }
+  };
+
+  // Revoke: used for auto-approved Paystack-verified donations where the admin
+  // discovers an issue after the fact (fraud, duplicate, etc.)
+  const confirmRevoke = async () => {
+    setIsRevoking(true);
+    try {
+      await dispatch(rejectPayment({
+        paymentId: selectedPayment._id,
+        rejectionReason: revokeReason || "Revoked by admin",
+        initiateRefund: false,
+      }));
+      setShowRevokeModal(false);
+      dispatch(fetchAllPayments(filters));
+      dispatch(fetchPaymentStats({ period: "30days" }));
+    } finally { setIsRevoking(false); }
+  };
+
+  // ── Shared styles ────────────────────────────────────────────────────────
+  const cardBase = `rounded-xl border ${darkMode ? "bg-dark-lighter border-gray-800/70" : "bg-white border-gray-200/80 shadow-sm"}`;
+  const modalBase = `rounded-xl border shadow-xl ${darkMode ? "bg-[#111] border-gray-800" : "bg-white border-gray-200"}`;
+  const inputCls  = `px-3 py-2 rounded-lg border text-sm outline-none transition-all ${darkMode ? "bg-gray-800/60 border-gray-700/50 text-white placeholder-gray-500 focus:border-primary-500/50" : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-primary-400"}`;
+
+  // ── Pagination helpers ───────────────────────────────────────────────────
+  const buildPages = () => {
+    const total = pagination.pages, cur = pagination.page;
+    if (!total || total <= 1) return [];
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    if (cur <= 4) return [1, 2, 3, 4, 5, "…", total];
+    if (cur >= total - 3) return [1, "…", total-4, total-3, total-2, total-1, total];
+    return [1, "…", cur-1, cur, cur+1, "…", total];
+  };
+
   return (
-    <div className="space-y-8 relative">
-      {/* Decorative Background Blob */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-3xl -z-10 pointer-events-none" />
+    <div className="space-y-6 pb-10">
 
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-1 bg-gradient-to-r from-emerald-500 to-emerald-300 rounded-full" />
-            <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider">
-              Financial Management
-            </span>
-          </div>
-          <h1
-            className={`text-3xl lg:text-4xl font-extrabold mb-2 tracking-tight ${
-              darkMode ? "text-white" : "text-dark"
-            }`}
-          >
-            Donation <span className="text-emerald-500">History</span>
-          </h1>
-          <p
-            className={`text-base max-w-xl ${
-              darkMode ? "text-gray-400" : "text-gray-600"
-            }`}
-          >
-            Monitor, verify, and analyze incoming financial contributions to
-            ensure transparency and accountability.
+      {/* ── Header ───────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className={`text-xl font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>Donations</h1>
+          <p className={`text-sm mt-0.5 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+            {pagination?.total || 0} total records
+            {(stats.overview?.pending?.count || 0) > 0 && (
+              <> · <span className="text-amber-500 font-medium">{stats.overview.pending.count} pending review</span></>
+            )}
           </p>
-        </motion.div>
-
-        <motion.button
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => dispatch(exportPayments(filters))}
-          className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white px-8 py-4 rounded-2xl font-bold text-sm flex items-center gap-3 shadow-xl shadow-emerald-500/30 transition-all w-fit disabled:opacity-50"
-        >
-          <Download size={20} />
-          <span className="whitespace-nowrap">Export Giving Report</span>
-        </motion.button>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => dispatch(fetchAllPayments(filters))}
+            className={`p-2 rounded-lg border text-sm transition-all ${darkMode ? "bg-dark-lighter border-gray-800 text-gray-400 hover:text-white" : "bg-white border-gray-200 text-gray-600 hover:text-gray-900 shadow-sm"}`}
+            title="Refresh"
+          >
+            <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
+          </button>
+          <button
+            onClick={() => dispatch(exportPayments(filters))}
+            className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all flex items-center gap-1.5 ${darkMode ? "bg-dark-lighter border-gray-800 text-gray-300 hover:text-white" : "bg-white border-gray-200 text-gray-600 hover:text-gray-900 shadow-sm"}`}
+          >
+            <Download size={15} />
+            <span className="hidden sm:inline">Export</span>
+          </button>
+        </div>
       </div>
 
-      {/* Stats Grid */}
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-      >
-        {internalStats.map((stat, i) => (
-          <motion.div
-            key={i}
-            variants={itemVariants}
-            whileHover={{ y: -5, transition: { duration: 0.2 } }}
-          >
-            <StatsCard {...stat} index={i} />
-          </motion.div>
-        ))}
-      </motion.div>
+      {/* ── Stats ────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {internalStats.map((s, i) => <StatsCard key={i} {...s} index={i} />)}
+      </div>
 
-      {/* Filters */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className={`p-6 rounded-3xl border backdrop-blur-sm ${
-          darkMode
-            ? "bg-dark-lighter/80 border-gray-800"
-            : "bg-white/80 border-gray-100 shadow-xl shadow-gray-100/50"
-        }`}
-      >
-        <div className="flex flex-col lg:flex-row gap-4">
-          <div className="relative flex-1 group">
-            <Search
-              className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-500 transition-colors"
-              size={20}
-            />
-            <input
-              type="text"
-              placeholder="Search giving records..."
-              value={filters.search || ""}
-              onChange={(e) =>
-                dispatch(setFilters({ search: e.target.value, page: 1 }))
-              }
-              className={`w-full pl-14 pr-6 py-4 rounded-2xl border-2 outline-none transition-all text-sm font-semibold ${
-                darkMode
-                  ? "bg-gray-800/50 border-gray-700 text-white focus:border-emerald-500 focus:bg-gray-800"
-                  : "bg-gray-50 border-gray-100 text-dark focus:border-emerald-500 focus:bg-white focus:shadow-lg focus:shadow-emerald-500/10"
-              }`}
-            />
-          </div>
-          <div className="flex flex-wrap gap-4 w-full xl:w-auto">
-            <select
-              value={filters.approvalStatus || ""}
-              onChange={(e) =>
-                dispatch(setFilters({ approvalStatus: e.target.value, page: 1 }))
-              }
-              className={`px-6 py-4 rounded-2xl border-2 outline-none cursor-pointer text-sm font-bold xl:min-w-[180px] ${
-                darkMode
-                  ? "bg-gray-800/50 border-gray-700 text-white focus:border-emerald-500"
-                  : "bg-gray-50 border-gray-100 text-dark focus:border-emerald-500 hover:bg-white transition-colors"
-              }`}
-            >
-              <option value="">All Statuses</option>
-              <option value="pending">Pending Review</option>
-              <option value="approved">Verified Donations</option>
-              <option value="rejected">Rejected</option>
-            </select>
-            <button
-              onClick={() => dispatch(fetchAllPayments(filters))}
-              className={`px-8 py-4 rounded-2xl border-2 font-bold text-sm transition-all flex items-center gap-2 hover:scale-105 active:scale-95 whitespace-nowrap ${
-                darkMode
-                  ? "bg-gray-800/50 border-gray-700 text-gray-300 hover:text-white hover:bg-gray-700"
-                  : "bg-white border-gray-200 text-gray-600 hover:text-emerald-600 hover:border-emerald-200"
-              }`}
-            >
-              <RefreshCw size={18} className={loading ? "animate-spin" : ""} />{" "}
-              Refresh
-            </button>
-          </div>
+      {/* ── Filters ──────────────────────────────────────────────────── */}
+      <div className={`${cardBase} p-4 flex flex-col sm:flex-row gap-3`}>
+        <div className="relative flex-1">
+          <Search className={`absolute left-3 top-1/2 -translate-y-1/2 ${darkMode ? "text-gray-500" : "text-gray-400"}`} size={15} />
+          <input
+            type="text"
+            placeholder="Search donations..."
+            value={filters.search || ""}
+            onChange={(e) => dispatch(setFilters({ search: e.target.value, page: 1 }))}
+            className={`${inputCls} w-full pl-9`}
+          />
         </div>
-      </motion.div>
+        <select
+          value={filters.approvalStatus || ""}
+          onChange={(e) => dispatch(setFilters({ approvalStatus: e.target.value, page: 1 }))}
+          className={inputCls}
+        >
+          <option value="">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Verified</option>
+          <option value="rejected">Rejected</option>
+        </select>
+      </div>
 
-      {/* Transaction Table */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className={`rounded-3xl border overflow-hidden ${
-          darkMode
-            ? "bg-dark-lighter border-gray-800"
-            : "bg-white border-gray-100 shadow-xl shadow-gray-100/50"
-        }`}
-      >
-        <div className="p-8 border-b border-gray-100 dark:border-gray-800/50 flex flex-wrap gap-4 items-center justify-between bg-gradient-to-r from-transparent via-transparent to-emerald-500/5">
-          <div className="flex items-center gap-4">
-            <div
-              className={`p-3 rounded-xl ${darkMode ? "bg-emerald-900/20" : "bg-emerald-50"}`}
-            >
-              <Wallet size={24} className="text-emerald-500" />
-            </div>
-            <div>
-              <h3
-                className={`text-xl font-bold ${
-                  darkMode ? "text-white" : "text-dark"
-                }`}
-              >
-                Live Transaction Feed
-              </h3>
-              <p
-                className={`text-sm mt-1 ${darkMode ? "text-gray-500" : "text-gray-500"}`}
-              >
-                Real-time donation tracking and status updates
-              </p>
-            </div>
-          </div>
-          <span
-            className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider ${
-              darkMode ? "bg-gray-800 text-gray-400" : "bg-gray-100 text-gray-600"
-            }`}
-          >
-            {payments?.length || 0} Records
+      {/* ── Table ────────────────────────────────────────────────────── */}
+      <div className={`${cardBase} overflow-hidden`}>
+        {/* Table header label */}
+        <div className={`px-5 py-4 border-b flex items-center gap-2.5 ${darkMode ? "border-gray-800/60" : "border-gray-100"}`}>
+          <Wallet size={17} className="text-emerald-500" />
+          <h2 className={`text-sm font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>Transactions</h2>
+          <span className={`ml-auto px-2 py-0.5 rounded-full text-xs font-medium ${darkMode ? "bg-gray-800 text-gray-400" : "bg-gray-100 text-gray-500"}`}>
+            {payments?.length || 0}
           </span>
         </div>
 
-        <div className="overflow-x-auto w-full -mx-0">
-          <table className="w-full min-w-[800px] text-left">
-            <thead
-              className={`${
-                darkMode ? "bg-gray-900/30" : "bg-gray-50/50"
-              } border-b ${darkMode ? "border-gray-800" : "border-gray-100"}`}
-            >
-              <tr>
-                {["Project Path", "Donor Details", "Amount", "Method", "Status", "Actions"].map(
-                  (h, i) => (
-                    <th
-                      key={h}
-                      className={`px-8 py-5 ${i === 2 ? "text-right" : i === 5 ? "text-center" : "text-left"} text-xs font-bold uppercase tracking-wider ${
-                        darkMode ? "text-gray-400" : "text-gray-500"
-                      }`}
-                    >
-                      {h}
-                    </th>
-                  ),
-                )}
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[700px] text-left">
+            <thead>
+              <tr className={`border-b ${darkMode ? "border-gray-800/60" : "border-gray-50"}`}>
+                {["Campaign", "Donor", "Amount", "Method", "Status", ""].map((h, i) => (
+                  <th
+                    key={h + i}
+                    className={`px-5 py-3 text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-500" : "text-gray-400"} ${i === 2 ? "text-right" : i === 5 ? "text-right" : "text-left"}`}
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
-            <tbody
-              className={`divide-y ${
-                darkMode ? "divide-gray-800/50" : "divide-gray-100"
-              }`}
-            >
+            <tbody>
               <AnimatePresence mode="wait">
                 {loading && (!payments || payments.length === 0) ? (
                   <tr>
-                    <td colSpan={6} className="py-20 text-center">
-                      <Loader className="animate-spin mx-auto text-emerald-500" size={32} />
+                    <td colSpan={6} className="py-16 text-center">
+                      <Loader className="animate-spin mx-auto text-emerald-500" size={24} />
                     </td>
                   </tr>
                 ) : payments.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className={`py-20 text-center text-sm font-medium ${darkMode ? "text-gray-500" : "text-gray-400"}`}>
+                    <td colSpan={6} className={`py-16 text-center text-sm ${darkMode ? "text-gray-500" : "text-gray-400"}`}>
                       No donations found.
                     </td>
                   </tr>
                 ) : (
                   payments.map((payment, i) => {
-                    const statusConfig = getStatusConfig(payment.approvalStatus);
+                    const sc = getPaymentDisplayConfig(payment);
+                    const donorName = payment.anonymous
+                      ? "Anonymous"
+                      : payment.donor?.fullName || (payment.guestInfo ? `${payment.guestInfo.firstName} ${payment.guestInfo.lastName}` : "Supporter");
                     return (
-                      <motion.tr
+                      <tr
                         key={payment._id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.04 }}
-                        className={`group hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10 transition-colors cursor-pointer`}
+                        className={`border-b transition-colors cursor-pointer ${darkMode ? "border-gray-800/40 hover:bg-gray-800/30" : "border-gray-50 hover:bg-gray-50/70"}`}
                       >
-                        {/* Project */}
-                        <td className="px-8 py-6 min-w-[220px]">
-                          <div className="flex flex-col">
-                            <span className={`text-sm font-bold ${darkMode ? "text-white" : "text-dark"}`}>
-                              {payment.campaign?.title || "General Donation"}
-                            </span>
-                            <span className={`text-xs font-medium mt-1 ${darkMode ? "text-gray-500" : "text-gray-500"}`}>
-                              ID: #{payment.donationId || payment._id.slice(-8).toUpperCase()}
-                            </span>
-                          </div>
+                        {/* Campaign */}
+                        <td className="px-5 py-3.5">
+                          <p className={`text-sm font-medium ${darkMode ? "text-white" : "text-gray-900"}`}>
+                            {payment.campaign?.title || "General Donation"}
+                          </p>
+                          <p className={`text-xs mt-0.5 ${darkMode ? "text-gray-500" : "text-gray-400"}`}>
+                            #{payment.donationId || payment._id.slice(-8).toUpperCase()}
+                          </p>
                         </td>
 
                         {/* Donor */}
-                        <td className="px-8 py-6">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 flex-shrink-0">
-                              <img
-                                src={
-                                  payment.anonymous
-                                    ? "https://ui-avatars.com/api/?name=A&background=random"
-                                    : payment.donor?.avatar ||
-                                      "https://ui-avatars.com/api/?name=User&background=059669&color=fff"
-                                }
-                                alt=""
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <div className="flex flex-col">
-                              <span className={`text-sm font-bold ${darkMode ? "text-gray-200" : "text-dark"}`}>
-                                {payment.anonymous
-                                  ? "Anonymous Donor"
-                                  : payment.donor?.fullName ||
-                                    (payment.guestInfo
-                                      ? `${payment.guestInfo.firstName} ${payment.guestInfo.lastName}`
-                                      : "Foundation Supporter")}
-                              </span>
-                              <span className={`text-xs font-medium ${darkMode ? "text-gray-500" : "text-gray-500"}`}>
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-2.5">
+                            <img
+                              src={payment.anonymous
+                                ? "https://ui-avatars.com/api/?name=A&background=random"
+                                : payment.donor?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(donorName)}&background=059669&color=fff`}
+                              alt=""
+                              className="w-7 h-7 rounded-full object-cover flex-shrink-0"
+                            />
+                            <div>
+                              <p className={`text-sm font-medium ${darkMode ? "text-gray-200" : "text-gray-800"}`}>{donorName}</p>
+                              <p className={`text-xs ${darkMode ? "text-gray-500" : "text-gray-400"}`}>
                                 {new Date(payment.createdAt).toLocaleDateString()}
-                              </span>
+                              </p>
                             </div>
                           </div>
                         </td>
 
                         {/* Amount */}
-                        <td className="px-8 py-6 text-right">
-                          <span className={`text-sm font-bold ${darkMode ? "text-emerald-400" : "text-emerald-600"}`}>
-                            {new Intl.NumberFormat("en-NG", {
-                              style: "currency",
-                              currency: "NGN",
-                              minimumFractionDigits: 0,
-                            }).format(payment.amount)}
+                        <td className="px-5 py-3.5 text-right">
+                          <span className={`text-sm font-semibold ${darkMode ? "text-emerald-400" : "text-emerald-600"}`}>
+                            {fmt(payment.amount)}
                           </span>
                         </td>
 
                         {/* Method */}
-                        <td className="px-8 py-6">
-                          <span className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-widest ${darkMode ? "bg-gray-800 text-gray-400" : "bg-gray-100 text-gray-600"}`}>
+                        <td className="px-5 py-3.5">
+                          <span className={`inline-block px-2 py-0.5 rounded-md text-xs font-medium capitalize ${darkMode ? "bg-gray-800 text-gray-400" : "bg-gray-100 text-gray-600"}`}>
                             {payment.paymentMethod?.replace("_", " ")}
                           </span>
                         </td>
 
                         {/* Status */}
-                        <td className="px-8 py-6">
-                          <span className={`${statusConfig.bg} ${statusConfig.color} ${statusConfig.border} border px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 w-fit`}>
-                            <statusConfig.icon size={12} /> {statusConfig.label}
+                        <td className="px-5 py-3.5">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${sc.bg} ${sc.color}`}>
+                            <sc.icon size={11} />{sc.label}
                           </span>
                         </td>
 
-                        {/* Actions - always visible */}
-                        <td className="px-8 py-6">
-                          <div className="flex items-center justify-center gap-2">
-                            {payment.approvalStatus === "pending" && (
+                        {/* Actions */}
+                        <td className="px-5 py-3.5 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {/* Auto-approved Paystack-verified donations: admin can Revoke */}
+                            {payment.approvalStatus === "approved" && payment.status === "verified" && (
+                              <button
+                                onClick={() => handleRevoke(payment)}
+                                title="Revoke this donation"
+                                className={`p-1.5 rounded-lg transition-all ${darkMode ? "text-amber-400 hover:bg-amber-950/30" : "text-amber-600 hover:bg-amber-50"}`}
+                              >
+                                <XCircle size={15} />
+                              </button>
+                            )}
+                            {/* Manual-transfer donations still needing human review */}
+                            {payment.approvalStatus === "pending" && payment.status === "verified" && (
                               <>
-                                <motion.button
-                                  whileHover={{ scale: isApproving && selectedPayment?._id === payment._id ? 1 : 1.15 }}
-                                  whileTap={{ scale: 0.9 }}
+                                <button
                                   onClick={() => handleApprove(payment)}
-                                  disabled={isApproving && selectedPayment?._id === payment._id}
                                   title="Approve"
-                                  className={`p-2 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                                    darkMode
-                                      ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white"
-                                      : "bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white shadow-sm"
-                                  }`}
+                                  className={`p-1.5 rounded-lg transition-all ${darkMode ? "text-emerald-400 hover:bg-emerald-950/30" : "text-emerald-600 hover:bg-emerald-50"}`}
                                 >
-                                  {isApproving && selectedPayment?._id === payment._id
-                                    ? <Loader size={16} className="animate-spin" />
-                                    : <Check size={16} />}
-                                </motion.button>
-                                <motion.button
-                                  whileHover={{ scale: isRejecting && selectedPayment?._id === payment._id ? 1 : 1.15 }}
-                                  whileTap={{ scale: 0.9 }}
+                                  <Check size={15} />
+                                </button>
+                                <button
                                   onClick={() => handleReject(payment)}
-                                  disabled={isRejecting && selectedPayment?._id === payment._id}
                                   title="Reject"
-                                  className={`p-2 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                                    darkMode
-                                      ? "bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white"
-                                      : "bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white shadow-sm"
-                                  }`}
+                                  className={`p-1.5 rounded-lg transition-all ${darkMode ? "text-red-400 hover:bg-red-950/30" : "text-red-600 hover:bg-red-50"}`}
                                 >
-                                  {isRejecting && selectedPayment?._id === payment._id
-                                    ? <Loader size={16} className="animate-spin" />
-                                    : <X size={16} />}
-                                </motion.button>
+                                  <X size={15} />
+                                </button>
                               </>
                             )}
-                            <motion.button
-                              whileHover={{ scale: 1.15 }}
-                              whileTap={{ scale: 0.9 }}
+                            {/* No action buttons for processing or failed payments */}
+                            <button
                               onClick={() => handleViewDetails(payment)}
                               title="View details"
-                              className={`p-2 rounded-xl transition-all ${
-                                darkMode
-                                  ? "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
-                                  : "bg-white text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 shadow-sm border border-gray-100"
-                              }`}
+                              className={`p-1.5 rounded-lg transition-all ${darkMode ? "text-gray-400 hover:text-white hover:bg-gray-800" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"}`}
                             >
-                              <Eye size={16} />
-                            </motion.button>
+                              <Eye size={15} />
+                            </button>
                           </div>
                         </td>
-                      </motion.tr>
+                      </tr>
                     );
                   })
                 )}
@@ -508,410 +339,462 @@ const Payments = () => {
           </table>
         </div>
 
-        {/* ── Pagination Bar ──────────────────────────────────────────── */}
-        <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t ${darkMode ? "border-gray-800" : "border-gray-100"}`}>
-
-          {/* Left: rows-per-page selector + count */}
-          <div className="flex items-center gap-3">
-            <span className={`text-xs font-semibold ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
-              Rows per page:
-            </span>
-            <div className="flex items-center gap-1">
-              {[25, 50, 75, 100].map((n) => (
-                <button
-                  key={n}
-                  onClick={() => dispatch(setFilters({ ...filters, page: 1, limit: n }))}
-                  className={`min-w-[40px] h-8 px-2 rounded-lg text-xs font-bold transition-all ${
-                    (filters.limit || 25) === n
-                      ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/30"
-                      : darkMode
-                        ? "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
-            <span className={`text-xs ${darkMode ? "text-gray-500" : "text-gray-400"}`}>
-              {pagination.total > 0 ? (
-                <>
-                  Showing{" "}
-                  <span className={`font-bold ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
-                    {((pagination.page - 1) * (filters.limit || 25)) + 1}–
-                    {Math.min(pagination.page * (filters.limit || 25), pagination.total)}
-                  </span>{" "}
-                  of{" "}
-                  <span className={`font-bold ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
-                    {pagination.total}
-                  </span>
-                </>
-              ) : (
-                "No records"
-              )}
-            </span>
-          </div>
-
-          {/* Right: page navigation */}
-          {pagination.pages > 1 && (
+        {/* Pagination */}
+        {pagination?.pages > 1 && (
+          <div className={`px-5 py-3.5 border-t flex flex-col sm:flex-row items-center justify-between gap-3 ${darkMode ? "border-gray-800/60" : "border-gray-100"}`}>
+            {/* Rows per page */}
             <div className="flex items-center gap-2">
-              {/* Previous */}
+              <span className={`text-xs ${darkMode ? "text-gray-500" : "text-gray-400"}`}>Rows:</span>
+              <div className="flex items-center gap-1">
+                {[25, 50, 75, 100].map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => dispatch(setFilters({ ...filters, page: 1, limit: n }))}
+                    className={`px-2 h-7 rounded-md text-xs font-medium transition-all ${
+                      (filters.limit || 25) === n
+                        ? "bg-primary-500 text-white"
+                        : darkMode ? "bg-gray-800 text-gray-400 hover:text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+              <span className={`text-xs ${darkMode ? "text-gray-500" : "text-gray-400"}`}>
+                {pagination.total > 0 && `${((pagination.page - 1) * (filters.limit || 25)) + 1}–${Math.min(pagination.page * (filters.limit || 25), pagination.total)} of ${pagination.total}`}
+              </span>
+            </div>
+
+            {/* Page buttons */}
+            <div className="flex items-center gap-1">
               <button
                 onClick={() => dispatch(setFilters({ ...filters, page: pagination.page - 1 }))}
                 disabled={pagination.page === 1}
-                className={`p-2 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
-                  darkMode ? "hover:bg-gray-800 text-white" : "hover:bg-gray-100 text-dark"
-                }`}
-                title="Previous page"
+                className={`p-1.5 rounded-lg transition-all disabled:opacity-40 ${darkMode ? "hover:bg-gray-800 text-gray-400" : "hover:bg-gray-100 text-gray-600"}`}
               >
-                <ChevronLeft size={18} />
+                <ChevronLeft size={16} />
               </button>
-
-              {/* Page numbers (up to 7 visible) */}
-              <div className="flex items-center gap-1">
-                {(() => {
-                  const total = pagination.pages;
-                  const cur = pagination.page;
-                  let pages = [];
-                  if (total <= 7) {
-                    pages = Array.from({ length: total }, (_, i) => i + 1);
-                  } else if (cur <= 4) {
-                    pages = [1, 2, 3, 4, 5, "…", total];
-                  } else if (cur >= total - 3) {
-                    pages = [1, "…", total - 4, total - 3, total - 2, total - 1, total];
-                  } else {
-                    pages = [1, "…", cur - 1, cur, cur + 1, "…", total];
-                  }
-                  return pages.map((p, i) =>
-                    p === "…" ? (
-                      <span
-                        key={`ellipsis-${i}`}
-                        className={`w-8 text-center text-xs select-none ${darkMode ? "text-gray-600" : "text-gray-400"}`}
-                      >
-                        …
-                      </span>
-                    ) : (
-                      <button
-                        key={p}
-                        onClick={() => dispatch(setFilters({ ...filters, page: p }))}
-                        className={`w-9 h-9 rounded-xl font-bold text-xs transition-all ${
-                          pagination.page === p
-                            ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 scale-105"
-                            : darkMode
-                              ? "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
-                              : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
-                        }`}
-                      >
-                        {p}
-                      </button>
-                    )
-                  );
-                })()}
-              </div>
-
-              {/* Next */}
+              {buildPages().map((p, i) =>
+                p === "…" ? (
+                  <span key={`e${i}`} className={`w-8 text-center text-xs ${darkMode ? "text-gray-600" : "text-gray-400"}`}>…</span>
+                ) : (
+                  <button
+                    key={p}
+                    onClick={() => dispatch(setFilters({ ...filters, page: p }))}
+                    className={`w-8 h-8 rounded-lg text-xs font-medium transition-all ${
+                      pagination.page === p
+                        ? "bg-primary-500 text-white"
+                        : darkMode ? "bg-gray-800 text-gray-400 hover:text-white" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                )
+              )}
               <button
                 onClick={() => dispatch(setFilters({ ...filters, page: pagination.page + 1 }))}
                 disabled={pagination.page === pagination.pages}
-                className={`p-2 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
-                  darkMode ? "hover:bg-gray-800 text-white" : "hover:bg-gray-100 text-dark"
-                }`}
-                title="Next page"
+                className={`p-1.5 rounded-lg transition-all disabled:opacity-40 ${darkMode ? "hover:bg-gray-800 text-gray-400" : "hover:bg-gray-100 text-gray-600"}`}
               >
-                <ChevronRight size={18} />
+                <ChevronRight size={16} />
               </button>
             </div>
-          )}
-        </div>
-        {/* ──────────────────────────────────────────────────────────────── */}
-      </motion.div>
+          </div>
+        )}
+      </div>
 
-      {/* Transparency Note */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-        className={`p-10 rounded-3xl border relative overflow-hidden ${
-          darkMode
-            ? "bg-gradient-to-br from-emerald-950/20 to-dark-lighter border-emerald-900/30"
-            : "bg-gradient-to-br from-emerald-50 to-white border-emerald-100"
-        }`}
-      >
-        <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
-          <Shield size={140} />
-        </div>
-        <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-4">
-              <div className={`p-2 rounded-lg ${darkMode ? "bg-emerald-900/50" : "bg-emerald-100"}`}>
-                <ShieldCheck className="text-emerald-600" size={24} />
-              </div>
-              <span className="text-xs font-bold tracking-widest uppercase text-emerald-500">
-                Public Trust
-              </span>
-            </div>
-            <h2 className={`text-2xl font-extrabold mb-3 ${darkMode ? "text-white" : "text-dark"}`}>
-              Financial Transparency
-            </h2>
-            <p className={`text-base leading-relaxed max-w-2xl ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
-              Every donation verified here represents a life-changing contribution.
-              We maintain 100% transparency from donor to community projects.
+      {/* ── Transparency Note ─────────────────────────────────────────── */}
+      <div className={`${cardBase} p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4`}>
+        <div className="flex items-start gap-3">
+          <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${darkMode ? "bg-emerald-950/30" : "bg-emerald-50"}`}>
+            <ShieldCheck size={18} className="text-emerald-600" />
+          </div>
+          <div>
+            <p className={`text-sm font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>Financial Transparency</p>
+            <p className={`text-xs mt-0.5 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+              Every verified donation is publicly recorded. 100% transparent from donor to community.
             </p>
           </div>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="bg-white text-emerald-700 border-2 border-emerald-100 hover:border-emerald-200 px-8 py-4 rounded-2xl font-bold shadow-xl shadow-gray-200/50 hover:shadow-2xl transition-all flex items-center gap-3"
-          >
-            <ShieldCheck size={20} />
-            <span>View Transparency Report</span>
-          </motion.button>
         </div>
-      </motion.div>
+        <button className={`px-4 py-2 rounded-lg border text-sm font-medium flex items-center gap-1.5 flex-shrink-0 ${darkMode ? "border-gray-700 text-gray-300 hover:bg-gray-800" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}>
+          <Shield size={14} /> View Report
+        </button>
+      </div>
 
-      {/* ── Modals ── */}
+      {/* ── Modals ───────────────────────────────────────────────────── */}
       <AnimatePresence>
-        {/* Approve Modal */}
-        {showApproveModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+        {/* Revoke — for auto-approved Paystack donations */}
+        {showRevokeModal && (
+          <div className="fixed inset-0 z-[103] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className={`p-8 rounded-[2rem] max-w-lg w-full border ${
-                darkMode ? "bg-gray-950 border-gray-800" : "bg-white border-gray-100 shadow-2xl"
-              }`}
+              initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.97 }}
+              className={`w-full max-w-sm ${modalBase} p-6`}
             >
-              <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <ShieldCheck size={40} className="text-emerald-500" />
+              <div className="flex items-start gap-3 mb-4">
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${darkMode ? "bg-amber-950/30" : "bg-amber-50"}`}>
+                  <XCircle size={18} className="text-amber-600" />
+                </div>
+                <div>
+                  <h3 className={`text-sm font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>Revoke Donation?</h3>
+                  <p className={`text-xs mt-0.5 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                    This will remove{" "}
+                    <span className="font-semibold text-amber-600">{fmt(selectedPayment?.amount)}</span>{" "}
+                    from confirmed totals. Use only for fraud, duplicates, or errors.
+                  </p>
+                </div>
               </div>
-              <h2 className={`text-2xl font-extrabold tracking-tight text-center ${darkMode ? "text-white" : "text-gray-950"}`}>
-                Verify Donation?
-              </h2>
-              <p className="mt-4 text-center text-sm font-medium text-gray-500 leading-relaxed">
-                Confirming{" "}
-                <span className={`font-bold ${darkMode ? "text-white" : "text-dark"}`}>
-                  {new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(selectedPayment?.amount)}
-                </span>{" "}
-                for the foundation project. This will finalize the donation record and update public ledgers.
-              </p>
-              <div className="flex gap-4 mt-8">
-                <button
-                  onClick={() => setShowApproveModal(false)}
-                  disabled={isApproving}
-                  className={`flex-1 py-4 rounded-xl font-bold uppercase tracking-wider text-xs transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-                    darkMode ? "bg-gray-900 text-gray-400 hover:bg-gray-800" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                  }`}
-                >
+              <textarea
+                value={revokeReason}
+                onChange={(e) => setRevokeReason(e.target.value)}
+                placeholder="Reason for revoking (optional)..."
+                rows={3}
+                className={`w-full px-3 py-2 rounded-lg border text-sm outline-none resize-none mb-4 ${darkMode ? "bg-gray-800/60 border-gray-700 text-white placeholder-gray-500" : "bg-gray-50 border-gray-200 text-gray-900"}`}
+              />
+              <div className="flex gap-2">
+                <button onClick={() => setShowRevokeModal(false)} disabled={isRevoking} className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-all ${darkMode ? "border-gray-700 text-gray-300 hover:bg-gray-800" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}>
                   Cancel
                 </button>
-                <button
-                  disabled={isApproving}
-                  onClick={async () => {
-                    setIsApproving(true);
-                    try {
-                      await dispatch(approvePayment({ paymentId: selectedPayment._id }));
-                      setShowApproveModal(false);
-                      // Refresh both the table AND the stat cards
-                      dispatch(fetchAllPayments(filters));
-                      dispatch(fetchPaymentStats({ period: "30days" }));
-                    } finally {
-                      setIsApproving(false);
-                    }
-                  }}
-                  className="flex-1 py-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold uppercase tracking-wider text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2"
-                >
-                  {isApproving ? (
-                    <>
-                      <Loader size={14} className="animate-spin" />
-                      Verifying...
-                    </>
-                  ) : (
-                    <>
-                      <Check size={14} />
-                      Confirm Donation
-                    </>
-                  )}
+                <button onClick={confirmRevoke} disabled={isRevoking} className="flex-1 py-2 rounded-lg text-sm font-medium bg-amber-600 hover:bg-amber-700 text-white transition-all disabled:opacity-50 flex items-center justify-center gap-1.5">
+                  {isRevoking ? <><span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Revoking...</> : <><XCircle size={13} /> Revoke</>}
                 </button>
               </div>
             </motion.div>
           </div>
         )}
 
-        {/* Reject Modal */}
-        {showRejectModal && (
-          <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+        {/* Approve */}
+        {showApproveModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className={`p-8 rounded-[2rem] max-w-lg w-full border ${
-                darkMode ? "bg-gray-950 border-gray-800" : "bg-white border-gray-100 shadow-2xl"
-              }`}
+              initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.97 }}
+              className={`w-full max-w-sm ${modalBase} p-6`}
             >
-              <div className="w-20 h-20 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <XCircle size={40} className="text-rose-500" />
+              <div className="flex items-start gap-3 mb-5">
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${darkMode ? "bg-emerald-950/30" : "bg-emerald-50"}`}>
+                  <ShieldCheck size={18} className="text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className={`text-sm font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>Verify Donation?</h3>
+                  <p className={`text-xs mt-0.5 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                    Confirming <span className="font-semibold text-emerald-600">{fmt(selectedPayment?.amount)}</span> for the foundation. This will finalize the record.
+                  </p>
+                </div>
               </div>
-              <h2 className={`text-2xl font-extrabold tracking-tight text-center ${darkMode ? "text-white" : "text-gray-950"}`}>
-                Reject Donation?
-              </h2>
-              <p className="mt-4 text-center text-sm font-medium text-gray-500 leading-relaxed">
-                Provide a reason for rejection and optionally initiate a refund.
-              </p>
+              <div className="flex gap-2">
+                <button onClick={() => setShowApproveModal(false)} disabled={isApproving} className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-all ${darkMode ? "border-gray-700 text-gray-300 hover:bg-gray-800" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}>
+                  Cancel
+                </button>
+                <button onClick={confirmApprove} disabled={isApproving} className="flex-1 py-2 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-all disabled:opacity-50 flex items-center justify-center gap-1.5">
+                  {isApproving ? <><span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Verifying...</> : <><Check size={13} /> Confirm</>}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Reject */}
+        {showRejectModal && (
+          <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.97 }}
+              className={`w-full max-w-sm ${modalBase} p-6`}
+            >
+              <div className="flex items-start gap-3 mb-4">
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${darkMode ? "bg-red-950/30" : "bg-red-50"}`}>
+                  <XCircle size={18} className="text-red-600" />
+                </div>
+                <div>
+                  <h3 className={`text-sm font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>Reject Donation?</h3>
+                  <p className={`text-xs mt-0.5 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>Provide a reason for rejection.</p>
+                </div>
+              </div>
               <textarea
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
                 placeholder="Rejection reason..."
                 rows={3}
-                className={`w-full mt-4 p-3 rounded-xl border outline-none text-sm resize-none ${
-                  darkMode ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500" : "bg-gray-50 border-gray-200 text-gray-900"
-                }`}
+                className={`w-full px-3 py-2 rounded-lg border text-sm outline-none resize-none mb-3 ${darkMode ? "bg-gray-800/60 border-gray-700 text-white placeholder-gray-500" : "bg-gray-50 border-gray-200 text-gray-900"}`}
               />
-              <div className="flex items-center mt-4 gap-2">
-                <input
-                  type="checkbox"
-                  checked={initiateRefund}
-                  onChange={(e) => setInitiateRefund(e.target.checked)}
-                  id="refundCheckbox"
-                  className="w-4 h-4 accent-rose-500"
-                />
-                <label
-                  htmlFor="refundCheckbox"
-                  className={`text-sm font-medium cursor-pointer ${darkMode ? "text-gray-200" : "text-gray-800"}`}
-                >
-                  Initiate Refund
-                </label>
-              </div>
-              <div className="flex gap-4 mt-8">
-                <button
-                  onClick={() => setShowRejectModal(false)}
-                  disabled={isRejecting}
-                  className={`flex-1 py-4 rounded-xl font-bold uppercase tracking-wider text-xs transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-                    darkMode ? "bg-gray-900 text-gray-400 hover:bg-gray-800" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                  }`}
-                >
+              <label className="flex items-center gap-2 cursor-pointer mb-4">
+                <input type="checkbox" checked={initiateRefund} onChange={(e) => setInitiateRefund(e.target.checked)} className="w-3.5 h-3.5 accent-red-500" />
+                <span className={`text-sm ${darkMode ? "text-gray-300" : "text-gray-700"}`}>Initiate Refund</span>
+              </label>
+              <div className="flex gap-2">
+                <button onClick={() => setShowRejectModal(false)} disabled={isRejecting} className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-all ${darkMode ? "border-gray-700 text-gray-300 hover:bg-gray-800" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}>
                   Cancel
                 </button>
-                <button
-                  disabled={isRejecting || !rejectionReason.trim()}
-                  onClick={async () => {
-                    setIsRejecting(true);
-                    try {
-                      await dispatch(rejectPayment({ paymentId: selectedPayment._id, rejectionReason, initiateRefund }));
-                      setShowRejectModal(false);
-                      // Refresh both the table AND the stat cards
-                      dispatch(fetchAllPayments(filters));
-                      dispatch(fetchPaymentStats({ period: "30days" }));
-                    } finally {
-                      setIsRejecting(false);
-                    }
-                  }}
-                  className="flex-1 py-4 rounded-xl bg-rose-600 hover:bg-rose-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold uppercase tracking-wider text-xs shadow-lg shadow-rose-500/20 transition-all flex items-center justify-center gap-2"
-                >
-                  {isRejecting ? (
-                    <>
-                      <Loader size={14} className="animate-spin" />
-                      Rejecting...
-                    </>
-                  ) : (
-                    <>
-                      <X size={14} />
-                      Confirm Rejection
-                    </>
-                  )}
+                <button onClick={confirmReject} disabled={isRejecting || !rejectionReason.trim()} className="flex-1 py-2 rounded-lg text-sm font-medium bg-red-600 hover:bg-red-700 text-white transition-all disabled:opacity-50 flex items-center justify-center gap-1.5">
+                  {isRejecting ? <><span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Rejecting...</> : <><X size={13} /> Reject</>}
                 </button>
               </div>
             </motion.div>
           </div>
         )}
 
-        {/* Details Modal */}
-        {showDetailsModal && (
-          <div className="fixed inset-0 z-[102] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className={`relative p-8 rounded-2xl max-w-lg w-full border ${
-                darkMode
-                  ? "bg-gray-900/70 border-gray-700 backdrop-blur-xl"
-                  : "bg-white/80 border-gray-200 backdrop-blur-xl shadow-2xl"
-              }`}
-            >
-              <button
-                onClick={() => setShowDetailsModal(false)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-                aria-label="Close"
+        {/* ── Details — Clerk-style slide-over ─────────────────────── */}
+        {showDetailsModal && selectedPayment && (() => {
+          const cfg = getPaymentDisplayConfig(selectedPayment);
+          const StatusIcon = cfg.icon;
+          const p = selectedPayment;
+          const donorName = p.donor?.fullName
+            || (p.anonymous ? "Anonymous Donor" : `${p.guestInfo?.firstName || ""} ${p.guestInfo?.lastName || ""}`.trim() || "Unknown");
+          const donorEmail = p.donor?.email || p.guestInfo?.email || "—";
+          const donorPhone = p.donor?.phone || p.guestInfo?.phone || "—";
+          const isAutoApproved = p.status === "verified" && p.approvalStatus === "approved"
+            && (!p.approvedBy || p.verificationDetails?.method?.includes("paystack"));
+          const isManualTransfer = p.paymentMethod === "manual_transfer" || p.paymentMethod === "bank_transfer";
+
+          const SectionLabel = ({ children }) => (
+            <p className={`text-[10px] font-bold uppercase tracking-widest mb-2.5 ${darkMode ? "text-gray-500" : "text-gray-400"}`}>
+              {children}
+            </p>
+          );
+          const Row = ({ label, value, valueClass = "", mono = false }) => (
+            <div className="flex items-start justify-between gap-4 py-2.5">
+              <span className={`text-xs flex-shrink-0 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>{label}</span>
+              <span className={`text-xs text-right break-all ${mono ? "font-mono" : "font-medium"} ${valueClass || (darkMode ? "text-gray-200" : "text-gray-800")}`}>
+                {value || "—"}
+              </span>
+            </div>
+          );
+          const Divider = () => <div className={`my-4 border-t ${darkMode ? "border-gray-800" : "border-gray-100"}`} />;
+
+          return (
+            <div className="fixed inset-0 z-[102] flex">
+              {/* Scrim */}
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowDetailsModal(false)} />
+
+              {/* Slide-over panel — right side */}
+              <motion.div
+                initial={{ x: "100%", opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: "100%", opacity: 0 }}
+                transition={{ type: "spring", stiffness: 320, damping: 32 }}
+                className={`relative ml-auto h-full w-full max-w-md flex flex-col overflow-hidden ${darkMode ? "bg-[#0e0e0e] border-l border-gray-800" : "bg-white border-l border-gray-200"} shadow-2xl`}
               >
-                <X className="w-5 h-5" />
-              </button>
-              <h2 className={`text-2xl font-extrabold mb-6 text-center ${darkMode ? "text-white" : "text-gray-900"}`}>
-                Donation Receipt
-              </h2>
-              <div className={`space-y-3 text-sm ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
-                <div className="flex items-center justify-between p-3 bg-gray-500/10 rounded-xl">
-                  <div className="flex items-center gap-2">
-                    <User className="w-4 h-4 text-emerald-500" />
-                    <span className="font-medium">Donor</span>
+                {/* ── Panel header ── */}
+                <div className={`flex items-center justify-between px-6 py-4 border-b flex-shrink-0 ${darkMode ? "border-gray-800 bg-[#111]" : "border-gray-100 bg-white"}`}>
+                  <div>
+                    <p className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? "text-gray-500" : "text-gray-400"}`}>Transaction</p>
+                    <p className={`text-sm font-semibold mt-0.5 font-mono ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
+                      {p.donationId || p._id?.slice(-8)?.toUpperCase()}
+                    </p>
                   </div>
-                  <span className="font-semibold">
-                    {selectedPayment?.donor?.fullName || (selectedPayment?.anonymous ? "Anonymous" : "N/A")}
-                  </span>
+                  <button
+                    onClick={() => setShowDetailsModal(false)}
+                    className={`p-2 rounded-lg transition-all ${darkMode ? "text-gray-400 hover:bg-gray-800 hover:text-white" : "text-gray-400 hover:bg-gray-100 hover:text-gray-700"}`}
+                  >
+                    <X size={18} />
+                  </button>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-gray-500/10 rounded-xl">
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="w-4 h-4 text-emerald-500" />
-                    <span className="font-medium">Amount</span>
+
+                {/* ── Scrollable body ── */}
+                <div className="flex-1 overflow-y-auto">
+
+                  {/* ── Hero: amount + status ── */}
+                  <div className={`px-6 py-8 text-center border-b ${darkMode ? "border-gray-800 bg-[#111]" : "border-gray-100 bg-gray-50"}`}>
+                    {/* Status badge */}
+                    <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold mb-4 ${cfg.bg} ${cfg.color}`}>
+                      <StatusIcon size={12} />
+                      {cfg.label}
+                    </div>
+                    {/* Amount */}
+                    <p className={`text-4xl font-black tracking-tight ${darkMode ? "text-white" : "text-gray-900"}`}>
+                      {fmt(p.amount)}
+                    </p>
+                    <p className={`text-xs mt-2 ${darkMode ? "text-gray-500" : "text-gray-400"}`}>
+                      {new Date(p.createdAt).toLocaleDateString("en-NG", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+                      {" · "}
+                      {new Date(p.createdAt).toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+
+                    {/* Paystack auto-verified badge */}
+                    {isAutoApproved && (
+                      <div className={`mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium ${darkMode ? "bg-emerald-950/40 text-emerald-400" : "bg-emerald-50 text-emerald-700"}`}>
+                        <ShieldCheck size={12} />
+                        Auto-verified by Paystack
+                      </div>
+                    )}
                   </div>
-                  <span className="font-bold text-emerald-500">
-                    {new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(selectedPayment?.amount)}
-                  </span>
+
+                  <div className="px-6 py-5 space-y-1">
+
+                    {/* ── Donor ── */}
+                    <SectionLabel>Donor</SectionLabel>
+                    <div className={`rounded-xl p-4 mb-4 ${darkMode ? "bg-gray-900/60 border border-gray-800" : "bg-gray-50 border border-gray-100"}`}>
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${darkMode ? "bg-indigo-950/50 text-indigo-300" : "bg-indigo-100 text-indigo-700"}`}>
+                          {donorName === "Anonymous Donor" ? "?" : donorName.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className={`text-sm font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>{donorName}</p>
+                          <p className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-500"}`}>{donorEmail}</p>
+                        </div>
+                      </div>
+                      {donorPhone !== "—" && (
+                        <Row label="Phone" value={donorPhone} />
+                      )}
+                      {p.anonymous && (
+                        <div className={`mt-1 text-[10px] font-semibold uppercase tracking-wider px-2 py-1 rounded ${darkMode ? "bg-gray-800 text-gray-400" : "bg-gray-200 text-gray-500"} w-fit`}>
+                          Anonymous
+                        </div>
+                      )}
+                    </div>
+
+                    <Divider />
+
+                    {/* ── Payment details ── */}
+                    <SectionLabel>Payment Details</SectionLabel>
+                    <div className={`divide-y rounded-xl overflow-hidden ${darkMode ? "divide-gray-800 bg-gray-900/60 border border-gray-800" : "divide-gray-100 bg-gray-50 border border-gray-100"}`}>
+                      <div className="px-4"><Row label="Campaign" value={p.campaign?.title} /></div>
+                      <div className="px-4"><Row label="Method" value={(p.paymentMethod || "card").replace(/_/g, " ")} /></div>
+                      <div className="px-4"><Row label="Reference" value={p.paymentReference || p.paystackReference} mono /></div>
+                      {p.transactionId && (
+                        <div className="px-4"><Row label="Paystack ID" value={p.transactionId} mono /></div>
+                      )}
+                      <div className="px-4">
+                        <Row
+                          label="Payment Status"
+                          value={p.status}
+                          valueClass={
+                            p.status === "verified" ? "text-emerald-600 capitalize" :
+                            p.status === "failed"   ? "text-red-600 capitalize" :
+                            "text-amber-600 capitalize"
+                          }
+                        />
+                      </div>
+                      <div className="px-4">
+                        <Row
+                          label="Approval"
+                          value={p.approvalStatus}
+                          valueClass={
+                            p.approvalStatus === "approved" ? "text-emerald-600 capitalize" :
+                            p.approvalStatus === "rejected" ? "text-red-600 capitalize" :
+                            "text-amber-600 capitalize"
+                          }
+                        />
+                      </div>
+                      {p.message && (
+                        <div className="px-4 py-3">
+                          <p className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${darkMode ? "text-gray-500" : "text-gray-400"}`}>Message</p>
+                          <p className={`text-xs italic ${darkMode ? "text-gray-300" : "text-gray-600"}`}>"{p.message}"</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* ── Failure reason ── */}
+                    {p.failureReason && (
+                      <>
+                        <Divider />
+                        <div className={`rounded-xl p-4 border ${darkMode ? "bg-red-950/20 border-red-900/40" : "bg-red-50 border-red-100"}`}>
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-red-600 mb-1">Failure Reason</p>
+                          <p className={`text-xs ${darkMode ? "text-red-400" : "text-red-700"}`}>{p.failureReason}</p>
+                        </div>
+                      </>
+                    )}
+
+                    {/* ── Rejection reason ── */}
+                    {p.rejectionReason && (
+                      <>
+                        <Divider />
+                        <div className={`rounded-xl p-4 border ${darkMode ? "bg-red-950/20 border-red-900/40" : "bg-red-50 border-red-100"}`}>
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-red-600 mb-1">Rejection Reason</p>
+                          <p className={`text-xs ${darkMode ? "text-red-400" : "text-red-700"}`}>{p.rejectionReason}</p>
+                        </div>
+                      </>
+                    )}
+
+                    <Divider />
+
+                    {/* ── Timeline ── */}
+                    <SectionLabel>Timeline</SectionLabel>
+                    <div className="space-y-3 pb-2">
+                      {[
+                        { label: "Donation created",    date: p.createdAt,    color: "bg-gray-400",    show: true },
+                        { label: "Payment verified",    date: p.verifiedAt,   color: "bg-emerald-500", show: !!p.verifiedAt },
+                        { label: "Approved",            date: p.approvedAt,   color: "bg-emerald-600", show: !!p.approvedAt && p.approvalStatus === "approved" },
+                        { label: "Rejected / Revoked",  date: p.rejectedAt || p.approvedAt, color: "bg-red-500", show: p.approvalStatus === "rejected" },
+                      ].filter(e => e.show).map((event, idx, arr) => (
+                        <div key={idx} className="flex items-start gap-3">
+                          <div className="flex flex-col items-center">
+                            <div className={`w-2.5 h-2.5 rounded-full mt-0.5 flex-shrink-0 ${event.color}`} />
+                            {idx < arr.length - 1 && (
+                              <div className={`w-px flex-1 mt-1 min-h-[20px] ${darkMode ? "bg-gray-800" : "bg-gray-200"}`} />
+                            )}
+                          </div>
+                          <div className="pb-2">
+                            <p className={`text-xs font-medium ${darkMode ? "text-gray-200" : "text-gray-800"}`}>{event.label}</p>
+                            {event.date && (
+                              <p className={`text-[11px] mt-0.5 ${darkMode ? "text-gray-500" : "text-gray-400"}`}>
+                                {new Date(event.date).toLocaleDateString("en-NG", { month: "short", day: "numeric", year: "numeric" })}
+                                {" · "}
+                                {new Date(event.date).toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit" })}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* ── Verification source ── */}
+                    {p.verificationDetails?.method && (
+                      <>
+                        <Divider />
+                        <div className={`rounded-xl px-4 py-3 border ${darkMode ? "bg-gray-900/50 border-gray-800" : "bg-gray-50 border-gray-100"}`}>
+                          <p className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${darkMode ? "text-gray-500" : "text-gray-400"}`}>Verification Method</p>
+                          <p className={`text-xs font-mono ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                            {p.verificationDetails.method.replace(/_/g, " ")}
+                          </p>
+                          {p.verificationDetails.notes && (
+                            <p className={`text-[11px] mt-1 ${darkMode ? "text-gray-500" : "text-gray-400"}`}>{p.verificationDetails.notes}</p>
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                  </div>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-gray-500/10 rounded-xl">
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="w-4 h-4 text-emerald-500" />
-                    <span className="font-medium">Method</span>
-                  </div>
-                  <span className="font-semibold capitalize">{selectedPayment?.paymentMethod?.replace("_", " ")}</span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-gray-500/10 rounded-xl">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-emerald-500" />
-                    <span className="font-medium">Status</span>
-                  </div>
-                  <span className={`font-semibold capitalize ${
-                    selectedPayment?.approvalStatus === "approved"
-                      ? "text-emerald-500"
-                      : selectedPayment?.approvalStatus === "rejected"
-                        ? "text-rose-500"
-                        : "text-amber-500"
-                  }`}>
-                    {selectedPayment?.approvalStatus}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-gray-500/10 rounded-xl">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-emerald-500" />
-                    <span className="font-medium">Date</span>
-                  </div>
-                  <span className="font-semibold">
-                    {new Date(selectedPayment?.createdAt).toLocaleDateString("en-NG", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </span>
-                </div>
-                {selectedPayment?.rejectionReason && (
-                  <div className="p-4 bg-rose-500/10 rounded-xl border border-rose-200 text-rose-500">
-                    <p className="font-bold text-xs uppercase mb-1">Rejection Reason</p>
-                    <p className="text-sm">{selectedPayment.rejectionReason}</p>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </div>
-        )}
+
+                {/* ── Sticky action footer ── */}
+                {(() => {
+                  const showRevoke  = p.status === "verified" && p.approvalStatus === "approved";
+                  const showApprove = isManualTransfer && p.status === "verified" && p.approvalStatus === "pending";
+                  const showReject  = isManualTransfer && p.status === "verified" && p.approvalStatus === "pending";
+                  if (!showRevoke && !showApprove && !showReject) return null;
+                  return (
+                    <div className={`flex-shrink-0 px-6 py-4 border-t flex gap-2 ${darkMode ? "border-gray-800 bg-[#111]" : "border-gray-100 bg-white"}`}>
+                      {showRevoke && (
+                        <button
+                          onClick={() => { setShowDetailsModal(false); handleRevoke(p); }}
+                          className="flex-1 py-2.5 rounded-lg text-sm font-semibold bg-amber-500 hover:bg-amber-600 text-white transition-all flex items-center justify-center gap-1.5"
+                        >
+                          <XCircle size={14} /> Revoke
+                        </button>
+                      )}
+                      {showApprove && (
+                        <button
+                          onClick={() => { setShowDetailsModal(false); handleApprove(p); }}
+                          className="flex-1 py-2.5 rounded-lg text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-all flex items-center justify-center gap-1.5"
+                        >
+                          <Check size={14} /> Approve
+                        </button>
+                      )}
+                      {showReject && (
+                        <button
+                          onClick={() => { setShowDetailsModal(false); handleReject(p); }}
+                          className="flex-1 py-2.5 rounded-lg text-sm font-semibold bg-red-600 hover:bg-red-700 text-white transition-all flex items-center justify-center gap-1.5"
+                        >
+                          <X size={14} /> Reject
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
+              </motion.div>
+            </div>
+          );
+        })()}
+
       </AnimatePresence>
     </div>
   );

@@ -33,28 +33,28 @@ const RevenueTrendChart = ({ monthlyData = [], isRefreshing, timeRange = "1M", o
   return (
     <div
       className={`${
-        darkMode ? "bg-gray-950 border-gray-800" : "bg-white border-gray-100 shadow-xl"
-      } border rounded-[2.5rem] p-6 lg:p-8 ${isRefreshing ? "animate-pulse" : ""}`}
+        darkMode ? "bg-dark-lighter border-gray-800/70" : "bg-white border-gray-200/80 shadow-sm"
+      } border rounded-xl p-5 ${isRefreshing ? "animate-pulse" : ""}`}
     >
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
         <div>
-          <h3 className={`text-xl font-black tracking-tight ${darkMode ? "text-white" : "text-gray-950"}`}>
+          <h3 className={`text-sm font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>
             Donation Trends
           </h3>
-          <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mt-1">
-            Giving Activity Over Time
+          <p className={`text-xs mt-0.5 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+            Giving activity over time
           </p>
         </div>
 
         {/* View Toggle */}
         <div className="flex items-center gap-2">
-          <div className="flex bg-gray-100 dark:bg-gray-900 p-1 rounded-xl">
+          <div className={`flex p-1 rounded-lg ${darkMode ? "bg-gray-800/50" : "bg-gray-100/50"}`}>
             <button
               onClick={() => setViewMode("revenue")}
-              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                 viewMode === "revenue"
                   ? darkMode
-                    ? "bg-gray-800 text-white shadow-md"
+                    ? "bg-gray-700 text-white shadow-sm"
                     : "bg-white text-gray-900 shadow-sm"
                   : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
               }`}
@@ -63,10 +63,10 @@ const RevenueTrendChart = ({ monthlyData = [], isRefreshing, timeRange = "1M", o
             </button>
             <button
               onClick={() => setViewMode("count")}
-              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                 viewMode === "count"
                   ? darkMode
-                    ? "bg-gray-800 text-white shadow-md"
+                    ? "bg-gray-700 text-white shadow-sm"
                     : "bg-white text-gray-900 shadow-sm"
                   : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
               }`}
@@ -78,43 +78,45 @@ const RevenueTrendChart = ({ monthlyData = [], isRefreshing, timeRange = "1M", o
       </div>
 
       {filteredData.length > 0 ? (
-        <div className="flex items-end justify-between h-64 gap-2 sm:gap-3 overflow-x-auto pb-2">
+        <div className="flex items-end justify-between h-56 gap-2 sm:gap-3 overflow-x-auto pb-2">
           {filteredData.map((data, index) => {
             const val = viewMode === "revenue" ? data.amount || data.revenue || 0 : data.count || 0;
             const heightPercentage = (val / maxVal) * 100;
 
             return (
-              <div key={index} className="flex-1 min-w-[36px] flex flex-col items-center gap-3 group relative">
+              <div key={index} className="flex-1 min-w-[36px] flex flex-col items-center gap-2 group relative">
                 <div className="w-full flex items-end justify-center h-full relative">
                   <motion.div
                     initial={{ height: 0 }}
                     animate={{ height: `${Math.max(heightPercentage, 4)}%` }}
                     transition={{
-                      duration: 0.8,
-                      delay: index * 0.05,
+                      duration: 0.5,
+                      delay: index * 0.03,
                       ease: "circOut",
                     }}
-                    className="w-full bg-gradient-to-t from-emerald-600 to-emerald-400 rounded-t-2xl relative group-hover:from-emerald-500 group-hover:to-emerald-300 transition-all cursor-pointer shadow-lg group-hover:shadow-emerald-500/30"
+                    className={`w-full rounded-t-sm transition-all cursor-pointer relative ${
+                      darkMode ? "bg-primary-900/60 hover:bg-primary-800/80" : "bg-primary-100 hover:bg-primary-200"
+                    }`}
                   >
                     {/* Tooltip */}
                     <div
-                      className={`absolute -top-14 left-1/2 transform -translate-x-1/2 ${
+                      className={`absolute -top-12 left-1/2 transform -translate-x-1/2 ${
                         darkMode ? "bg-gray-900 border-gray-700 text-white" : "bg-white border-gray-200 text-gray-900"
-                      } border px-3 py-2 rounded-xl opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap z-30 shadow-xl pointer-events-none text-center`}
+                      } border px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap z-30 shadow-lg pointer-events-none text-center`}
                     >
-                      <div className="text-xs font-black">
+                      <div className="text-xs font-semibold">
                         {viewMode === "revenue" ? formatCurrency(val) : `${val} donations`}
                       </div>
-                      <div className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mt-0.5">
+                      <div className="text-[10px] text-gray-500 mt-0.5">
                         {data.month || "Period"}
                       </div>
                     </div>
                   </motion.div>
                 </div>
                 <span
-                  className={`text-[9px] font-black uppercase tracking-widest ${
-                    darkMode ? "text-gray-500 group-hover:text-white" : "text-gray-400 group-hover:text-gray-900"
-                  } transition-colors`}
+                  className={`text-[10px] ${
+                    darkMode ? "text-gray-500 group-hover:text-gray-300" : "text-gray-400 group-hover:text-gray-600"
+                  } transition-colors whitespace-nowrap`}
                 >
                   {data.month}
                 </span>
@@ -123,11 +125,11 @@ const RevenueTrendChart = ({ monthlyData = [], isRefreshing, timeRange = "1M", o
           })}
         </div>
       ) : (
-        <div className="text-center py-20 flex flex-col items-center justify-center border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-3xl">
-          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-900 rounded-full flex items-center justify-center mb-4">
-            <TrendingUp size={24} className={darkMode ? "text-gray-600" : "text-gray-400"} />
+        <div className={`text-center py-16 flex flex-col items-center justify-center border border-dashed rounded-xl ${darkMode ? "border-gray-800" : "border-gray-200"}`}>
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 ${darkMode ? "bg-gray-800/50" : "bg-gray-50"}`}>
+            <TrendingUp size={16} className={darkMode ? "text-gray-500" : "text-gray-400"} />
           </div>
-          <p className={`text-xs font-black uppercase tracking-widest ${darkMode ? "text-gray-500" : "text-gray-400"}`}>
+          <p className={`text-xs ${darkMode ? "text-gray-500" : "text-gray-500"}`}>
             No giving activity detected
           </p>
         </div>

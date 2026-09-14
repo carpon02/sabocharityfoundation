@@ -160,156 +160,201 @@ export const handlePaystackWebhook = async (req, res) => {
 };
 
 /**
- * Handle successful charge (payment completed)
+ * Core verification + auto-approval + notification logic.
+ * Called by BOTH the Paystack webhook AND the client-side verify endpoint.
+ * @param {string} reference   - Paystack payment reference
+ * @param {string} source      - 'webhook' | 'client_verify' (for logging only)
+ * @returns {{ alreadyVerified: boolean }}
  */
-const handleSuccessfulCharge = async (chargeData) => {
-  try {
-    const reference = chargeData.reference;
-    
-    // Find donation by payment reference
-    const donation = await Donation.findOne({
-      $or: [
-        { paymentReference: reference },
-        { paystackReference: reference }
-      ]
-    }).populate('campaign donor');
+export const confirmDonation = async (reference, source = 'webhook') => {
+  // Find donation by payment reference
+  const donation = await Donation.findOne({
+    $or: [
+      { paymentReference: reference },
+      { paystackReference: reference }
+    ]
+  }).populate('campaign donor');
 
-    if (!donation) {
-      logger.warn('Donation not found for successful charge', { reference });
-      return;
-    }
+  if (!donation) {
+    logger.warn('Donation not found for reference', { reference, source });
+    return { alreadyVerified: false, notFound: true };
+  }
 
-    // Prevent duplicate processing
-    if (donation.paymentVerified && donation.status === 'verified') {
-      logger.info('Donation already verified', { 
-        donationId: donation.donationId,
-        reference 
-      });
-      return;
-    }
-
-    // Verify payment with Paystack (double-check)
-    const verificationResponse = await verifyPayment(reference);
-    
-    if (!verificationResponse.status || verificationResponse.data.status !== 'success') {
-      logger.error('Payment verification failed in webhook', {
-        donationId: donation.donationId,
-        reference,
-        paystackStatus: verificationResponse.data?.status
-      });
-      return;
-    }
-
-    // Update donation status
-    donation.status = 'verified';
-    donation.paymentVerified = true;
-    donation.verifiedAt = new Date();
-    donation.transactionId = verificationResponse.data.id.toString();
-    donation.verificationDetails = {
-      method: 'paystack_webhook',
-      notes: 'Payment verified via Paystack webhook',
-      verifiedBy: null, // System verification
-    };
-
-    // Save authorization code for recurring donations
-    const authorization = verificationResponse.data.authorization;
-    if (donation.isRecurring && authorization && authorization.reusable) {
-      donation.authorizationCode = authorization.authorization_code;
-      logger.info('Saved reusable authorization for recurring donation', {
-        donationId: donation.donationId,
-        authorizationType: authorization.card_type,
-        last4: authorization.last4,
-      });
-    }
-
-    await donation.save();
-
-    // ── Option A: Webhook is the sole authority for raisedAmount ──────────
-    // Update campaign progress bar immediately after payment is verified,
-    // regardless of when admin approves. Uses atomic $inc to prevent races.
-    if (donation.campaign?._id) {
-      await campaignRepository.incrementRaisedAmount(
-        donation.campaign._id,
-        donation.amount
-      );
-      logger.info('Campaign raisedAmount incremented via webhook', {
-        campaignId: donation.campaign._id,
-        incrementBy: donation.amount,
-      });
-    }
-    // ─────────────────────────────────────────────────────────────────────
-
-    logger.info('Donation verified via webhook', {
+  // Idempotency — already fully processed
+  if (donation.paymentVerified && donation.status === 'verified') {
+    logger.info('Donation already verified, skipping', {
       donationId: donation.donationId,
       reference,
-      amount: donation.amount
+      source,
     });
+    return { alreadyVerified: true };
+  }
 
-    // Resolve donor identity — supports both registered users and guests
-    const donorEmail = donation.donor?.email || donation.guestInfo?.email;
-    const donorName = donation.anonymous
-      ? 'Anonymous'
-      : donation.donor?.fullName ||
-        `${donation.guestInfo?.firstName || ''} ${donation.guestInfo?.lastName || ''}`.trim() ||
-        'Supporter';
+  // ── Call Paystack verify API ────────────────────────────────────────────
+  const verificationResponse = await verifyPayment(reference);
 
-    // Send notification to donor
-    if (donorEmail) {
-      await sendEmail({
-        to: donorEmail,
-        subject: 'Payment Received - Pending Approval',
-        template: 'donation-verified',
+  if (!verificationResponse.status || verificationResponse.data.status !== 'success') {
+    logger.error('Paystack verification returned non-success', {
+      donationId: donation.donationId,
+      reference,
+      source,
+      paystackStatus: verificationResponse.data?.status
+    });
+    donation.status = 'failed';
+    donation.failureReason =
+      verificationResponse.data?.gateway_response ||
+      verificationResponse.data?.status ||
+      'Paystack verification did not return success';
+    await donation.save();
+    return { alreadyVerified: false, failed: true };
+  }
+
+  const paystackData = verificationResponse.data;
+
+  // ── Validate currency ──────────────────────────────────────────────────
+  if (paystackData.currency !== 'NGN') {
+    logger.error('Currency mismatch', {
+      donationId: donation.donationId,
+      expected: 'NGN',
+      actual: paystackData.currency,
+      reference,
+      source
+    });
+    donation.status = 'failed';
+    donation.failureReason = `Currency mismatch: expected NGN, received ${paystackData.currency}`;
+    await donation.save();
+    return { alreadyVerified: false, failed: true };
+  }
+
+  // ── Validate amount (Paystack sends kobo) ─────────────────────────────
+  const expectedKobo = Math.round(donation.amount * 100);
+  if (paystackData.amount !== expectedKobo) {
+    logger.error('Amount mismatch', {
+      donationId: donation.donationId,
+      expectedKobo,
+      actualKobo: paystackData.amount,
+      reference,
+      source
+    });
+    donation.status = 'failed';
+    donation.failureReason = `Amount mismatch: expected ${expectedKobo} kobo, received ${paystackData.amount} kobo`;
+    await donation.save();
+    return { alreadyVerified: false, failed: true };
+  }
+
+  // ── All checks passed — confirm AND auto-approve ───────────────────────
+  donation.status = 'verified';
+  donation.paymentVerified = true;
+  donation.verifiedAt = new Date();
+  donation.transactionId = paystackData.id.toString();
+  donation.verificationDetails = {
+    method: source === 'client_verify' ? 'paystack_client_verify' : 'paystack_webhook',
+    notes: source === 'client_verify'
+      ? 'Payment verified via server-side API call (client-triggered)'
+      : 'Payment verified via Paystack webhook',
+    verifiedBy: null,
+  };
+  donation.approvalStatus = 'approved';
+  donation.approvedAt = new Date();
+  donation.approvedBy = null; // null = system-approved
+
+  const authorization = paystackData.authorization;
+  if (donation.isRecurring && authorization && authorization.reusable) {
+    donation.authorizationCode = authorization.authorization_code;
+  }
+
+  await donation.save();
+
+  // ── Update campaign raised amount ─────────────────────────────────────
+  if (donation.campaign?._id) {
+    await campaignRepository.incrementRaisedAmount(donation.campaign._id, donation.amount);
+    logger.info('Campaign raisedAmount incremented', {
+      campaignId: donation.campaign._id,
+      incrementBy: donation.amount,
+      source,
+    });
+  }
+
+  logger.info('Donation confirmed and auto-approved', {
+    donationId: donation.donationId,
+    reference,
+    amount: donation.amount,
+    source,
+  });
+
+  // ── Resolve donor identity ─────────────────────────────────────────
+  const donorEmail = donation.donor?.email || donation.guestInfo?.email;
+  const donorName = donation.anonymous
+    ? 'Anonymous'
+    : donation.donor?.fullName ||
+      `${donation.guestInfo?.firstName || ''} ${donation.guestInfo?.lastName || ''}`.trim() ||
+      'Supporter';
+
+  // ── Receipt email to donor ─────────────────────────────────────────
+  if (donorEmail) {
+    await sendEmail({
+      to: donorEmail,
+      subject: 'Donation Confirmed — Thank You!',
+      template: 'donation-verified',
+      data: {
+        donorName,
+        amount: donation.amount,
+        campaignTitle: donation.campaign.title,
+        donationId: donation.donationId,
+        message: 'Your donation has been received and confirmed. Thank you for your generosity!'
+      }
+    }).catch((err) =>
+      logger.warn('Donor receipt email failed', { donorEmail, error: err.message })
+    );
+  }
+
+  // ── Admin notifications ─────────────────────────────────────────────
+  const admins = await User.find({ role: 'admin', isActive: true });
+
+  await Notification.create({
+    title: 'New Donation Confirmed',
+    message: `${donorName} donated ₦${donation.amount.toLocaleString()} to “${donation.campaign.title}”.`,
+    type: 'donation',
+    link: '/admin/payments',
+    recipientRole: 'finance_admin',
+  });
+
+  const adminEmailResults = await Promise.allSettled(
+    admins.map((admin) =>
+      sendEmail({
+        to: admin.email,
+        subject: 'New Donation Confirmed',
+        template: 'admin-donation-notification',
         data: {
-          donorName,
+          adminName: admin.fullName,
+          donorName: donation.anonymous ? 'Anonymous' : (donation.donor?.fullName || donorName),
           amount: donation.amount,
           campaignTitle: donation.campaign.title,
           donationId: donation.donationId,
-          message: 'Your payment has been received and is now pending admin approval.'
-        }
+          approvalUrl: `${process.env.ADMIN_URL || process.env.FRONTEND_URL}/admin/payments`,
+        },
+      })
+    )
+  );
+
+  adminEmailResults.forEach((result, i) => {
+    if (result.status === 'rejected') {
+      logger.warn('Admin notification email failed', {
+        adminEmail: admins[i]?.email,
+        error: result.reason?.message,
       });
     }
+  });
 
-    // Notify admins — use Promise.allSettled so one failed email
-    // doesn't abort the others or crash the webhook handler
-    const admins = await User.find({ role: 'admin', isActive: true });
+  return { alreadyVerified: false, confirmed: true };
+};
 
-    // Create a database notification for finance/super admins
-    await Notification.create({
-      title: 'New Donation Pending Approval',
-      message: `${donorName} donated ${donation.amount} to "${donation.campaign.title}".`,
-      type: 'donation',
-      link: '/admin/payments',
-      recipientRole: 'finance_admin',
-    });
-
-    // Fire all admin emails concurrently; log failures individually
-    const adminEmailResults = await Promise.allSettled(
-      admins.map((admin) =>
-        sendEmail({
-          to: admin.email,
-          subject: 'New Donation Pending Approval',
-          template: 'admin-donation-notification',
-          data: {
-            adminName: admin.fullName,
-            donorName: donation.anonymous ? 'Anonymous' : donation.donor.fullName,
-            amount: donation.amount,
-            campaignTitle: donation.campaign.title,
-            donationId: donation.donationId,
-            approvalUrl: `${process.env.FRONTEND_URL || process.env.ADMIN_URL}/admin/payments`,
-          },
-        })
-      )
-    );
-
-    adminEmailResults.forEach((result, i) => {
-      if (result.status === 'rejected') {
-        logger.warn('Admin notification email failed', {
-          adminEmail: admins[i]?.email,
-          error: result.reason?.message,
-        });
-      }
-    });
-
+/**
+ * Handle successful charge (payment completed) — called by Paystack webhook
+ */
+const handleSuccessfulCharge = async (chargeData) => {
+  try {
+    await confirmDonation(chargeData.reference, 'webhook');
   } catch (error) {
     logger.error('Error handling successful charge:', {
       error: error.message,
@@ -317,6 +362,63 @@ const handleSuccessfulCharge = async (chargeData) => {
       reference: chargeData.reference
     });
     throw error;
+  }
+};
+
+/**
+ * Client-triggered server-side verification.
+ * Called by the frontend after Paystack popup onSuccess fires.
+ * This is the fallback for when the webhook URL is not configured (local dev)
+ * or when the webhook is delayed.
+ *
+ * Security: this endpoint calls Paystack's API directly — it never trusts
+ * what the client says about whether the payment succeeded.
+ *
+ * @route   POST /api/v1/donations/verify/:reference
+ * @access  Public
+ */
+export const verifyDonationController = async (req, res) => {
+  const { reference } = req.params;
+
+  if (!reference) {
+    return res.status(400).json({ success: false, message: 'Payment reference is required' });
+  }
+
+  try {
+    const result = await confirmDonation(reference, 'client_verify');
+
+    if (result.notFound) {
+      return res.status(404).json({
+        success: false,
+        message: 'Donation not found for this reference'
+      });
+    }
+
+    if (result.failed) {
+      return res.status(422).json({
+        success: false,
+        message: 'Payment verification failed. The payment may not have completed successfully.'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      alreadyVerified: result.alreadyVerified,
+      message: result.alreadyVerified
+        ? 'Donation was already confirmed'
+        : 'Donation confirmed successfully'
+    });
+
+  } catch (error) {
+    logger.error('Client verify endpoint error', {
+      reference,
+      error: error.message,
+      stack: error.stack
+    });
+    return res.status(500).json({
+      success: false,
+      message: 'Verification failed due to a server error. Please contact support.'
+    });
   }
 };
 

@@ -45,6 +45,13 @@ const Events = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [eventToDelete, setEventToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showEventDetail, setShowEventDetail] = useState(false);
+
+  const handleViewEvent = (event) => {
+    setSelectedEvent(event);
+    setShowEventDetail(true);
+  };
 
   const fetchEvents = useCallback(async () => {
     try {
@@ -175,200 +182,93 @@ const Events = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      <div className="flex items-center justify-between">
         <div>
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-1 bg-primary-500 rounded-full" />
-            <span className="text-xs font-bold text-primary-600 uppercase tracking-wider">
-              Event Management
-            </span>
-          </div>
-          <h1
-            className={`text-3xl lg:text-4xl font-bold mb-2 ${
-              darkMode ? "text-white" : "text-dark"
-            }`}
-          >
-            Community Events
+          <h1 className={`text-xl font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>
+            Events
           </h1>
-          <p
-            className={`text-base ${
-              darkMode ? "text-gray-400" : "text-gray-600"
-            }`}
-          >
-            Manage and organize community events and programs
+          <p className={`text-sm mt-0.5 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+            Manage and organize community events
           </p>
         </div>
-
         <Link
           to="/admin/events/create"
-          className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 shadow-lg shadow-primary-500/25 transition-all w-fit"
+          className="px-3 py-2 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium flex items-center gap-1.5 transition-all shadow-sm"
         >
-          <Plus size={20} /> Create Event
+          <Plus size={15} /> Create Event
         </Link>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, i) => (
           <StatsCard key={i} {...stat} index={i} />
         ))}
       </div>
 
-      {/* Filters Section */}
-      <div
-        className={`p-6 rounded-2xl border ${
-          darkMode
-            ? "bg-dark-lighter border-gray-800"
-            : "bg-white border-gray-200 shadow-lg"
-        }`}
-      >
-        <div className="flex flex-col lg:flex-row gap-4">
-          {/* Search */}
-          <div className="relative flex-1">
-            <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-              size={20}
-            />
-            <input
-              type="text"
-              placeholder="Search events by title..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className={`w-full pl-12 pr-4 py-3 rounded-xl border-2 outline-none transition-all text-sm font-medium ${
-                darkMode
-                  ? "bg-gray-800 border-gray-700 text-white focus:border-primary-500"
-                  : "bg-gray-50 border-gray-200 text-dark focus:border-primary-500"
-              }`}
-            />
-          </div>
-
-          {/* Status Filter */}
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className={`px-6 py-3 rounded-xl border-2 outline-none cursor-pointer text-sm font-semibold ${
-              darkMode
-                ? "bg-gray-800 border-gray-700 text-white"
-                : "bg-gray-50 border-gray-200 text-dark"
+      {/* Filters */}
+      <div className={`p-4 rounded-xl border flex flex-col sm:flex-row gap-3 ${darkMode ? "bg-dark-lighter border-gray-800/70" : "bg-white border-gray-200/80 shadow-sm"}`}>
+        <div className="relative flex-1">
+          <Search className={`absolute left-3 top-1/2 -translate-y-1/2 ${darkMode ? "text-gray-500" : "text-gray-400"}`} size={15} />
+          <input
+            type="text"
+            placeholder="Search events..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className={`w-full pl-9 pr-4 py-2 rounded-lg border text-sm outline-none transition-all ${
+              darkMode ? "bg-gray-800/60 border-gray-700/50 text-white placeholder-gray-500 focus:border-primary-500/50" : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-primary-500/50"
             }`}
-          >
-            <option value="all">All Status</option>
-            <option value="published">Published</option>
-            <option value="draft">Draft</option>
-            <option value="ongoing">Ongoing</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-
-          {/* Refresh Button */}
-          <button
-            onClick={() => fetchEvents()}
-            disabled={loading}
-            className={`px-6 py-3 rounded-xl border-2 font-semibold text-sm transition-all flex items-center gap-2 ${
-              darkMode
-                ? "bg-gray-800 border-gray-700 text-gray-300 hover:text-white disabled:opacity-50"
-                : "bg-white border-gray-200 text-gray-600 hover:text-dark disabled:opacity-50"
-            }`}
-          >
-            <RefreshCw size={18} className={loading ? "animate-spin" : ""} />{" "}
-            Refresh
-          </button>
+          />
         </div>
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          className={`px-3 py-2 rounded-lg border text-sm outline-none cursor-pointer ${
+            darkMode ? "bg-gray-800/60 border-gray-700/50 text-white" : "bg-gray-50 border-gray-200 text-gray-700"
+          }`}
+        >
+          <option value="all">All Status</option>
+          <option value="published">Published</option>
+          <option value="draft">Draft</option>
+          <option value="ongoing">Ongoing</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+        <button
+          onClick={() => fetchEvents()}
+          disabled={loading}
+          className={`p-2 rounded-lg border text-sm transition-all disabled:opacity-50 ${
+            darkMode ? "bg-dark-lighter border-gray-800 text-gray-400 hover:text-white" : "bg-white border-gray-200 text-gray-600 hover:text-gray-900 shadow-sm"
+          }`}
+          title="Refresh"
+        >
+          <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
+        </button>
       </div>
 
       {/* Events Table */}
-      <div
-        className={`rounded-2xl border overflow-hidden ${
-          darkMode
-            ? "bg-dark-lighter border-gray-800"
-            : "bg-white border-gray-200 shadow-lg"
-        }`}
-      >
-        {/* Table Header */}
-        <div className="p-6 border-b border-gray-200 dark:border-gray-800">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <BarChart3 size={20} className="text-primary-500" />
-              <h3
-                className={`text-lg font-bold ${
-                  darkMode ? "text-white" : "text-dark"
-                }`}
-              >
-                Events List
-              </h3>
-              <span
-                className={`px-3 py-1 rounded-lg text-sm font-semibold ${
-                  darkMode
-                    ? "bg-gray-800 text-gray-400"
-                    : "bg-gray-100 text-gray-600"
-                }`}
-              >
-                {events?.length || 0} Events
-              </span>
-            </div>
-          </div>
+      <div className={`rounded-xl border overflow-hidden ${darkMode ? "bg-dark-lighter border-gray-800/70" : "bg-white border-gray-200/80 shadow-sm"}`}>
+        <div className={`px-5 py-4 border-b flex items-center gap-2.5 ${darkMode ? "border-gray-800/60" : "border-gray-100"}`}>
+          <Calendar size={17} className="text-primary-500" />
+          <h2 className={`text-sm font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>Events</h2>
+          <span className={`ml-auto px-2 py-0.5 rounded-full text-xs font-medium ${darkMode ? "bg-gray-800 text-gray-400" : "bg-gray-100 text-gray-500"}`}>
+            {events?.length || 0}
+          </span>
         </div>
 
         {/* Desktop Table View */}
         <div className="hidden lg:block overflow-x-auto">
           <table className="w-full">
-            <thead
-              className={`${
-                darkMode ? "bg-gray-900/50" : "bg-gray-50"
-              } border-b ${darkMode ? "border-gray-800" : "border-gray-200"}`}
-            >
-              <tr>
-                <th
-                  className={`px-6 py-4 text-left text-xs font-bold uppercase tracking-wider ${
-                    darkMode ? "text-gray-400" : "text-gray-600"
-                  }`}
-                >
-                  Event Details
-                </th>
-                <th
-                  className={`px-6 py-4 text-left text-xs font-bold uppercase tracking-wider ${
-                    darkMode ? "text-gray-400" : "text-gray-600"
-                  }`}
-                >
-                  Date & Time
-                </th>
-                <th
-                  className={`px-6 py-4 text-left text-xs font-bold uppercase tracking-wider ${
-                    darkMode ? "text-gray-400" : "text-gray-600"
-                  }`}
-                >
-                  Location
-                </th>
-                <th
-                  className={`px-6 py-4 text-left text-xs font-bold uppercase tracking-wider ${
-                    darkMode ? "text-gray-400" : "text-gray-600"
-                  }`}
-                >
-                  Attendees
-                </th>
-                <th
-                  className={`px-6 py-4 text-left text-xs font-bold uppercase tracking-wider ${
-                    darkMode ? "text-gray-400" : "text-gray-600"
-                  }`}
-                >
-                  Status
-                </th>
-                <th
-                  className={`px-6 py-4 text-right text-xs font-bold uppercase tracking-wider ${
-                    darkMode ? "text-gray-400" : "text-gray-600"
-                  }`}
-                >
-                  Actions
-                </th>
+            <thead>
+              <tr className={`border-b text-left ${darkMode ? "border-gray-800/60" : "border-gray-50"}`}>
+                {["Event", "Date", "Location", "Attendees", "Status", ""].map((h, i) => (
+                  <th key={h + i} className={`px-5 py-3 text-xs font-semibold uppercase tracking-wider ${darkMode ? "text-gray-500" : "text-gray-400"} ${i === 5 ? "text-right" : ""}`}>{h}</th>
+                ))}
               </tr>
             </thead>
-            <tbody
-              className={`divide-y ${
-                darkMode ? "divide-gray-800" : "divide-gray-200"
-              }`}
-            >
+            <tbody>
               {loading ? (
                 // Loading Skeleton
                 Array.from({ length: 5 }).map((_, i) => (
@@ -421,151 +321,50 @@ const Events = () => {
                 events.map((event) => {
                   const status = getStatusConfig(event.status);
                   return (
-                    <motion.tr
+                    <tr
                       key={event._id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className={`hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors`}
+                      className={`border-b transition-colors ${darkMode ? "border-gray-800/40 hover:bg-gray-800/30" : "border-gray-50 hover:bg-gray-50/50"}`}
                     >
-                      {/* Event Details */}
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-3.5">
                         <div>
-                          <h4
-                            className={`font-semibold text-sm mb-1 ${
-                              darkMode ? "text-white" : "text-dark"
-                            }`}
-                          >
-                            {event.title}
-                          </h4>
-                          <p
-                            className={`text-xs capitalize ${
-                              darkMode ? "text-gray-500" : "text-gray-600"
-                            }`}
-                          >
-                            {event.category?.replace(/_/g, " ")}
-                          </p>
+                          <p className={`text-sm font-medium mb-0.5 ${darkMode ? "text-white" : "text-gray-900"}`}>{event.title}</p>
+                          <p className={`text-xs capitalize ${darkMode ? "text-gray-500" : "text-gray-400"}`}>{event.category?.replace(/_/g, " ")}</p>
                         </div>
                       </td>
 
-                      {/* Date & Time */}
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Calendar size={16} className="text-primary-500" />
-                          <span
-                            className={
-                              darkMode ? "text-gray-300" : "text-gray-700"
-                            }
-                          >
-                            {formatDate(event.eventDate)}
-                          </span>
-                        </div>
-                        {event.eventTime?.start && (
-                          <div className="flex items-center gap-2 text-xs mt-1">
-                            <Clock size={14} className="text-gray-400" />
-                            <span
-                              className={
-                                darkMode ? "text-gray-500" : "text-gray-600"
-                              }
-                            >
-                              {event.eventTime.start}
-                            </span>
-                          </div>
-                        )}
+                      <td className="px-5 py-3.5">
+                        <p className={`text-sm ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{formatDate(event.eventDate)}</p>
+                        {event.eventTime?.start && <p className={`text-xs mt-0.5 ${darkMode ? "text-gray-500" : "text-gray-400"}`}>{event.eventTime.start}</p>}
                       </td>
 
-                      {/* Location */}
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 text-sm">
-                          <MapPin size={16} className="text-primary-500" />
-                          <span
-                            className={`truncate max-w-[150px] ${
-                              darkMode ? "text-gray-300" : "text-gray-700"
-                            }`}
-                          >
-                            {event.isOnline
-                              ? "Online Event"
-                              : event.location?.city || "TBA"}
-                          </span>
-                        </div>
+                      <td className="px-5 py-3.5">
+                        <span className={`text-sm truncate ${darkMode ? "text-gray-400" : "text-gray-500"}`}>{event.isOnline ? "Online" : event.location?.city || "TBA"}</span>
                       </td>
 
-                      {/* Attendees */}
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <Users size={16} className="text-primary-500" />
-                          <span
-                            className={`font-semibold text-sm ${
-                              darkMode ? "text-white" : "text-dark"
-                            }`}
-                          >
-                            {event.capacity?.registered || 0}
-                          </span>
-                          <span
-                            className={`text-xs ${
-                              darkMode ? "text-gray-500" : "text-gray-600"
-                            }`}
-                          >
-                            / {event.capacity?.max || "∞"}
-                          </span>
-                        </div>
+                      <td className="px-5 py-3.5">
+                        <span className={`text-sm font-medium ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{event.capacity?.registered || 0} <span className={`${darkMode ? "text-gray-600" : "text-gray-400"}`}>/ {event.capacity?.max || "∞"}</span></span>
                       </td>
 
-                      {/* Status */}
-                      <td className="px-6 py-4">
-                        <span
-                          className={`${status.bg} ${status.color} px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 w-fit`}
-                        >
-                          <status.icon size={14} />
-                          {status.label}
+                      <td className="px-5 py-3.5">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${status.bg} ${status.color}`}>
+                          <status.icon size={11} />{status.label}
                         </span>
                       </td>
 
-                      {/* Actions */}
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() =>
-                              navigate(`/admin/events/${event._id}`)
-                            }
-                            className={`p-2 rounded-lg transition-all ${
-                              darkMode
-                                ? "bg-gray-800 text-gray-400 hover:text-white"
-                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                            }`}
-                            title="View event"
-                          >
-                            <Eye size={18} />
+                      <td className="px-5 py-3.5 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button onClick={() => handleViewEvent(event)} className={`p-1.5 rounded-lg transition-all ${darkMode ? "text-gray-400 hover:text-white hover:bg-gray-800" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"}`} title="View">
+                            <Eye size={16} />
                           </button>
-                          <button
-                            onClick={() =>
-                              navigate(`/admin/events/${event._id}/edit`)
-                            }
-                            className={`p-2 rounded-lg transition-all ${
-                              darkMode
-                                ? "bg-primary-950/30 text-primary-500 hover:bg-primary-950/50"
-                                : "bg-primary-50 text-primary-600 hover:bg-primary-100"
-                            }`}
-                            title="Edit event"
-                          >
-                            <Edit size={18} />
+                          <button onClick={() => navigate(`/admin/events/${event._id}/edit`)} className={`p-1.5 rounded-lg transition-all ${darkMode ? "text-primary-400 hover:bg-primary-950/30" : "text-primary-600 hover:bg-primary-50"}`} title="Edit">
+                            <Edit size={16} />
                           </button>
-                          <button
-                            onClick={() => {
-                              setEventToDelete(event._id);
-                              setShowDeleteModal(true);
-                            }}
-                            className={`p-2 rounded-lg transition-all ${
-                              darkMode
-                                ? "bg-red-950/30 text-red-500 hover:bg-red-950/50"
-                                : "bg-red-50 text-red-600 hover:bg-red-100"
-                            }`}
-                            title="Delete event"
-                          >
-                            <Trash2 size={18} />
+                          <button onClick={() => { setEventToDelete(event._id); setShowDeleteModal(true); }} className={`p-1.5 rounded-lg transition-all ${darkMode ? "text-red-400 hover:bg-red-950/30" : "text-red-500 hover:bg-red-50"}`} title="Delete">
+                            <Trash2 size={16} />
                           </button>
                         </div>
                       </td>
-                    </motion.tr>
+                    </tr>
                   );
                 })
               ) : (
@@ -804,6 +603,216 @@ const Events = () => {
           </button>
         </div>
       </motion.div>
+
+      {/* ── Event Detail — Clerk-style slide-over ────────────────────── */}
+      <AnimatePresence>
+        {showEventDetail && selectedEvent && (() => {
+          const ev = selectedEvent;
+          const status = getStatusConfig(ev.status);
+          const StatusIcon = status.icon;
+          const registered = ev.capacity?.registered || 0;
+          const maxCapacity = ev.capacity?.max || 0;
+          const capacityPct = maxCapacity > 0 ? Math.min((registered / maxCapacity) * 100, 100) : 0;
+          const isPast = new Date(ev.eventDate) < new Date();
+          const isFull = maxCapacity > 0 && registered >= maxCapacity;
+
+          const SectionLabel = ({ children }) => (
+            <p className={`text-[10px] font-bold uppercase tracking-widest mb-3 ${darkMode ? "text-gray-500" : "text-gray-400"}`}>
+              {children}
+            </p>
+          );
+          const Divider = () => <div className={`my-5 border-t ${darkMode ? "border-gray-800" : "border-gray-100"}`} />;
+          const Row = ({ label, value, icon: Icon }) => (
+            <div className="flex items-center gap-3 py-2.5">
+              {Icon && <Icon size={14} className={darkMode ? "text-gray-500" : "text-gray-400"} />}
+              <span className={`text-xs flex-1 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>{label}</span>
+              <span className={`text-xs font-medium ${darkMode ? "text-gray-200" : "text-gray-800"}`}>{value || "—"}</span>
+            </div>
+          );
+
+          return (
+            <div className="fixed inset-0 z-[110] flex">
+              {/* Scrim */}
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowEventDetail(false)} />
+
+              {/* Slide-over panel */}
+              <motion.div
+                initial={{ x: "100%", opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: "100%", opacity: 0 }}
+                transition={{ type: "spring", stiffness: 320, damping: 32 }}
+                className={`relative ml-auto h-full w-full max-w-md flex flex-col overflow-hidden shadow-2xl ${darkMode ? "bg-[#0e0e0e] border-l border-gray-800" : "bg-white border-l border-gray-200"}`}
+              >
+                {/* ── Panel header ── */}
+                <div className={`flex items-center justify-between px-6 py-4 border-b flex-shrink-0 ${darkMode ? "border-gray-800 bg-[#111]" : "border-gray-100 bg-white"}`}>
+                  <div>
+                    <p className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? "text-gray-500" : "text-gray-400"}`}>Event</p>
+                    <p className={`text-sm font-semibold mt-0.5 font-mono ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
+                      {ev._id?.slice(-8)?.toUpperCase()}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowEventDetail(false)}
+                    className={`p-2 rounded-lg transition-all ${darkMode ? "text-gray-400 hover:bg-gray-800 hover:text-white" : "text-gray-400 hover:bg-gray-100 hover:text-gray-700"}`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </button>
+                </div>
+
+                {/* ── Scrollable body ── */}
+                <div className="flex-1 overflow-y-auto">
+
+                  {/* ── Hero: cover image or colored banner ── */}
+                  <div className="relative">
+                    {ev.coverImage ? (
+                      <img src={ev.coverImage} alt={ev.title} className="w-full h-44 object-cover" />
+                    ) : (
+                      <div className={`w-full h-44 flex items-center justify-center ${darkMode ? "bg-primary-950/30" : "bg-primary-50"}`}>
+                        <Calendar size={48} className="text-primary-400 opacity-40" />
+                      </div>
+                    )}
+                    {/* Status badge over image */}
+                    <div className="absolute top-3 left-3">
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-sm ${status.bg} ${status.color}`}>
+                        <StatusIcon size={11} /> {status.label}
+                      </span>
+                    </div>
+                    {isFull && (
+                      <div className="absolute top-3 right-3">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${darkMode ? "bg-red-950/80 text-red-300" : "bg-red-100 text-red-700"} backdrop-blur-sm`}>
+                          Full
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="px-6 py-5">
+
+                    {/* Title + category */}
+                    <h2 className={`text-xl font-bold leading-snug mb-1 ${darkMode ? "text-white" : "text-gray-900"}`}>{ev.title}</h2>
+                    <p className={`text-sm capitalize mb-4 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>{ev.category?.replace(/_/g, " ")}</p>
+
+                    {/* Tags */}
+                    {ev.tags?.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-5">
+                        {ev.tags.map((tag) => (
+                          <span key={tag} className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${darkMode ? "bg-gray-800 text-gray-400" : "bg-gray-100 text-gray-600"}`}>#{tag}</span>
+                        ))}
+                      </div>
+                    )}
+
+                    <Divider />
+
+                    {/* ── Event details ── */}
+                    <SectionLabel>Event Details</SectionLabel>
+                    <div className={`divide-y rounded-xl overflow-hidden ${darkMode ? "divide-gray-800 bg-gray-900/60 border border-gray-800" : "divide-gray-100 bg-gray-50 border border-gray-100"}`}>
+                      <div className="px-4">
+                        <Row label="Date" value={formatDate(ev.eventDate)} icon={Calendar} />
+                      </div>
+                      {ev.eventTime?.start && (
+                        <div className="px-4">
+                          <Row label="Time" value={`${ev.eventTime.start}${ev.eventTime.end ? ` – ${ev.eventTime.end}` : ""}`} icon={Clock} />
+                        </div>
+                      )}
+                      <div className="px-4">
+                        <Row
+                          label="Location"
+                          value={ev.isOnline ? "Online Event" : [ev.location?.venue, ev.location?.city].filter(Boolean).join(", ") || "TBA"}
+                          icon={MapPin}
+                        />
+                      </div>
+                      {ev.organizer && (
+                        <div className="px-4">
+                          <Row label="Organizer" value={ev.organizer} icon={Users} />
+                        </div>
+                      )}
+                    </div>
+
+                    <Divider />
+
+                    {/* ── Capacity ── */}
+                    <SectionLabel>Capacity</SectionLabel>
+                    <div className={`p-4 rounded-xl border ${darkMode ? "bg-gray-900/60 border-gray-800" : "bg-gray-50 border-gray-100"}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className={`text-sm font-bold ${darkMode ? "text-white" : "text-gray-900"}`}>
+                          {registered} <span className={`font-normal text-xs ${darkMode ? "text-gray-500" : "text-gray-400"}`}>registered</span>
+                        </span>
+                        <span className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                          {maxCapacity > 0 ? `${maxCapacity} max` : "Unlimited"}
+                        </span>
+                      </div>
+                      {maxCapacity > 0 && (
+                        <div className={`w-full rounded-full h-2 ${darkMode ? "bg-gray-800" : "bg-gray-200"}`}>
+                          <div
+                            className={`h-2 rounded-full transition-all ${capacityPct >= 90 ? "bg-red-500" : capacityPct >= 60 ? "bg-amber-500" : "bg-emerald-500"}`}
+                            style={{ width: `${capacityPct}%` }}
+                          />
+                        </div>
+                      )}
+                      {isFull && (
+                        <p className="text-xs text-red-500 mt-2 font-medium">This event is fully booked.</p>
+                      )}
+                    </div>
+
+                    {/* ── Description ── */}
+                    {ev.description && (
+                      <>
+                        <Divider />
+                        <SectionLabel>Description</SectionLabel>
+                        <p className={`text-sm leading-relaxed ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
+                          {ev.description}
+                        </p>
+                      </>
+                    )}
+
+                    {/* ── Timestamps ── */}
+                    <Divider />
+                    <SectionLabel>Timeline</SectionLabel>
+                    <div className={`divide-y rounded-xl overflow-hidden ${darkMode ? "divide-gray-800 bg-gray-900/60 border border-gray-800" : "divide-gray-100 bg-gray-50 border border-gray-100"}`}>
+                      <div className="px-4"><Row label="Created" value={formatDate(ev.createdAt)} icon={Clock} /></div>
+                      {ev.updatedAt && ev.updatedAt !== ev.createdAt && (
+                        <div className="px-4"><Row label="Last Updated" value={formatDate(ev.updatedAt)} icon={RefreshCw} /></div>
+                      )}
+                      {isPast && (
+                        <div className="px-4">
+                          <div className="flex items-center gap-3 py-2.5">
+                            <TrendingUp size={14} className="text-emerald-500" />
+                            <span className={`text-xs flex-1 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>Event Status</span>
+                            <span className="text-xs font-medium text-emerald-600">Completed</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* ── Sticky action footer ── */}
+                <div className={`flex-shrink-0 px-6 py-4 border-t flex gap-2 ${darkMode ? "border-gray-800 bg-[#111]" : "border-gray-100 bg-white"}`}>
+                  <button
+                    onClick={() => { setShowEventDetail(false); navigate(`/admin/events/${ev._id}`); }}
+                    className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-1.5 ${darkMode ? "bg-gray-800 hover:bg-gray-700 text-gray-200" : "bg-gray-100 hover:bg-gray-200 text-gray-700"}`}
+                  >
+                    <Eye size={14} /> Full View
+                  </button>
+                  <button
+                    onClick={() => { setShowEventDetail(false); navigate(`/admin/events/${ev._id}/edit`); }}
+                    className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-1.5 ${darkMode ? "bg-primary-900/50 hover:bg-primary-900/70 text-primary-300 border border-primary-800" : "bg-primary-50 hover:bg-primary-100 text-primary-700 border border-primary-200"}`}
+                  >
+                    <Edit size={14} /> Edit
+                  </button>
+                  <button
+                    onClick={() => { setShowEventDetail(false); setEventToDelete(ev._id); setShowDeleteModal(true); }}
+                    className="flex-1 py-2.5 rounded-lg text-sm font-semibold bg-red-600 hover:bg-red-700 text-white transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <Trash2 size={14} /> Delete
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          );
+        })()}
+      </AnimatePresence>
 
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
