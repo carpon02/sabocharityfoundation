@@ -513,7 +513,7 @@ const CampaignModal = ({ isOpen, onClose, onSubmit, darkMode, mode = "create", c
                 type="button"
                 onClick={handleNext}
                 disabled={!canAdvance()}
-                className={`px-5 py-2 rounded-lg text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed`}
+                className={`px-5 py-2 rounded-lg text-sm font-semibold bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed`}
               >
                 Next →
               </button>
@@ -523,7 +523,7 @@ const CampaignModal = ({ isOpen, onClose, onSubmit, darkMode, mode = "create", c
                 form="campaign-form"
                 disabled={submitting}
                 onClick={handleSubmit}
-                className={`px-5 py-2 rounded-lg text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors flex items-center gap-2 ${submitting ? "opacity-70" : ""}`}
+                className={`px-5 py-2 rounded-lg text-sm font-semibold bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:opacity-90 transition-opacity flex items-center gap-2 ${submitting ? "opacity-70" : ""}`}
               >
                 {submitting ? "Submitting..." : mode === "create" ? "Submit Campaign" : "Save Changes"}
               </button>
@@ -684,7 +684,7 @@ const CampaignCard = ({ campaign, isOwnCampaign, onEdit, onRequestDelete, onDona
               {status === "active" && (
                 <button
                   onClick={() => onDonate(campaign)}
-                  className="flex-1 py-2 rounded-lg text-xs font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+                  className="flex-1 py-2 rounded-lg text-xs font-semibold bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:opacity-90 transition-opacity"
                 >
                   Donate
                 </button>
@@ -784,7 +784,7 @@ const MyCampaigns = () => {
         </div>
         <button
           onClick={() => { setModalMode("create"); setSelectedCampaign(null); setIsModalOpen(true); }}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 w-fit"
+          className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity flex items-center gap-2 w-fit"
         >
           <Plus size={16} /> Create Campaign
         </button>
