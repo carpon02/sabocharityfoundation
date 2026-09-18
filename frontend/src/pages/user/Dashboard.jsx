@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   Heart,
   Wallet,
@@ -53,10 +54,13 @@ const today = new Date().toLocaleDateString("en-NG", {
 });
 
 // ── Shared primitives ─────────────────────────────────────────────────────────
-const Card = ({ children, className = "" }) => {
+const Card = ({ children, className = "", delay = 0 }) => {
   const { darkMode } = useTheme();
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", stiffness: 400, damping: 30, delay }}
       className={`rounded-xl border ${
         darkMode
           ? "bg-[#111] border-gray-800"
@@ -64,7 +68,7 @@ const Card = ({ children, className = "" }) => {
       } ${className}`}
     >
       {children}
-    </div>
+    </motion.div>
   );
 };
 
@@ -75,10 +79,10 @@ const SectionLabel = ({ children }) => (
 );
 
 // ── Stat Card ─────────────────────────────────────────────────────────────────
-const StatCard = ({ icon: Icon, label, value, sub, iconBg }) => {
+const StatCard = ({ icon: Icon, label, value, sub, iconBg, delay = 0 }) => {
   const { darkMode } = useTheme();
   return (
-    <Card className="p-5 flex items-start gap-4">
+    <Card className="p-5 flex items-start gap-4" delay={delay}>
       <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${iconBg}`}>
         <Icon size={18} />
       </div>
@@ -266,7 +270,80 @@ const MetricRow = ({ m }) => {
 
 // ── Loading Skeleton ──────────────────────────────────────────────────────────
 const Skeleton = ({ className = "" }) => (
-  <div className={`animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800 ${className}`} />
+  <div
+    className={`relative overflow-hidden rounded-lg ${className}`}
+    style={{
+      background:
+        "linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%)",
+      backgroundSize: "200% 100%",
+      animation: "shimmer 1.4s infinite",
+    }}
+  />
+);
+
+// Composite Skeleton — mirrors a real StatCard
+const StatCardSkeleton = ({ delay = 0 }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 15 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ type: "spring", stiffness: 400, damping: 30, delay }}
+    className="rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-[#111] p-5 flex items-start gap-4"
+  >
+    <Skeleton className="w-10 h-10 shrink-0" />
+    <div className="flex-1 space-y-2 pt-0.5">
+      <Skeleton className="h-2.5 w-16" />
+      <Skeleton className="h-5 w-24" />
+      <Skeleton className="h-2 w-12" />
+    </div>
+  </motion.div>
+);
+
+// Composite Skeleton — mirrors a DonationRow
+const DonationRowSkeleton = () => (
+  <div className="flex items-center gap-3 py-3 px-4">
+    <Skeleton className="w-8 h-8 shrink-0" />
+    <div className="flex-1 space-y-1.5">
+      <Skeleton className="h-3 w-36" />
+      <Skeleton className="h-2 w-20" />
+    </div>
+    <Skeleton className="h-3 w-14" />
+  </div>
+);
+
+// Composite Skeleton — mirrors a CampaignRow
+const CampaignRowSkeleton = () => (
+  <div className="rounded-xl border border-gray-100 dark:border-gray-800 p-4 space-y-3">
+    <div className="space-y-1.5">
+      <Skeleton className="h-3.5 w-40" />
+      <Skeleton className="h-2.5 w-20" />
+    </div>
+    <Skeleton className="h-1.5 w-full" />
+    <div className="flex justify-between">
+      <Skeleton className="h-2.5 w-24" />
+      <Skeleton className="h-2.5 w-8" />
+    </div>
+  </div>
+);
+
+// Composite Skeleton — mirrors an EventRow
+const EventRowSkeleton = () => (
+  <div className="flex items-center gap-3 py-3 px-4">
+    <Skeleton className="w-10 h-10 shrink-0" />
+    <div className="flex-1 space-y-1.5">
+      <Skeleton className="h-3 w-32" />
+      <Skeleton className="h-2 w-20" />
+    </div>
+    <Skeleton className="h-5 w-16 rounded-md" />
+  </div>
+);
+
+// Composite Skeleton — mirrors a MetricRow
+const MetricRowSkeleton = () => (
+  <div className="flex items-center gap-3 py-2.5 px-4">
+    <Skeleton className="w-4 h-4 rounded-full shrink-0" />
+    <Skeleton className="h-3 flex-1" />
+    <Skeleton className="h-3 w-10" />
+  </div>
 );
 
 // ── Main Dashboard ────────────────────────────────────────────────────────────
@@ -391,8 +468,8 @@ const Dashboard = () => {
       {/* ── Stats Row ────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {loading
-          ? [1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24" />)
-          : stats.map((s) => <StatCard key={s.label} {...s} />)}
+          ? [0, 1, 2, 3].map((i) => <StatCardSkeleton key={i} delay={i * 0.05} />)
+          : stats.map((s, idx) => <StatCard key={s.label} {...s} delay={idx * 0.05} />)}
       </div>
 
       {/* ── Monthly Goal ─────────────────────────────────────────────────── */}
@@ -417,7 +494,7 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
 
         {/* ── Recent Donations (wider) ────────────────────────────────── */}
-        <Card className="lg:col-span-3 overflow-hidden">
+        <Card delay={0.2} className="lg:col-span-3 overflow-hidden">
           <div className={`flex items-center justify-between px-5 py-4 border-b ${darkMode ? "border-gray-800" : "border-gray-100"}`}>
             <div>
               <p className={`text-sm font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>
@@ -433,7 +510,7 @@ const Dashboard = () => {
           </div>
           <div className="p-2">
             {loading ? (
-              [1, 2, 3].map((i) => <Skeleton key={i} className="h-14 mb-2" />)
+              [1, 2, 3, 4].map((i) => <DonationRowSkeleton key={i} />)
             ) : data.recentDonations.length > 0 ? (
               data.recentDonations.slice(0, 5).map((d) => (
                 <DonationRow key={d._id} d={d} />
@@ -456,7 +533,7 @@ const Dashboard = () => {
         </Card>
 
         {/* ── Impact Metrics (narrower) ───────────────────────────────── */}
-        <Card className="lg:col-span-2 overflow-hidden">
+        <Card delay={0.3} className="lg:col-span-2 overflow-hidden">
           <div className={`px-5 py-4 border-b ${darkMode ? "border-gray-800" : "border-gray-100"}`}>
             <p className={`text-sm font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>
               Your impact
@@ -464,7 +541,7 @@ const Dashboard = () => {
           </div>
           <div className="p-2">
             {loading ? (
-              [1, 2, 3].map((i) => <Skeleton key={i} className="h-10 mb-2" />)
+              [1, 2, 3].map((i) => <MetricRowSkeleton key={i} />)
             ) : data.impactMetrics.length > 0 ? (
               data.impactMetrics.map((m, i) => <MetricRow key={i} m={m} />)
             ) : (
@@ -495,7 +572,7 @@ const Dashboard = () => {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {loading
-              ? [1, 2, 3].map((i) => <Skeleton key={i} className="h-28" />)
+              ? [1, 2, 3].map((i) => <CampaignRowSkeleton key={i} />)
               : data.activeCampaigns.slice(0, 3).map((c) => (
                   <CampaignRow key={c._id || c.id} c={c} />
                 ))}
@@ -518,7 +595,7 @@ const Dashboard = () => {
         </div>
         <div className="p-2">
           {userEventsLoading ? (
-            [1, 2].map((i) => <Skeleton key={i} className="h-14 mb-2" />)
+            [1, 2, 3].map((i) => <EventRowSkeleton key={i} />)
           ) : userRegisteredEvents.length > 0 ? (
             userRegisteredEvents.slice(0, 4).map((e) => (
               <EventRow key={e._id || e.id} e={e} />

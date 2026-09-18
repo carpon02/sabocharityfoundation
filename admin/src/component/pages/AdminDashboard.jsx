@@ -233,11 +233,59 @@ const AdminDashboard = () => {
 
   if (analyticsLoading && !platformAnalytics)
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3">
-        <LoadingSpinner size="large" />
-        <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
-          Loading dashboard...
-        </p>
+      <div className="space-y-6 pb-10">
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <ShimmerD darkMode={darkMode} className="h-6 w-32" />
+            <ShimmerD darkMode={darkMode} className="h-3.5 w-52" />
+          </div>
+          <div className="flex gap-2">
+            <ShimmerD darkMode={darkMode} className="h-9 w-9 rounded-lg" />
+            <ShimmerD darkMode={darkMode} className="h-9 w-28 rounded-lg" />
+          </div>
+        </div>
+        {/* Metric cards skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[0, 1, 2, 3].map((i) => <MetricCardSkeleton key={i} darkMode={darkMode} delay={i * 0.06} />)}
+        </div>
+        {/* Chart + sidebar skeleton */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <div className={`xl:col-span-2 rounded-xl border p-5 ${
+            darkMode ? "bg-dark-lighter border-gray-800" : "bg-white border-gray-200 shadow-sm"
+          }`}>
+            <ShimmerD darkMode={darkMode} className="h-4 w-40 mb-6" />
+            <ShimmerD darkMode={darkMode} className="h-48 w-full" />
+          </div>
+          <div className={`rounded-xl border p-5 ${
+            darkMode ? "bg-dark-lighter border-gray-800" : "bg-white border-gray-200 shadow-sm"
+          }`}>
+            <ShimmerD darkMode={darkMode} className="h-4 w-32 mb-4" />
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-3 py-3">
+                <ShimmerD darkMode={darkMode} className="w-9 h-9 rounded-lg" />
+                <div className="flex-1 space-y-1.5">
+                  <ShimmerD darkMode={darkMode} className="h-3 w-36" />
+                  <ShimmerD darkMode={darkMode} className="h-2.5 w-20" />
+                </div>
+                <ShimmerD darkMode={darkMode} className="h-5 w-12 rounded-full" />
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Table skeleton */}
+        <div className={`rounded-xl border overflow-hidden ${
+          darkMode ? "bg-dark-lighter border-gray-800" : "bg-white border-gray-200 shadow-sm"
+        }`}>
+          <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-800">
+            <ShimmerD darkMode={darkMode} className="h-4 w-36" />
+          </div>
+          <table className="w-full">
+            <tbody>
+              {[1, 2, 3, 4, 5].map((i) => <TableRowSkeleton key={i} darkMode={darkMode} />)}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
 
@@ -290,20 +338,9 @@ const AdminDashboard = () => {
 
       {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {analyticsLoading && !platformAnalytics
-          ? Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className={`p-5 rounded-xl border animate-pulse ${
-                  darkMode ? "bg-dark-lighter border-gray-800" : "bg-white border-gray-200 shadow-sm"
-                }`}
-              >
-                <div className={`w-9 h-9 rounded-lg mb-4 ${darkMode ? "bg-gray-800" : "bg-gray-100"}`} />
-                <div className={`h-7 rounded w-2/3 mb-2 ${darkMode ? "bg-gray-800" : "bg-gray-100"}`} />
-                <div className={`h-4 rounded w-1/2 ${darkMode ? "bg-gray-800" : "bg-gray-100"}`} />
-              </div>
-            ))
-          : metrics.map((m, i) => <MetricCard key={i} {...m} index={i} />)}
+          {analyticsLoading && !platformAnalytics
+            ? [0, 1, 2, 3].map((i) => <MetricCardSkeleton key={i} darkMode={darkMode} delay={i * 0.06} />)
+            : metrics.map((m, i) => <MetricCard key={i} {...m} index={i} />)}
       </div>
 
       {/* Main Content Grid */}
@@ -373,17 +410,7 @@ const AdminDashboard = () => {
               </thead>
               <tbody>
                 {paymentsLoading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i}>
-                      <td className="px-5 py-3" colSpan={4}>
-                        <div
-                          className={`h-10 rounded-lg animate-pulse ${
-                            darkMode ? "bg-gray-800" : "bg-gray-50"
-                          }`}
-                        />
-                      </td>
-                    </tr>
-                  ))
+                  [1, 2, 3, 4, 5].map((i) => <TableRowSkeleton key={i} darkMode={darkMode} />)
                 ) : payments && payments.length > 0 ? (
                   payments.slice(0, 5).map((p, i) => {
                     const badge = getStatusBadge(p.status);
@@ -489,15 +516,7 @@ const AdminDashboard = () => {
           {/* Mobile Card View */}
           <div className="lg:hidden divide-y divide-gray-100 dark:divide-gray-800/50">
             {paymentsLoading
-              ? Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="p-4">
-                    <div
-                      className={`h-14 rounded-lg animate-pulse ${
-                        darkMode ? "bg-gray-800" : "bg-gray-50"
-                      }`}
-                    />
-                  </div>
-                ))
+              ? [1, 2, 3].map((i) => <MobileCardSkeleton key={i} darkMode={darkMode} />)
               : payments &&
                 payments.slice(0, 5).map((p, i) => {
                   const badge = getStatusBadge(p.status);
