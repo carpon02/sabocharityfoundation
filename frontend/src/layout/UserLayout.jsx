@@ -1,591 +1,378 @@
-// layouts/UserLayout.jsx - Sabo Ibadan Youth Charity Foundation
+// layout/UserLayout.jsx — Clerk-style redesign (Aligned with AdminLayout)
 import React, { useState, useEffect } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { logoutUser } from "../features/auth/authSlice";
-import { useTheme } from "../context/ThemeContext";
 import { motion, AnimatePresence } from "framer-motion";
+import { logoutUser, logout } from "../features/auth/authSlice";
+import { useTheme } from "../context/ThemeContext";
 import {
-  Search,
-  Bell,
-  Settings,
-  HelpCircle,
+  LayoutDashboard,
   Heart,
   Target,
-  LayoutDashboard,
-  CalendarDays,
+  Calendar,
+  Settings,
+  HelpCircle,
   LogOut,
-  Moon,
-  Sun,
   Menu,
   X,
+  Sun,
+  Moon,
   ChevronRight,
+  Bell,
+  Search
 } from "lucide-react";
 
-// Navigation Configuration - ONLY ONE DECLARATION
+// ── Navigation Configuration ──────────────────────────────────────────────────
 const NAVIGATION_CONFIG = {
   mainLinks: [
-    {
-      name: "Dashboard",
-      path: "/user/dashboard",
-      icon: LayoutDashboard,
-      badge: null,
-    },
-    {
-      name: "My Donations",
-      path: "/user/my-donations",
-      icon: Heart,
-      badge: null,
-    },
-    {
-      name: "Events",
-      path: "/user/events",
-      icon: CalendarDays,
-      badge: null,
-    },
-    {
-      name: "My Campaigns",
-      path: "/user/my-campaigns",
-      icon: Target,
-      badge: null,
-    },
+    { name: "Dashboard",     path: "/user/dashboard",    icon: LayoutDashboard },
+    { name: "Donations",     path: "/user/my-donations", icon: Heart },
+    { name: "My Campaigns",  path: "/user/my-campaigns", icon: Target },
+    { name: "Events",        path: "/user/events",       icon: Calendar },
   ],
-  secondaryLinks: [
-    {
-      name: "Settings",
-      path: "/user/settings",
-      icon: Settings,
-    },
-    {
-      name: "Help & Support",
-      path: "/user/help",
-      icon: HelpCircle,
-    },
+  supportLinks: [
+    { name: "Settings", path: "/user/settings", icon: Settings },
+    { name: "Help",     path: "/user/help",     icon: HelpCircle },
   ],
 };
 
-// Mobile Sidebar Component
-const MobileSidebar = ({
-  isOpen,
-  setIsOpen,
-  darkMode,
-  location,
-  onLogout,
-  userName,
-  user,
-}) => (
-  <AnimatePresence>
-    {isOpen && (
-      <>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={() => setIsOpen(false)}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 lg:hidden"
-        />
-        <motion.aside
-          initial={{ x: "-100%" }}
-          animate={{ x: 0 }}
-          exit={{ x: "-100%" }}
-          transition={{ type: "spring", damping: 30, stiffness: 300 }}
-          className={`fixed top-0 left-0 h-full w-[280px] z-50 flex flex-col
-            ${darkMode ? "bg-dark-lighter" : "bg-white"}
-            border-r ${darkMode ? "border-gray-800" : "border-gray-200"}
-          `}
-        >
-          {/* Mobile Header */}
-          <div className="p-6 border-b border-gray-200 dark:border-gray-800">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-premium flex items-center justify-center">
-                  <Heart size={20} className="text-white fill-white" />
-                </div>
-                <div>
-                  <h1 className="text-sm font-bold text-dark dark:text-white">
-                    Sabo Ibadan
-                  </h1>
-                  <p className="text-[10px] text-gray-500 font-medium">
-                    Youth Foundation
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              >
-                <X size={18} className="text-gray-600 dark:text-gray-400" />
-              </button>
-            </div>
+const PAGE_TITLES = {
+  "/user/dashboard":    "Dashboard",
+  "/user/my-donations": "Donations",
+  "/user/my-campaigns": "My Campaigns",
+  "/user/events":       "Events",
+  "/user/settings":     "Settings",
+  "/user/help":         "Help Center",
+};
 
-            {/* User Info */}
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50">
-              <div className="w-10 h-10 rounded-full bg-gradient-premium overflow-hidden">
-                <img
-                  src={
-                    user?.avatar ||
-                    `https://ui-avatars.com/api/?name=${userName}&background=059669&color=fff`
-                  }
-                  alt={`${userName}'s profile`}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-dark dark:text-white truncate">
-                  {userName}
-                </p>
-                <p className="text-xs text-gray-500">Member</p>
-              </div>
-            </div>
-          </div>
+// ── Sidebar Component ─────────────────────────────────────────────────────────
+const Sidebar = ({ darkMode, setDarkMode, location, onLogout, isOpen, setIsOpen, user }) => {
+  const [isLargeScreen, setIsLargeScreen] = useState(false);
+  const userName = user?.fullName || "Member";
+  const initials = userName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
 
-          {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto p-4">
-            <div className="space-y-1 mb-6">
-              {NAVIGATION_CONFIG.mainLinks.map((link) => {
-                const Icon = link.icon;
-                const isActive = location.pathname === link.path;
-                return (
-                  <Link
-                    key={link.path}
-                    to={link.path}
-                    onClick={() => setIsOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all relative group
-                      ${
-                        isActive
-                          ? "bg-primary-500 text-white shadow-lg shadow-primary-500/25"
-                          : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-                      }`}
-                  >
-                    <Icon size={20} className={isActive ? "text-white" : ""} />
-                    <span className="text-sm font-semibold flex-1">
-                      {link.name}
-                    </span>
-                    {link.badge && (
-                      <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-primary-500 text-white">
-                        {link.badge}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsLargeScreen(window.innerWidth >= 1024);
+    };
 
-            <div className="border-t border-gray-200 dark:border-gray-800 pt-4 space-y-1">
-              {NAVIGATION_CONFIG.secondaryLinks.map((link) => {
-                const Icon = link.icon;
-                const isActive = location.pathname === link.path;
-                return (
-                  <Link
-                    key={link.path}
-                    to={link.path}
-                    onClick={() => setIsOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all
-                      ${
-                        isActive
-                          ? "bg-gray-100 dark:bg-gray-800 text-dark dark:text-white"
-                          : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-                      }`}
-                  >
-                    <Icon size={20} />
-                    <span className="text-sm font-semibold">{link.name}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          </nav>
-
-          {/* Logout */}
-          <div className="p-4 border-t border-gray-200 dark:border-gray-800">
-            <button
-              onClick={onLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all"
-            >
-              <LogOut size={20} />
-              <span className="text-sm font-semibold">Logout</span>
-            </button>
-          </div>
-        </motion.aside>
-      </>
-    )}
-  </AnimatePresence>
-);
-
-// Desktop Sidebar Component
-const DesktopSidebar = ({
-  darkMode,
-  location,
-  onLogout,
-  userName,
-  userStats,
-  user,
-}) => {
-  const formatCurrency = (amount) => {
-    if (amount >= 1000000) {
-      return `₦${(amount / 1000000).toFixed(1)}M`;
-    } else if (amount >= 1000) {
-      return `₦${(amount / 1000).toFixed(1)}K`;
-    }
-    return `₦${amount.toFixed(0)}`;
-  };
+    checkScreenSize();
+    window.addEventListener("resize", checkScreenSize);
+    return () => window.removeEventListener("resize", checkScreenSize);
+  }, []);
 
   return (
-    <aside
-      className={`hidden lg:flex flex-col w-[280px] h-screen sticky top-0 border-r transition-colors
-        ${darkMode ? "bg-dark-lighter border-gray-800" : "bg-white border-gray-200"}
-      `}
-    >
-      {/* Logo & Branding */}
-      <div className="p-6 border-b border-gray-200 dark:border-gray-800">
-        <Link
-          to="/user/dashboard"
-          className="flex items-center gap-3 group mb-6"
-        >
-          <div className="w-11 h-11 rounded-xl bg-gradient-premium flex items-center justify-center group-hover:scale-105 transition-transform shadow-lg shadow-primary-500/20">
-            <Heart size={22} className="text-white fill-white" />
-          </div>
-          <div>
-            <h1 className="text-base font-bold text-dark dark:text-white leading-tight">
-              Sabo Ibadan
-            </h1>
-            <p className="text-[11px] text-gray-500 font-medium leading-tight">
-              Youth Foundation
-            </p>
-          </div>
-        </Link>
+    <>
+      {/* Overlay for Mobile */}
+      <AnimatePresence>
+        {isOpen && !isLargeScreen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsOpen(false)}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"
+          />
+        )}
+      </AnimatePresence>
 
-        {/* Impact Stats Card */}
-        <div
-          className={`p-4 rounded-xl border ${darkMode ? "bg-primary-950/20 border-primary-900/30" : "bg-primary-50 border-primary-100"}`}
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <Heart size={16} className="text-primary-600 fill-primary-600" />
-            <span className="text-xs font-bold text-primary-700 dark:text-primary-400">
-              Your Impact
-            </span>
-          </div>
-          <div className="space-y-3">
-            <div>
-              <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                Total Donated
-              </p>
-              <p className="text-xl font-bold text-dark dark:text-white">
-                {formatCurrency(userStats.totalDonated)}
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                  Campaigns
-                </p>
-                <p className="text-sm font-bold text-dark dark:text-white">
-                  {userStats.campaignsSupported}
-                </p>
+      <motion.aside
+        initial={false}
+        animate={{ x: isLargeScreen || isOpen ? 0 : "-100%" }}
+        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+        className={`fixed top-0 left-0 h-full w-64 z-50 lg:translate-x-0 lg:static flex flex-col ${
+          darkMode
+            ? "bg-[#111] lg:bg-dark-lighter border-gray-800/80"
+            : "bg-white border-gray-200/80"
+        } border-r`}
+      >
+        {/* Sidebar Header — Logo */}
+        <div className={`px-5 py-5 border-b ${darkMode ? "border-gray-800/60" : "border-gray-100"}`}>
+          <div className="flex justify-between items-center">
+            <Link to="/user/dashboard" className="flex items-center gap-3 group">
+              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white shadow-sm">
+                <Heart size={18} fill="white" />
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                  Events
-                </p>
-                <p className="text-sm font-bold text-dark dark:text-white">
-                  {userStats.eventsAttended}
+                <h1 className={`text-sm font-bold leading-tight ${darkMode ? "text-white" : "text-gray-900"}`}>
+                  Sabo Foundation
+                </h1>
+                <p className="text-[10px] font-medium text-gray-400">
+                  User Portal
                 </p>
               </div>
-            </div>
+            </Link>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="lg:hidden p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              aria-label="Close menu"
+            >
+              <X size={18} className={darkMode ? "text-gray-400" : "text-gray-500"} />
+            </button>
           </div>
         </div>
-      </div>
 
-      {/* Navigation Links */}
-      <nav className="flex-1 overflow-y-auto p-4">
-        <div className="space-y-1 mb-6">
-          {NAVIGATION_CONFIG.mainLinks.map((link) => {
-            const Icon = link.icon;
-            const isActive = location.pathname === link.path;
-            return (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all relative group
-                  ${
-                    isActive
-                      ? "bg-primary-500 text-white shadow-lg shadow-primary-500/25"
-                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-                  }`}
-              >
-                <Icon size={20} />
-                <span className="text-sm font-semibold flex-1">
-                  {link.name}
-                </span>
-                {link.badge && (
-                  <span
-                    className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
-                      isActive
-                        ? "bg-white/20 text-white"
-                        : "bg-primary-500 text-white"
-                    }`}
-                  >
-                    {link.badge}
-                  </span>
-                )}
-                {isActive && (
-                  <ChevronRight size={16} className="text-white/60" />
-                )}
-              </Link>
-            );
-          })}
-        </div>
-
-        <div className="border-t border-gray-200 dark:border-gray-800 pt-4 space-y-1">
-          {NAVIGATION_CONFIG.secondaryLinks.map((link) => {
-            const Icon = link.icon;
-            const isActive = location.pathname === link.path;
-            return (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all
-                  ${
-                    isActive
-                      ? "bg-gray-100 dark:bg-gray-800 text-dark dark:text-white"
-                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-                  }`}
-              >
-                <Icon size={20} />
-                <span className="text-sm font-semibold">{link.name}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
-
-      {/* User Profile & Logout */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-800 space-y-3">
-        <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800/50">
-          <div className="w-10 h-10 rounded-full bg-gradient-premium overflow-hidden">
-            <img
-              src={
-                user?.avatar ||
-                `https://ui-avatars.com/api/?name=${userName}&background=059669&color=fff`
-              }
-              alt={`${userName}'s profile`}
-              className="w-full h-full object-cover"
-            />
+        {/* User Profile Header (Optional: showing user briefly at top of nav) */}
+        <div className={`p-4 border-b ${darkMode ? "border-gray-800/60" : "border-gray-100"} flex items-center gap-3`}>
+          <div className="w-9 h-9 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-700 dark:text-emerald-400 text-xs font-bold overflow-hidden shrink-0">
+            {user?.avatar ? (
+              <img src={user.avatar} alt={userName} className="w-full h-full object-cover" />
+            ) : (
+              initials
+            )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-dark dark:text-white truncate">
+            <p className={`text-sm font-semibold truncate ${darkMode ? "text-white" : "text-gray-900"}`}>
               {userName}
             </p>
-            <p className="text-xs text-gray-500">Member</p>
+            <p className="text-[10px] text-gray-400 truncate">{user?.email}</p>
           </div>
         </div>
-        <button
-          onClick={onLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all"
-        >
-          <LogOut size={20} />
-          <span className="text-sm font-semibold">Logout</span>
-        </button>
-      </div>
-    </aside>
+
+        {/* Main Navigation */}
+        <nav className="flex-1 px-3 py-4 overflow-y-auto">
+          <p className={`px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest ${darkMode ? "text-gray-500" : "text-gray-400"}`}>
+            Menu
+          </p>
+          <div className="space-y-0.5">
+            {NAVIGATION_CONFIG.mainLinks.map((link) => {
+              const Icon = link.icon;
+              const isActive = location.pathname === link.path || (link.path !== "/user/dashboard" && location.pathname.startsWith(link.path));
+              return (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  onClick={() => setIsOpen(false)}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all relative ${
+                    isActive
+                      ? darkMode
+                        ? "bg-gray-800/80 text-white"
+                        : "bg-emerald-50 text-emerald-700"
+                      : darkMode
+                      ? "text-gray-400 hover:text-gray-200 hover:bg-gray-800/50"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeUserNav"
+                      className={`absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full ${darkMode ? "bg-emerald-400" : "bg-emerald-600"}`}
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    />
+                  )}
+                  <Icon size={18} className={isActive ? "" : "opacity-70"} />
+                  <span>{link.name}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+
+        {/* Support Links + Footer */}
+        <div className={`px-3 py-3 border-t ${darkMode ? "border-gray-800/60" : "border-gray-100"}`}>
+          <p className={`px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest ${darkMode ? "text-gray-500" : "text-gray-400"}`}>
+            Support
+          </p>
+          <div className="space-y-0.5">
+            {NAVIGATION_CONFIG.supportLinks.map((link) => {
+              const Icon = link.icon;
+              const isActive = location.pathname === link.path;
+              return (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  onClick={() => setIsOpen(false)}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all relative ${
+                    isActive
+                      ? darkMode
+                        ? "bg-gray-800/80 text-white"
+                        : "bg-emerald-50 text-emerald-700"
+                      : darkMode
+                      ? "text-gray-400 hover:text-gray-200 hover:bg-gray-800/50"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeUserNavSupport"
+                      className={`absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full ${darkMode ? "bg-emerald-400" : "bg-emerald-600"}`}
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    />
+                  )}
+                  <Icon size={18} className={isActive ? "" : "opacity-70"} />
+                  <span>{link.name}</span>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Footer Actions */}
+          <div className={`mt-3 pt-3 border-t ${darkMode ? "border-gray-800/40" : "border-gray-100"} flex items-center justify-between`}>
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className={`p-2 rounded-lg transition-all ${
+                darkMode ? "text-gray-400 hover:text-white hover:bg-gray-800" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+              }`}
+              title={darkMode ? "Light mode" : "Dark mode"}
+            >
+              {darkMode ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
+            <button
+              onClick={onLogout}
+              className={`p-2 rounded-lg transition-all ${
+                darkMode ? "text-gray-400 hover:text-red-400 hover:bg-red-950/30" : "text-gray-500 hover:text-red-600 hover:bg-red-50"
+              }`}
+              title="Sign Out"
+            >
+              <LogOut size={16} />
+            </button>
+          </div>
+        </div>
+      </motion.aside>
+    </>
   );
 };
 
-// Header Component
-const Header = ({ darkMode, setDarkMode, userName, user, setIsOpen }) => {
-  const [searchFocused, setSearchFocused] = useState(false);
+// ── Header Component ──────────────────────────────────────────────────────────
+const Header = ({ darkMode, setIsOpen, user }) => {
+  const location = useLocation();
+
+  const getPageTitle = () => {
+    if (PAGE_TITLES[location.pathname]) return PAGE_TITLES[location.pathname];
+    const segments = location.pathname.split("/").filter(Boolean);
+    if (segments.length >= 2) {
+      const base = `/${segments[0]}/${segments[1]}`;
+      if (PAGE_TITLES[base]) return PAGE_TITLES[base];
+    }
+    return "Dashboard";
+  };
+
+  const getBreadcrumb = () => {
+    const segments = location.pathname.split("/").filter(Boolean);
+    if (segments.length <= 2) return null;
+    const parent = `/${segments[0]}/${segments[1]}`;
+    return PAGE_TITLES[parent] || segments[1];
+  };
+
+  const breadcrumb = getBreadcrumb();
 
   return (
     <header
-      className={`sticky top-0 z-40 backdrop-blur-xl border-b transition-colors
-        ${darkMode ? "bg-dark/80 border-gray-800" : "bg-white/80 border-gray-200"}
-      `}
+      className={`${
+        darkMode
+          ? "bg-[#111]/95 lg:bg-dark-lighter/95 border-gray-800/60"
+          : "bg-white/95 border-gray-200/60"
+      } border-b backdrop-blur-md px-5 lg:px-6 py-3 sticky top-0 z-30`}
     >
-      <div className="flex items-center justify-between px-4 lg:px-8 py-4">
-        {/* Left Section */}
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between gap-4">
+        {/* Left: Mobile menu + Breadcrumb */}
+        <div className="flex items-center gap-3">
           <button
+            className={`lg:hidden p-2 rounded-lg transition-all ${
+              darkMode ? "hover:bg-gray-800 text-gray-400" : "hover:bg-gray-100 text-gray-500"
+            }`}
             onClick={() => setIsOpen(true)}
-            aria-label="Open mobile menu"
-            className="lg:hidden p-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:scale-95 active:scale-90 transition-transform"
           >
-            <Menu size={20} className="text-gray-700 dark:text-gray-300" />
+            <Menu size={20} />
           </button>
 
-          <div>
-            <h2 className="text-lg lg:text-xl font-bold text-dark dark:text-white">
-              Welcome Back
-            </h2>
-            <p className="text-xs text-gray-500 font-medium hidden sm:block">
-              Track your impact and manage donations
-            </p>
+          <div className="flex items-center gap-2">
+            {breadcrumb && (
+              <>
+                <span className={`text-sm hidden sm:inline-block ${darkMode ? "text-gray-500" : "text-gray-400"}`}>
+                  {breadcrumb}
+                </span>
+                <ChevronRight size={14} className={`hidden sm:inline-block ${darkMode ? "text-gray-600" : "text-gray-300"}`} />
+              </>
+            )}
+            <h1 className={`text-sm font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>
+              {getPageTitle()}
+            </h1>
           </div>
         </div>
 
-        {/* Right Section */}
-        <div className="flex items-center gap-2 lg:gap-3">
-          {/* Search - Desktop Only */}
-          <div className="hidden xl:block relative">
+        {/* Right: Actions */}
+        <div className="flex items-center gap-3">
+          {/* Search Placeholder */}
+          <div className="relative hidden md:block">
             <Search
-              className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors pointer-events-none
-                ${searchFocused ? "text-primary-600" : "text-gray-400"}
-              `}
-              size={18}
+              className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${darkMode ? "text-gray-500" : "text-gray-400"}`}
+              size={15}
             />
             <input
               type="text"
               placeholder="Search..."
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-              className={`pl-11 pr-4 py-2.5 w-[280px] rounded-xl text-sm font-medium outline-none border-2 transition-all
-                ${
-                  darkMode
-                    ? "bg-gray-800 border-gray-700 text-white focus:border-primary-500"
-                    : "bg-gray-50 border-gray-200 text-gray-900 focus:border-primary-500 focus:bg-white"
-                }
-                focus:w-[360px]
-              `}
+              className={`pl-9 pr-4 py-1.5 rounded-lg w-48 text-sm ${
+                darkMode
+                  ? "bg-gray-800/60 border-gray-700/50 text-white placeholder-gray-500"
+                  : "bg-gray-50 border-gray-200/80 text-gray-900 placeholder-gray-400"
+              } border focus:outline-none focus:ring-1 focus:ring-emerald-500/50 transition-all`}
             />
           </div>
 
-          {/* Notification Button */}
-          {/* <button
-            aria-label="Show notifications"
-            className={`relative p-2.5 rounded-xl transition-all hover:scale-105 active:scale-95
-              ${darkMode ? "bg-gray-800 hover:bg-gray-700" : "bg-gray-100 hover:bg-gray-200"}
-            `}
-          >
-            <Bell
-              size={20}
-              className={darkMode ? "text-gray-300" : "text-gray-700"}
-            />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-primary-500 rounded-full border-2 border-white dark:border-dark animate-pulse" />
-          </button> */}
-
-          {/* Theme Toggle */}
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            aria-label={`Switch to ${darkMode ? "light" : "dark"} mode`}
-            className={`p-2.5 rounded-xl transition-all hover:scale-105 active:scale-95
-              ${darkMode ? "bg-gray-800 hover:bg-gray-700" : "bg-gray-100 hover:bg-gray-200"}
-            `}
-          >
-            {darkMode ? (
-              <Sun size={20} className="text-yellow-500" />
+          {/* Avatar (Mobile primarily) */}
+          <Link to="/user/settings" className="lg:hidden w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white text-[11px] font-bold overflow-hidden">
+            {user?.avatar ? (
+              <img src={user.avatar} alt="" className="w-full h-full object-cover" />
             ) : (
-              <Moon size={20} className="text-gray-700" />
+              (user?.fullName || "U").split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
             )}
-          </button>
-
-          {/* User Avatar - Desktop Only */}
-          <div className="hidden lg:flex items-center gap-3 pl-3 ml-2 border-l border-gray-200 dark:border-gray-800">
-            <div className="text-right">
-              <p className="text-sm font-semibold text-dark dark:text-white">
-                {userName}
-              </p>
-              <p className="text-xs text-gray-500">Member</p>
-            </div>
-            <div className="w-10 h-10 rounded-full bg-gradient-premium overflow-hidden cursor-pointer hover:ring-4 hover:ring-primary-500/20 transition-all">
-              <img
-                src={
-                  user?.avatar ||
-                  `https://ui-avatars.com/api/?name=${userName}&background=059669&color=fff`
-                }
-                alt={`${userName}'s profile`}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </div>
+          </Link>
         </div>
       </div>
     </header>
   );
 };
 
-// Main Layout Component
+// ── Main Layout ───────────────────────────────────────────────────────────────
 const UserLayout = () => {
   const { darkMode, setDarkMode } = useTheme();
   const location = useLocation();
-  const dispatch = useDispatch();
+  const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
-  const user = useSelector((state) => state.auth.user);
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const dispatch = useDispatch();
 
-  // User stats (will be populated from Redux or API)
-  const [userStats, setUserStats] = useState({
-    totalDonated: 0,
-    campaignsSupported: 0,
-    eventsAttended: 0,
-  });
-
-  // Close mobile sidebar on route change
-  useEffect(() => {
-    setIsMobileSidebarOpen(false);
-  }, [location]);
-
-  // Update user stats when user data changes
-  useEffect(() => {
-    if (user) {
-      setUserStats({
-        totalDonated: user.totalDonated || 0,
-        campaignsSupported: user.campaignsSupported || 0,
-        eventsAttended: user.eventsAttended || 0,
-      });
-    }
-  }, [user]);
+  const { user } = useSelector((state) => state.auth);
 
   const handleLogout = () => {
+    dispatch(logout());
     dispatch(logoutUser());
-    navigate("/login");
+    navigate("/");
   };
 
-  const userName = user?.fullName || "Member";
+  // Close mobile menu on route change
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location.pathname]);
 
   return (
     <div
-      className={`flex min-h-screen w-full transition-colors selection:bg-primary-500/30
-        ${darkMode ? "bg-dark text-white" : "bg-gray-50 text-dark"}
-      `}
+      className={`flex h-screen w-screen overflow-hidden ${
+        darkMode ? "bg-[#0a0a0a] text-white" : "bg-gray-50 text-gray-900"
+      }`}
     >
-      {/* Background Gradients */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] bg-primary-500/5 blur-[120px] rounded-full" />
-        <div className="absolute -bottom-[20%] -right-[10%] w-[50%] h-[50%] bg-secondary-500/5 blur-[120px] rounded-full" />
-      </div>
-
-      {/* Mobile Sidebar */}
-      <MobileSidebar
-        isOpen={isMobileSidebarOpen}
-        setIsOpen={setIsMobileSidebarOpen}
+      {/* Sidebar */}
+      <Sidebar
         darkMode={darkMode}
+        setDarkMode={setDarkMode}
         location={location}
         onLogout={handleLogout}
-        userName={userName}
-        userStats={userStats}
-        user={user}
-      />
-
-      {/* Desktop Sidebar */}
-      <DesktopSidebar
-        darkMode={darkMode}
-        location={location}
-        onLogout={handleLogout}
-        userName={userName}
-        userStats={userStats}
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
         user={user}
       />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 relative z-10">
+      <div className="flex flex-col flex-1 overflow-hidden">
         <Header
           darkMode={darkMode}
-          setDarkMode={setDarkMode}
-          userName={userName}
+          setIsOpen={setIsOpen}
           user={user}
-          setIsOpen={setIsMobileSidebarOpen}
         />
-
-        <main className="flex-1 overflow-auto">
-          <div className="max-w-[1600px] mx-auto p-4 lg:p-8">
+        
+        {/* Page Content */}
+        <main className="overflow-y-auto p-4 sm:p-6 lg:p-8">
+          <div className="max-w-[1600px] mx-auto">
             <Outlet />
           </div>
         </main>

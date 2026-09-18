@@ -200,8 +200,7 @@ campaignSchema.methods.updateDonationStats = async function () {
       {
         $match: {
           campaign: this._id,
-          status: { $in: ["completed", "approved"] },
-          approvalStatus: "approved",
+          status: { $in: ["verified", "completed", "approved"] },
         },
       },
       {

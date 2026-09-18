@@ -16,11 +16,11 @@ import asyncHandler from "../utils/asyncHandler.js";
 export const getPlatformAnalytics = asyncHandler(async (req, res, next) => {
   const totalUsers = await User.countDocuments();
   const totalCampaigns = await Campaign.countDocuments();
-  const totalDonations = await Donation.countDocuments({ status: "completed" });
+  const totalDonations = await Donation.countDocuments({ status: { $in: ["verified", "approved", "completed"] } });
   const totalEvents = await Event.countDocuments();
 
   const totalRaisedResult = await Donation.aggregate([
-    { $match: { status: "completed" } },
+    { $match: { status: { $in: ["verified", "approved", "completed"] } } },
     { $group: { _id: null, total: { $sum: "$amount" }, count: { $sum: 1 } } },
   ]);
 
@@ -40,7 +40,7 @@ export const getPlatformAnalytics = asyncHandler(async (req, res, next) => {
 
   // Calculate unique donors
   const uniqueDonors = await Donation.distinct("donor", {
-    status: "completed",
+    status: { $in: ["verified", "approved", "completed"] },
   });
   const totalDonors = uniqueDonors.length;
 
@@ -98,10 +98,10 @@ export const getOverviewAnalytics = asyncHandler(async (req, res, next) => {
     status: "active",
     approved: true,
   });
-  const totalDonations = await Donation.countDocuments({ status: "completed" });
+  const totalDonations = await Donation.countDocuments({ status: { $in: ["verified", "approved", "completed"] } });
 
   const totalRaised = await Donation.aggregate([
-    { $match: { status: "completed" } },
+    { $match: { status: { $in: ["verified", "approved", "completed"] } } },
     { $group: { _id: null, total: { $sum: "$amount" } } },
   ]);
 
@@ -152,7 +152,7 @@ export const getDonationTrends = asyncHandler(async (req, res, next) => {
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
   const donationTrends = await Donation.aggregate([
-    { $match: { createdAt: { $gte: sixMonthsAgo }, status: "completed" } },
+    { $match: { createdAt: { $gte: sixMonthsAgo }, status: { $in: ["verified", "approved", "completed"] } } },
     {
       $group: {
         _id: {

@@ -200,15 +200,19 @@ const campaignsSlice = createSlice({
       .addCase(fetchAllCampaigns.fulfilled, (state, action) => {
         state.loading = false;
         // Handle different response structures
+        let all = [];
         if (action.payload.campaigns) {
-          state.campaigns = Array.isArray(action.payload.campaigns) 
-            ? action.payload.campaigns 
+          all = Array.isArray(action.payload.campaigns)
+            ? action.payload.campaigns
             : [];
         } else if (Array.isArray(action.payload)) {
-          state.campaigns = action.payload;
-        } else {
-          state.campaigns = [];
+          all = action.payload;
         }
+        // Guard: only keep approved + active campaigns in the public store
+        // (backend already filters, this is a client-side safety net)
+        state.campaigns = all.filter(
+          (c) => c.status === "active" && c.approved === true
+        );
       })
       .addCase(fetchAllCampaigns.rejected, (state, action) => {
         state.loading = false;
@@ -260,7 +264,9 @@ const campaignsSlice = createSlice({
       })
       .addCase(createCampaign.fulfilled, (state, action) => {
         state.loading = false;
-        state.campaigns.unshift(action.payload.campaign || action.payload);
+        // Do NOT push the new campaign into the public list —
+        // it's pending admin approval and must not appear publicly.
+        // The user's own campaigns are managed by userCampaignsSlice.
       })
       .addCase(createCampaign.rejected, (state, action) => {
         state.loading = false;

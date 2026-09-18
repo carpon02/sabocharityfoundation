@@ -1,78 +1,141 @@
-import React, { useState, useEffect, useCallback, use } from "react";
+// pages/user/Settings.jsx — Clerk-style redesign (all functionality preserved)
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useTheme } from "../../context/ThemeContext";
-import { AnimatePresence,motion } from "framer-motion";
+import { useDispatch } from "react-redux";
+import { logout, logoutUser } from "../../features/auth/authSlice";
+import { useNavigate } from "react-router-dom";
 import {
-  Settings as SettingsIcon,
   User,
   Bell,
   Shield,
-  Lock as LockIcon,
+  Lock,
   Camera,
   RefreshCw,
-  Zap,
-  Activity,
   Globe,
   CreditCard,
   Clock,
   Eye,
   Mail,
   Smartphone,
-  ChevronRight,
+  Zap,
+  CheckCircle2,
+  AlertTriangle,
+  Activity,
   Sparkles,
-  Info,
+  ChevronRight,
 } from "lucide-react";
 import apiClient from "../../config/apiConfig";
 
-// Mock User Data for fallback (in case API fails)
+// ── Fallback data ─────────────────────────────────────────────────────────────
 const MOCK_USER_DATA = {
   name: "John Doe",
   email: "john.doe@example.com",
   phone: "+234 801 234 5678",
-  bio: "Passionate about supporting underprivileged communities in Ibadan through education and healthcare initiatives.",
-  avatar:
-    "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+  bio: "Passionate about supporting underprivileged communities in Ibadan.",
+  avatar: null,
   verified: true,
   twoFactorEnabled: false,
+  authMethod: "email",
   dateJoined: "2024-01-15T10:00:00Z",
-  lastLogin: "2025-10-25T08:30:00Z",
-  location: {
-    address: "123 Sabo Road",
-    city: "Ibadan",
-    state: "Oyo",
-    country: "Nigeria",
-  },
+  lastLogin: new Date().toISOString(),
+  location: { address: "", city: "Ibadan", state: "Oyo", country: "Nigeria" },
   preferences: {
-    emailNotifications: {
-      campaignUpdates: true,
-      donationReceipts: true,
-      eventReminders: true,
-      weeklyDigest: false,
-      marketingEmails: true,
-    },
-    smsNotifications: {
-      urgentAlerts: true,
-      eventReminders: true,
-      campaignMilestones: true,
-    },
-    privacy: {
-      profileVisibility: "public",
-      showDonations: true,
-      showLocation: true,
-      allowContact: false,
-    },
-    language: "en",
-    currency: "NGN",
-    timezone: "Africa/Lagos",
-    theme: "system",
+    emailNotifications: { campaignUpdates: true, donationReceipts: true, eventReminders: true, weeklyDigest: false },
+    smsNotifications:   { urgentAlerts: true, eventReminders: true, campaignMilestones: true },
+    privacy:            { profileVisibility: "public", showDonations: true, showLocation: true, allowContact: false },
+    language: "en", currency: "NGN", timezone: "Africa/Lagos", theme: "system",
   },
 };
 
-// Component: Profile Section - Personal Identity Module
-const ProfileSection = ({ user, onUpdate, isLoading, onRefresh }) => {
+// ── Shared primitives ─────────────────────────────────────────────────────────
+const Card = ({ children, className = "" }) => {
+  const { darkMode } = useTheme();
+  return (
+    <div className={`rounded-xl border ${darkMode ? "bg-[#111] border-gray-800" : "bg-white border-gray-200 shadow-sm"} ${className}`}>
+      {children}
+    </div>
+  );
+};
+const CardHeader = ({ title, description, action }) => {
+  const { darkMode } = useTheme();
+  return (
+    <div className={`flex items-start justify-between gap-3 px-5 py-4 border-b ${darkMode ? "border-gray-800" : "border-gray-100"}`}>
+      <div>
+        <p className={`text-sm font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>{title}</p>
+        {description && <p className="text-[12px] text-gray-400 mt-0.5">{description}</p>}
+      </div>
+      {action}
+    </div>
+  );
+};
+
+const inputCls = (darkMode) =>
+  `w-full px-3 py-2.5 rounded-lg border text-sm outline-none transition-colors ${
+    darkMode
+      ? "bg-gray-900 border-gray-700 text-white placeholder:text-gray-500 focus:border-gray-600"
+      : "bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:bg-white"
+  }`;
+
+const Label = ({ children }) => {
+  const { darkMode } = useTheme();
+  return (
+    <label className={`block text-[11px] font-medium mb-1.5 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
+      {children}
+    </label>
+  );
+};
+
+// ── Toggle Switch ─────────────────────────────────────────────────────────────
+const Toggle = ({ checked, onChange, disabled }) => {
+  const { darkMode } = useTheme();
+  return (
+    <button
+      onClick={onChange}
+      disabled={disabled}
+      role="switch"
+      aria-checked={checked}
+      className={`relative inline-flex w-9 h-5 rounded-full transition-colors duration-200 shrink-0 disabled:opacity-50 ${
+        checked ? "bg-emerald-600" : darkMode ? "bg-gray-700" : "bg-gray-200"
+      }`}
+    >
+      <span
+        className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${
+          checked ? "translate-x-4" : "translate-x-0"
+        }`}
+      />
+    </button>
+  );
+};
+
+// ── Toggle Row ────────────────────────────────────────────────────────────────
+const ToggleRow = ({ label, description, checked, onChange, disabled }) => {
+  const { darkMode } = useTheme();
+  return (
+    <div className={`flex items-center justify-between gap-4 py-3.5 px-5 border-b last:border-0 ${darkMode ? "border-gray-800" : "border-gray-100"}`}>
+      <div className="min-w-0">
+        <p className={`text-sm font-medium ${darkMode ? "text-white" : "text-gray-900"}`}>{label}</p>
+        {description && <p className="text-[11px] text-gray-400 mt-0.5">{description}</p>}
+      </div>
+      <Toggle checked={checked} onChange={onChange} disabled={disabled} />
+    </div>
+  );
+};
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+const TABS = [
+  { id: "profile",       label: "Profile",       icon: User },
+  { id: "notifications", label: "Notifications", icon: Bell },
+  { id: "privacy",       label: "Privacy",       icon: Eye },
+  { id: "security",      label: "Security",      icon: Shield },
+  { id: "preferences",   label: "Preferences",   icon: Globe },
+];
+
+// ── Profile Tab ───────────────────────────────────────────────────────────────
+const ProfileTab = ({ user, onUpdate, isLoading, onRefresh }) => {
   const { darkMode } = useTheme();
   const [editing, setEditing] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [formData, setFormData] = useState({
+  const [form, setForm] = useState({
     fullName: user.name || "",
     phone: user.phone || "",
     bio: user.bio || "",
@@ -84,1498 +147,700 @@ const ProfileSection = ({ user, onUpdate, isLoading, onRefresh }) => {
     },
   });
 
-  const handleSave = useCallback(async () => {
-    try {
-      await onUpdate("profile", formData);
-      setEditing(false);
-    } catch (error) {
-      console.error("Profile update failed:", error);
-    }
-  }, [formData, onUpdate]);
+  const set = (key, val) => setForm((p) => ({ ...p, [key]: val }));
+  const setLoc = (key, val) => setForm((p) => ({ ...p, location: { ...p.location, [key]: val } }));
 
-  const handleCancel = () => {
-    setFormData({
-      fullName: user.name,
-      phone: user.phone,
-      bio: user.bio,
-      location: user.location,
-    });
+  const handleSave = async () => {
+    await onUpdate("profile", form);
     setEditing(false);
   };
 
-  const handleAvatarUpload = async (e) => {
+  const handleCancel = () => {
+    setForm({ fullName: user.name, phone: user.phone, bio: user.bio, location: user.location });
+    setEditing(false);
+  };
+
+  const handleAvatar = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) return alert("Please upload an image");
-    if (file.size > 2 * 1024 * 1024) return alert("File size must be < 2MB");
-
+    if (!file.type.startsWith("image/")) return alert("Please upload an image file");
+    if (file.size > 2 * 1024 * 1024) return alert("Image must be smaller than 2MB");
     setUploading(true);
     try {
-      const uploadData = new FormData();
-      uploadData.append("avatar", file);
-      await apiClient.post("/settings/avatar", uploadData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const fd = new FormData();
+      fd.append("avatar", file);
+      await apiClient.post("/settings/avatar", fd, { headers: { "Content-Type": "multipart/form-data" } });
       await onRefresh();
-    } catch (error) {
-      console.error("Avatar upload failed:", error);
+    } catch (err) {
+      console.error("Avatar upload failed:", err);
     } finally {
       setUploading(false);
     }
   };
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`rounded-[2.5rem] border overflow-hidden backdrop-blur-xl transition-all duration-500
-        ${
-          darkMode
-            ? "bg-gray-950/40 border-gray-800 shadow-2xl shadow-indigo-500/5"
-            : "bg-white border-gray-100 shadow-xl shadow-gray-200/50"
-        }`}
-    >
-      <div className="p-6 sm:p-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
-          <div>
-            <h2
-              className={`text-xl font-bold tracking-tight ${
-                darkMode ? "text-white" : "text-gray-900"
-              }`}
-            >
-              Profile Information
-            </h2>
-            <p
-              className={`text-xs font-semibold uppercase tracking-widest mt-2 ${
-                darkMode ? "text-emerald-500/60" : "text-emerald-600/60"
-              }`}
-            >
-              Manage your personal impact records
-            </p>
-          </div>
+  const initials = (user.name || "U").split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
 
-          <div className="flex gap-4">
-            {!editing ? (
+  return (
+    <div className="space-y-4">
+      {/* Avatar */}
+      <Card>
+        <CardHeader
+          title="Profile photo"
+          description="Upload a photo to personalize your account"
+        />
+        <div className="p-5 flex items-center gap-5">
+          <div className="relative shrink-0">
+            <div className="w-16 h-16 rounded-full bg-emerald-600 flex items-center justify-center text-white text-xl font-bold overflow-hidden">
+              {user.avatar ? (
+                <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+              ) : (
+                initials
+              )}
+            </div>
+            <label className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center cursor-pointer shadow-md transition-opacity ${
+              darkMode ? "bg-gray-700 text-gray-200 hover:bg-gray-600" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+            }`}>
+              {uploading ? <RefreshCw size={11} className="animate-spin" /> : <Camera size={11} />}
+              <input type="file" accept="image/*" onChange={handleAvatar} disabled={uploading} className="hidden" />
+            </label>
+          </div>
+          <div>
+            <p className={`text-sm font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>{user.name}</p>
+            <p className="text-[12px] text-gray-400">{user.email}</p>
+            {user.verified && (
+              <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-medium text-emerald-600">
+                <CheckCircle2 size={11} /> Verified
+              </span>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      {/* Personal info */}
+      <Card>
+        <CardHeader
+          title="Personal information"
+          description="Update your name, phone, and bio"
+          action={
+            !editing ? (
               <button
                 onClick={() => setEditing(true)}
-                className={`px-6 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all duration-300
-                  ${
-                    darkMode
-                      ? "bg-gray-900 text-emerald-500/80 hover:bg-emerald-600 hover:text-white"
-                      : "bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white"
-                  }`}
+                className={`text-[12px] font-medium px-3 py-1.5 rounded-lg transition-colors ${
+                  darkMode
+                    ? "bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
               >
-                Edit Profile
+                Edit
               </button>
             ) : (
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <button
                   onClick={handleCancel}
-                  className={`px-5 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all
-                    ${
-                      darkMode
-                        ? "text-gray-400 hover:text-white"
-                        : "text-gray-500 hover:text-gray-900"
-                    }`}
+                  className={`text-[12px] font-medium px-3 py-1.5 rounded-lg transition-colors ${
+                    darkMode ? "text-gray-400 hover:text-white" : "text-gray-500 hover:text-gray-900"
+                  }`}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={isLoading}
-                  className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
+                  className="text-[12px] font-semibold px-3 py-1.5 rounded-lg bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:opacity-90 disabled:opacity-50 transition-opacity"
                 >
-                  {isLoading ? "Saving..." : "Save Changes"}
+                  {isLoading ? "Saving…" : "Save"}
                 </button>
               </div>
-            )}
-          </div>
-        </div>
-
-        <div className="flex flex-col lg:flex-row gap-12">
-          {/* Avatar Forge */}
-          <div className="relative group self-center lg:self-start">
-            <div
-              className={`w-24 h-24 sm:w-32 sm:h-32 rounded-2xl p-1 overflow-hidden border-2 transition-all duration-500 group-hover:p-0
-              ${
-                darkMode
-                  ? "border-gray-800 group-hover:border-emerald-500"
-                  : "border-gray-100 group-hover:border-emerald-600"
-              }`}
-            >
-              <img
-                src={
-                  user.avatar ||
-                  `https://ui-avatars.com/api/?name=${user.name}&background=059669&color=fff`
-                }
-                alt={user.name}
-                className="w-full h-full object-cover rounded-2xl transition-transform duration-700 group-hover:scale-110"
-              />
-            </div>
-
-            <label className="absolute -bottom-1 -right-1 bg-emerald-600 text-white rounded-xl p-3 hover:scale-110 active:scale-90 shadow-lg shadow-emerald-500/30 transition-all cursor-pointer">
-              {uploading ? (
-                <RefreshCw className="w-5 h-5 animate-spin" />
-              ) : (
-                <Camera className="w-5 h-5" />
-              )}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarUpload}
-                disabled={uploading}
-                className="hidden"
-              />
-            </label>
-
-            {user.verified && (
-              <div className="absolute -top-2 -right-2 bg-emerald-500 text-white rounded-xl p-2 shadow-lg shadow-emerald-500/20">
-                <Shield size={16} />
-              </div>
-            )}
-          </div>
-
-          {/* Form Matrix */}
-          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-2">
-              <label
-                className={`text-[10px] font-bold uppercase tracking-widest ml-1 ${
-                  darkMode ? "text-gray-500" : "text-gray-400"
-                }`}
-              >
-                Full Name
-              </label>
-              {editing ? (
-                <input
-                  type="text"
-                  value={formData.fullName}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      fullName: e.target.value,
-                    }))
-                  }
-                  className={`w-full px-6 py-4 rounded-xl font-semibold bg-transparent border-2 outline-none transition-all
-                    ${
-                      darkMode
-                        ? "border-gray-800 text-white focus:border-emerald-500/50"
-                        : "border-gray-100 text-gray-900 focus:border-emerald-600/30"
-                    }`}
-                />
-              ) : (
-                <p
-                  className={`px-5 py-3 rounded-xl font-bold text-base ${
-                    darkMode
-                      ? "bg-gray-900/50 text-white"
-                      : "bg-gray-50 text-gray-900"
-                  }`}
-                >
-                  {user.name}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <label
-                className={`text-[10px] font-bold uppercase tracking-widest ml-1 ${
-                  darkMode ? "text-gray-500" : "text-gray-400"
-                }`}
-              >
-                Email Address
-              </label>
-              <div
-                className={`flex items-center justify-between px-5 py-3 rounded-xl font-semibold text-sm ${
-                  darkMode
-                    ? "bg-gray-900/50 text-white"
-                    : "bg-gray-50 text-gray-900"
-                }`}
-              >
-                <span>{user.email}</span>
-                {user.verified && (
-                  <span className="text-[10px] font-bold uppercase text-emerald-500 tracking-tighter">
-                    Verified Holder
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label
-                className={`text-[10px] font-bold uppercase tracking-widest ml-1 ${
-                  darkMode ? "text-gray-500" : "text-gray-400"
-                }`}
-              >
-                Phone Number
-              </label>
-              {editing ? (
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, phone: e.target.value }))
-                  }
-                  className={`w-full px-6 py-4 rounded-xl font-semibold bg-transparent border-2 outline-none transition-all
-                    ${
-                      darkMode
-                        ? "border-gray-800 text-white focus:border-emerald-500/50"
-                        : "border-gray-100 text-gray-900 focus:border-emerald-600/30"
-                    }`}
-                />
-              ) : (
-                <p
-                  className={`px-5 py-3 rounded-xl font-bold text-sm sm:text-base ${
-                    darkMode
-                      ? "bg-gray-900/50 text-white"
-                      : "bg-gray-50 text-gray-900"
-                  }`}
-                >
-                  {user.phone}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <label
-                className={`text-[10px] font-bold uppercase tracking-widest ml-1 ${
-                  darkMode ? "text-gray-500" : "text-gray-400"
-                }`}
-              >
-                Region Location
-              </label>
-              {editing ? (
-                <div className="flex gap-2">
-                  <input
-                    placeholder="City"
-                    value={formData.location.city}
-                    onChange={(e) =>
-                      setFormData((p) => ({
-                        ...p,
-                        location: { ...p.location, city: e.target.value },
-                      }))
-                    }
-                    className={`flex-1 px-6 py-4 rounded-xl font-semibold bg-transparent border-2 outline-none transition-all
-                      ${
-                        darkMode
-                          ? "border-gray-800 text-white focus:border-emerald-500/50"
-                          : "border-gray-100 text-gray-900 focus:border-emerald-600/30"
-                      }`}
-                  />
-                  <input
-                    placeholder="State"
-                    value={formData.location.state}
-                    onChange={(e) =>
-                      setFormData((p) => ({
-                        ...p,
-                        location: { ...p.location, state: e.target.value },
-                      }))
-                    }
-                    className={`w-24 px-4 py-4 rounded-xl font-semibold bg-transparent border-2 outline-none transition-all
-                      ${
-                        darkMode
-                          ? "border-gray-800 text-white focus:border-emerald-500/50"
-                          : "border-gray-100 text-gray-900 focus:border-emerald-600/30"
-                      }`}
-                  />
-                </div>
-              ) : (
-                <p
-                  className={`px-5 py-3 rounded-xl font-bold text-sm sm:text-base ${
-                    darkMode
-                      ? "bg-gray-900/50 text-white"
-                      : "bg-gray-50 text-gray-900"
-                  }`}
-                >
-                  {user.location.city}, {user.location.state}
-                </p>
-              )}
-            </div>
-
-            <div className="md:col-span-2 space-y-2">
-              <label
-                className={`text-[10px] font-bold uppercase tracking-widest ml-1 ${
-                  darkMode ? "text-gray-500" : "text-gray-400"
-                }`}
-              >
-                Personal Bio
-              </label>
-              {editing ? (
-                <textarea
-                  rows={4}
-                  value={formData.bio}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, bio: e.target.value }))
-                  }
-                  className={`w-full px-6 py-4 rounded-2xl font-semibold bg-transparent border-2 outline-none transition-all resize-none
-                    ${
-                      darkMode
-                        ? "border-gray-800 text-white focus:border-emerald-500/50"
-                        : "border-gray-100 text-gray-900 focus:border-emerald-600/30"
-                    }`}
-                  placeholder="Tell us about your impact journey..."
-                />
-              ) : (
-                <p
-                  className={`px-6 py-4 rounded-[1.5rem] font-bold text-xs sm:text-sm leading-relaxed ${
-                    darkMode
-                      ? "bg-gray-900/50 text-gray-300"
-                      : "bg-gray-50 text-gray-700"
-                  }`}
-                >
-                  {user.bio || "Your strategic vision remains unarticulated."}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-// Component: Notification Preferences - Intelligence Toggles
-const NotificationSection = ({ preferences, onUpdate, isLoading }) => {
-  const { darkMode } = useTheme();
-  const [settings, setSettings] = useState({
-    emailNotifications: preferences.emailNotifications || {},
-    smsNotifications: preferences.smsNotifications || {},
-  });
-
-  const handleToggle = useCallback(
-    async (category, setting) => {
-      const newSettings = {
-        ...settings,
-        [category]: {
-          ...settings[category],
-          [setting]: !settings[category][setting],
-        },
-      };
-      setSettings(newSettings);
-      await onUpdate("notifications", newSettings);
-    },
-    [settings, onUpdate],
-  );
-
-  const SectionHeader = ({ icon: Icon, title, subtitle }) => (
-    <div className="flex items-center gap-4 mb-8">
-      <div
-        className={`p-4 rounded-xl ${
-          darkMode
-            ? "bg-emerald-500/10 text-emerald-500"
-            : "bg-emerald-50 text-emerald-600"
-        }`}
-      >
-        <Icon size={18} />
-      </div>
-      <div>
-        <h3
-          className={`text-lg font-bold tracking-tight ${
-            darkMode ? "text-white" : "text-gray-900"
-          }`}
-        >
-          {title}
-        </h3>
-        <p
-          className={`text-[10px] font-semibold uppercase tracking-widest ${
-            darkMode ? "text-gray-500" : "text-gray-400"
-          }`}
-        >
-          {subtitle}
-        </p>
-      </div>
-    </div>
-  );
-
-  const ToggleItem = ({ category, id, label, description }) => (
-    <div
-      className={`group flex items-center justify-between p-4 sm:p-5 rounded-2xl border transition-all duration-500
-      ${
-        darkMode
-          ? "bg-gray-950/20 border-gray-800/50 hover:bg-gray-900/40"
-          : "bg-gray-50 border-transparent hover:bg-white hover:shadow-xl hover:shadow-gray-200/40"
-      }`}
-    >
-      <div className="flex-1 pr-8">
-        <h4
-          className={`text-sm font-bold transition-colors ${
-            darkMode
-              ? "text-gray-200 group-hover:text-white"
-              : "text-gray-700 group-hover:text-gray-950"
-          }`}
-        >
-          {label}
-        </h4>
-        <p
-          className={`text-[9px] font-semibold mt-1 leading-relaxed ${
-            darkMode ? "text-gray-500" : "text-gray-400"
-          }`}
-        >
-          {description}
-        </p>
-      </div>
-      <button
-        onClick={() => handleToggle(category, id)}
-        disabled={isLoading}
-        className={`relative inline-flex h-8 w-14 items-center rounded-full transition-all duration-500 shadow-inner
-          ${
-            settings[category][id]
-              ? "bg-emerald-600 shadow-emerald-500/20"
-              : darkMode
-                ? "bg-gray-800"
-                : "bg-gray-200"
-          }`}
-      >
-        <motion.span
-          animate={{ x: settings[category][id] ? 28 : 4 }}
-          className="inline-block h-6 w-6 rounded-full bg-white shadow-lg"
+            )
+          }
         />
-      </button>
-    </div>
-  );
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className={`rounded-[2.5rem] border overflow-hidden backdrop-blur-xl transition-all duration-500
-        ${
-          darkMode
-            ? "bg-gray-950/40 border-gray-800 shadow-2xl"
-            : "bg-white border-gray-100 shadow-xl shadow-gray-200/50"
-        }`}
-    >
-      <div className="p-8 sm:p-12">
-        <div className="space-y-16">
-          <section>
-            <SectionHeader
-              icon={Mail}
-              title="Email Alerts"
-              subtitle="Email Notification Settings"
-            />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <ToggleItem
-                category="emailNotifications"
-                id="campaignUpdates"
-                label="Mission Updates"
-                description="Live updates from your supported projects."
-              />
-              <ToggleItem
-                category="emailNotifications"
-                id="donationReceipts"
-                label="Impact Receipts"
-                description="Automated confirmation of your contributions."
-              />
-              <ToggleItem
-                category="emailNotifications"
-                id="eventReminders"
-                label="Event Reminders"
-                description="Timing details for upcoming community events."
-              />
-              <ToggleItem
-                category="emailNotifications"
-                id="weeklyDigest"
-                label="Community Digest"
-                description="Weekly summary of platform activity."
-              />
-            </div>
-          </section>
-
-          <section>
-            <SectionHeader
-              icon={Smartphone}
-              title="Mobile Settings"
-              subtitle="Direct SMS Notification Settings"
-            />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <ToggleItem
-                category="smsNotifications"
-                id="urgentAlerts"
-                label="Urgent Notifications"
-                description="Immediate alerts for high-impact missions."
-              />
-              <ToggleItem
-                category="smsNotifications"
-                id="eventReminders"
-                label="Mission Reminders"
-                description="Timely updates for active participation."
-              />
-              <ToggleItem
-                category="smsNotifications"
-                id="campaignMilestones"
-                label="Goal Success"
-                description="Notifications for reaching critical milestones."
-              />
-            </div>
-          </section>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-// Component: Privacy Settings - Visibility Matrix
-const PrivacySection = ({ preferences, onUpdate, isLoading }) => {
-  const { darkMode } = useTheme();
-  const [settings, setSettings] = useState(preferences.privacy || {});
-
-  const handleChange = useCallback(
-    async (setting, value) => {
-      const newSettings = { ...settings, [setting]: value };
-      setSettings(newSettings);
-      await onUpdate("privacy", newSettings);
-    },
-    [settings, onUpdate],
-  );
-
-  const ItemWrapper = ({ title, description, children }) => (
-    <div
-      className={`flex items-center justify-between p-5 rounded-[1.5rem] border transition-all duration-500
-      ${
-        darkMode
-          ? "bg-gray-950/20 border-gray-800/50"
-          : "bg-gray-50 border-transparent"
-      }`}
-    >
-      <div className="flex-1 pr-8">
-        <h4
-          className={`text-sm font-bold transition-colors ${
-            darkMode ? "text-gray-200" : "text-gray-900"
-          }`}
-        >
-          {title}
-        </h4>
-        <p
-          className={`text-[11px] font-bold mt-1 leading-relaxed ${
-            darkMode ? "text-gray-500" : "text-gray-400"
-          }`}
-        >
-          {description}
-        </p>
-      </div>
-      {children}
-    </div>
-  );
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      className={`rounded-3xl border overflow-hidden backdrop-blur-xl transition-all duration-500
-        ${
-          darkMode
-            ? "bg-gray-950/40 border-gray-800 shadow-2xl"
-            : "bg-white border-gray-100 shadow-xl shadow-gray-200/50"
-        }`}
-    >
-      <div className="p-8 sm:p-12">
-        <div className="mb-12">
-          <div className="flex items-center gap-4 mb-2">
-            <div
-              className={`p-4 rounded-2xl ${
-                darkMode
-                  ? "bg-emerald-500/10 text-emerald-400"
-                  : "bg-emerald-50 text-emerald-600"
-              }`}
-            >
-              <Eye size={20} />
-            </div>
-            <div>
-              <h3
-                className={`text-xl font-bold tracking-tight ${
-                  darkMode ? "text-white" : "text-gray-900"
-                }`}
-              >
-                Privacy Matrix
-              </h3>
-              <p
-                className={`text-[10px] font-semibold uppercase tracking-widest ${
-                  darkMode ? "text-gray-500" : "text-gray-400"
-                }`}
-              >
-                Control your profile visibility
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          <ItemWrapper
-            title="Profile Visibility"
-            description="Choose who can view your mission accomplishments and profile details."
-          >
-            <select
-              value={settings.profileVisibility || "public"}
-              onChange={(e) =>
-                handleChange("profileVisibility", e.target.value)
-              }
-              className={`px-6 py-4 rounded-xl font-bold text-xs uppercase tracking-widest outline-none border-2 transition-all cursor-pointer
-                ${
-                  darkMode
-                    ? "bg-gray-950 border-gray-800 text-white focus:border-emerald-500/50"
-                    : "bg-white border-gray-100 text-gray-900 focus:border-emerald-600/30 shadow-sm"
-                }`}
-            >
-              <option value="public">Global Access</option>
-              <option value="donors">Verified Donors</option>
-              <option value="private">Restricted Access</option>
-            </select>
-          </ItemWrapper>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                key: "showDonations",
-                label: "Donation History",
-                desc: "Display supported campaigns.",
-              },
-              {
-                key: "showLocation",
-                label: "Location Sharing",
-                desc: "Show your city/state to others.",
-              },
-              {
-                key: "allowContact",
-                label: "Messaging",
-                desc: "Enable secure direct messaging.",
-              },
-            ].map((item) => (
-              <div
-                key={item.key}
-                className={`p-6 rounded-2xl border transition-all duration-500 flex flex-col justify-between
-                ${
-                  darkMode
-                    ? "bg-gray-950/20 border-gray-800/50"
-                    : "bg-gray-50 border-transparent hover:bg-white hover:shadow-xl hover:shadow-gray-200/40"
-                }`}
-              >
-                <div>
-                  <h4
-                    className={`text-xs font-bold uppercase tracking-widest mb-2 ${
-                      darkMode ? "text-gray-200" : "text-gray-900"
-                    }`}
-                  >
-                    {item.label}
-                  </h4>
-                  <p
-                    className={`text-[10px] font-bold leading-relaxed mb-8 ${
-                      darkMode ? "text-gray-500" : "text-gray-400"
-                    }`}
-                  >
-                    {item.desc}
-                  </p>
-                </div>
-                <button
-                  onClick={() => handleChange(item.key, !settings[item.key])}
-                  disabled={isLoading}
-                  className={`w-full py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all
-                    ${
-                      settings[item.key]
-                        ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
-                        : darkMode
-                          ? "bg-gray-800 text-gray-500 border border-transparent"
-                          : "bg-gray-200 text-gray-600 border border-transparent"
-                    }`}
-                >
-                  {settings[item.key] ? "Visible" : "Hidden"}
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-// Component: Security Settings - Armor Protocol
-const SecuritySection = ({ user, onUpdate, isLoading }) => {
-  const { darkMode } = useTheme();
-  const [showChangePassword, setShowChangePassword] = useState(false);
-  const [passwordForm, setPasswordForm] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
-
-  const handlePasswordChange = useCallback(
-    async (e) => {
-      e.preventDefault();
-      if (passwordForm.newPassword !== passwordForm.confirmPassword)
-        return alert("Protocol Mismatch: Passwords do not match");
-      try {
-        await onUpdate("password", passwordForm);
-        setPasswordForm({
-          currentPassword: "",
-          newPassword: "",
-          confirmPassword: "",
-        });
-        setShowChangePassword(false);
-      } catch (error) {
-        console.error("Password change failed:", error);
-      }
-    },
-    [passwordForm, onUpdate],
-  );
-  const handleTwoFactorToggle = useCallback(async () => {
-    try {
-      await onUpdate("twoFactor", !user.twoFactorEnabled);
-    } catch (error) {
-      console.error("2FA toggle failed:", error);
-    }
-  }, [user.twoFactorEnabled, onUpdate]);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`rounded-3xl border overflow-hidden backdrop-blur-xl transition-all duration-500
-        ${
-          darkMode
-            ? "bg-gray-950/40 border-gray-800 shadow-2xl"
-            : "bg-white border-gray-100 shadow-xl shadow-gray-200/50"
-        }`}
-    >
-      <div className="p-8 sm:p-12">
-        <div className="flex items-center gap-4 mb-12">
-          <div
-            className={`p-4 rounded-xl ${
-              darkMode
-                ? "bg-emerald-500/10 text-emerald-400"
-                : "bg-emerald-50 text-emerald-600"
-            }`}
-          >
-            <Shield size={20} />
+        <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <Label>Full name</Label>
+            {editing ? (
+              <input className={inputCls(darkMode)} value={form.fullName} onChange={(e) => set("fullName", e.target.value)} placeholder="Your full name" />
+            ) : (
+              <p className={`text-sm py-2.5 px-3 rounded-lg ${darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"}`}>{user.name || "—"}</p>
+            )}
           </div>
           <div>
-            <h3
-              className={`text-xl font-black tracking-tight ${
-                darkMode ? "text-white" : "text-gray-900"
-              }`}
-            >
-              Armor Protocol
-            </h3>
-            <p
-              className={`text-[10px] font-black uppercase tracking-widest ${
-                darkMode ? "text-gray-500" : "text-gray-400"
-              }`}
-            >
-              Account Fortification & access control
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-8">
-          {/* Password Vector */}
-          <div
-            className={`p-6 rounded-2xl border transition-all duration-500
-            ${
-              darkMode
-                ? "bg-gray-950/20 border-gray-800/50"
-                : "bg-gray-50 border-transparent"
-            }`}
-          >
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h4
-                  className={`text-sm font-bold uppercase tracking-widest ${
-                    darkMode ? "text-gray-200" : "text-gray-900"
-                  }`}
-                >
-                  Password Settings
-                </h4>
-                <p
-                  className={`text-[9px] font-bold mt-1 ${
-                    darkMode ? "text-gray-500" : "text-gray-400"
-                  }`}
-                >
-                  {user.authMethod === "google"
-                    ? "Your security is managed by Google"
-                    : "Standard cryptographic authentication"}
-                </p>
-              </div>
-              {user.authMethod !== "google" && (
-                <button
-                  onClick={() => setShowChangePassword(!showChangePassword)}
-                  className={`px-6 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all
-                    ${
-                      darkMode
-                        ? "bg-gray-800 text-emerald-400 hover:bg-emerald-600 hover:text-white"
-                        : "bg-white text-emerald-600 hover:bg-emerald-600 hover:text-white shadow-sm"
-                    }`}
-                >
-                  {showChangePassword ? "Close Settings" : "Change Password"}
-                </button>
-              )}
+            <Label>Email address</Label>
+            <div className={`flex items-center justify-between text-sm py-2.5 px-3 rounded-lg ${darkMode ? "bg-gray-900" : "bg-gray-50"}`}>
+              <span className={darkMode ? "text-gray-300" : "text-gray-700"}>{user.email}</span>
+              {user.verified && <span className="text-[10px] text-emerald-600 font-medium">Verified</span>}
             </div>
-
-            {user.authMethod === "google" && (
-              <div
-                className={`p-4 rounded-xl text-[10px] font-bold uppercase tracking-widest border ${
-                  darkMode
-                    ? "bg-emerald-500/5 border-emerald-500/10 text-emerald-400"
-                    : "bg-emerald-50 border-emerald-100 text-emerald-700"
-                }`}
-              >
-                You are signed in with Google. Password management is handled
-                through your Google Account security settings.
-              </div>
+          </div>
+          <div>
+            <Label>Phone number</Label>
+            {editing ? (
+              <input className={inputCls(darkMode)} type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+234..." />
+            ) : (
+              <p className={`text-sm py-2.5 px-3 rounded-lg ${darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"}`}>{user.phone || "—"}</p>
             )}
-
-            <AnimatePresence>
-              {showChangePassword && (
-                <motion.form
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  onSubmit={handlePasswordChange}
-                  className="space-y-4 overflow-hidden"
-                >
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input
-                      type="password"
-                      placeholder="Current Password"
-                      value={passwordForm.currentPassword}
-                      onChange={(e) =>
-                        setPasswordForm((prev) => ({
-                          ...prev,
-                          currentPassword: e.target.value,
-                        }))
-                      }
-                      className={`px-6 py-4 rounded-xl font-semibold bg-transparent border-2 outline-none transition-all
-                        ${
-                          darkMode
-                            ? "border-gray-800 text-white focus:border-emerald-500/50"
-                            : "border-gray-100 text-gray-900 focus:border-emerald-600/30"
-                        }`}
-                      required
-                    />
-                    <input
-                      type="password"
-                      placeholder="New Password"
-                      value={passwordForm.newPassword}
-                      onChange={(e) =>
-                        setPasswordForm((prev) => ({
-                          ...prev,
-                          newPassword: e.target.value,
-                        }))
-                      }
-                      className={`px-6 py-4 rounded-xl font-semibold bg-transparent border-2 outline-none transition-all
-                        ${
-                          darkMode
-                            ? "border-gray-800 text-white focus:border-emerald-500/50"
-                            : "border-gray-100 text-gray-900 focus:border-emerald-600/30"
-                        }`}
-                      required
-                    />
-                  </div>
-                  <div className="flex gap-4">
-                    <button
-                      type="submit"
-                      disabled={isLoading}
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
-                    >
-                      {isLoading ? "Verifying..." : "Update Password"}
-                    </button>
-                  </div>
-                </motion.form>
-              )}
-            </AnimatePresence>
           </div>
-
-          {/* 2FA Node */}
-          {/* <div
-            className={`p-6 rounded-2xl border transition-all duration-500 flex items-center justify-between
-            ${
-              darkMode
-                ? "bg-gray-950/20 border-gray-800/50"
-                : "bg-emerald-50/30 border-transparent"
-            }`}
-          >
-            <div className="flex items-center gap-6">
-              <div
-                className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                  user.twoFactorEnabled
-                    ? "bg-emerald-500 text-white"
-                    : "bg-gray-200 text-gray-400"
-                }`}
-              >
-                <Zap size={20} />
+          <div>
+            <Label>Location</Label>
+            {editing ? (
+              <div className="flex gap-2">
+                <input className={inputCls(darkMode)} value={form.location.city} onChange={(e) => setLoc("city", e.target.value)} placeholder="City" />
+                <input className={`${inputCls(darkMode)} w-24`} value={form.location.state} onChange={(e) => setLoc("state", e.target.value)} placeholder="State" />
               </div>
-              <div>
-                <h4
-                  className={`text-sm font-bold uppercase tracking-widest ${
-                    darkMode ? "text-gray-200" : "text-gray-900"
-                  }`}
-                >
-                  Two-Factor Auth
-                </h4>
-                <p
-                  className={`text-[9px] font-semibold mt-1 ${
-                    darkMode ? "text-gray-500" : "text-gray-400"
-                  }`}
-                >
-                  Secondary device security verification
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={handleTwoFactorToggle}
-              disabled={isLoading}
-              className={`relative inline-flex h-8 w-14 items-center rounded-full transition-all duration-500
-                ${
-                  user.twoFactorEnabled
-                    ? "bg-emerald-500 shadow-lg shadow-emerald-500/30"
-                    : darkMode
-                      ? "bg-gray-800"
-                      : "bg-gray-200"
-                }`}
-            >
-              <motion.span
-                animate={{ x: user.twoFactorEnabled ? 28 : 4 }}
-                className="inline-block h-6 w-6 rounded-full bg-white shadow-md"
+            ) : (
+              <p className={`text-sm py-2.5 px-3 rounded-lg ${darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"}`}>
+                {[user.location?.city, user.location?.state].filter(Boolean).join(", ") || "—"}
+              </p>
+            )}
+          </div>
+          <div className="sm:col-span-2">
+            <Label>Bio</Label>
+            {editing ? (
+              <textarea
+                rows={3}
+                className={`${inputCls(darkMode)} resize-none`}
+                value={form.bio}
+                onChange={(e) => set("bio", e.target.value)}
+                placeholder="Tell us about yourself…"
               />
-            </button>
-          </div> */}
+            ) : (
+              <p className={`text-sm py-2.5 px-3 rounded-lg ${darkMode ? "bg-gray-900 text-gray-300" : "bg-gray-50 text-gray-700"}`}>
+                {user.bio || "No bio yet."}
+              </p>
+            )}
+          </div>
         </div>
-      </div>
-    </motion.div>
+      </Card>
+
+      {/* Account info */}
+      <Card>
+        <CardHeader title="Account details" />
+        <div className={`divide-y ${darkMode ? "divide-gray-800" : "divide-gray-100"}`}>
+          {[
+            { label: "Member since", value: user.dateJoined ? new Date(user.dateJoined).toLocaleDateString("en-NG", { year: "numeric", month: "long", day: "numeric" }) : "—" },
+            { label: "Last sign in",  value: user.lastLogin  ? new Date(user.lastLogin).toLocaleDateString("en-NG",  { year: "numeric", month: "long", day: "numeric" }) : "—" },
+            { label: "Account status", value: user.verified ? "Verified" : "Unverified" },
+          ].map(({ label, value }) => (
+            <div key={label} className="flex items-center justify-between px-5 py-3.5">
+              <p className={`text-[12px] ${darkMode ? "text-gray-400" : "text-gray-500"}`}>{label}</p>
+              <p className={`text-[12px] font-medium ${darkMode ? "text-white" : "text-gray-900"}`}>{value}</p>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
   );
 };
 
-// Component: App Preferences - Environment Tuning
-const PreferencesSection = ({ preferences, onUpdate }) => {
+// ── Notifications Tab ─────────────────────────────────────────────────────────
+const NotificationsTab = ({ preferences, onUpdate, isLoading }) => {
+  const [s, setS] = useState({
+    emailNotifications: { ...preferences.emailNotifications },
+    smsNotifications:   { ...preferences.smsNotifications },
+  });
+
+  const toggle = async (cat, key) => {
+    // Optimistic update
+    const prev = s;
+    const next = { ...s, [cat]: { ...s[cat], [key]: !s[cat][key] } };
+    setS(next);
+    try {
+      await onUpdate("notifications", next);
+    } catch {
+      // Rollback on failure
+      setS(prev);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader title="Email notifications" description="Choose which emails you receive" />
+        <ToggleRow label="Campaign updates"   description="Progress reports from campaigns you support"      checked={s.emailNotifications.campaignUpdates}  onChange={() => toggle("emailNotifications","campaignUpdates")}  disabled={isLoading} />
+        <ToggleRow label="Donation receipts"  description="Instant confirmation after every donation"         checked={s.emailNotifications.donationReceipts} onChange={() => toggle("emailNotifications","donationReceipts")} disabled={isLoading} />
+        <ToggleRow label="Event reminders"    description="Reminders for upcoming events you've joined"      checked={s.emailNotifications.eventReminders}   onChange={() => toggle("emailNotifications","eventReminders")}   disabled={isLoading} />
+        <ToggleRow label="Weekly digest"      description="A summary of foundation activity each week"       checked={s.emailNotifications.weeklyDigest}     onChange={() => toggle("emailNotifications","weeklyDigest")}     disabled={isLoading} />
+      </Card>
+
+      <Card>
+        <CardHeader title="SMS notifications" description="Text alerts sent to your phone number" />
+        <ToggleRow label="Urgent alerts"       description="High-priority notifications that can't wait"     checked={s.smsNotifications.urgentAlerts}       onChange={() => toggle("smsNotifications","urgentAlerts")}       disabled={isLoading} />
+        <ToggleRow label="Event reminders"     description="SMS reminders before registered events"          checked={s.smsNotifications.eventReminders}     onChange={() => toggle("smsNotifications","eventReminders")}     disabled={isLoading} />
+        <ToggleRow label="Campaign milestones" description="Notify when your supported campaigns hit goals"  checked={s.smsNotifications.campaignMilestones} onChange={() => toggle("smsNotifications","campaignMilestones")} disabled={isLoading} />
+      </Card>
+    </div>
+  );
+};
+
+// ── Privacy Tab ───────────────────────────────────────────────────────────────
+const PrivacyTab = ({ preferences, onUpdate, isLoading }) => {
   const { darkMode } = useTheme();
-  const [settings, setSettings] = useState({
+  const [s, setS] = useState({ ...preferences.privacy });
+
+  const change = async (key, val) => {
+    const next = { ...s, [key]: val };
+    setS(next);
+    await onUpdate("privacy", next);
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader title="Profile visibility" description="Control who can see your profile" />
+        <div className="p-5">
+          <Label>Who can view your profile</Label>
+          <select
+            value={s.profileVisibility || "public"}
+            onChange={(e) => change("profileVisibility", e.target.value)}
+            className={`${inputCls(darkMode)} cursor-pointer`}
+          >
+            <option value="public">Everyone (public)</option>
+            <option value="donors">Verified donors only</option>
+            <option value="private">Only me (private)</option>
+          </select>
+        </div>
+      </Card>
+
+      <Card>
+        <CardHeader title="Data sharing" description="Choose what others can see about you" />
+        <ToggleRow label="Show donation history" description="Display campaigns you've supported on your profile" checked={s.showDonations}  onChange={() => change("showDonations",  !s.showDonations)}  disabled={isLoading} />
+        <ToggleRow label="Show location"         description="Share your city and state with other users"         checked={s.showLocation}   onChange={() => change("showLocation",   !s.showLocation)}   disabled={isLoading} />
+        <ToggleRow label="Allow direct messages" description="Let other verified users message you"               checked={s.allowContact}   onChange={() => change("allowContact",   !s.allowContact)}   disabled={isLoading} />
+      </Card>
+    </div>
+  );
+};
+
+// ── Security Tab ──────────────────────────────────────────────────────────────
+const SecurityTab = ({ user, onUpdate, isLoading }) => {
+  const { darkMode } = useTheme();
+  const [showPw, setShowPw] = useState(false);
+  const [pw, setPw] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [err, setErr] = useState("");
+
+  const handleChangePw = async (e) => {
+    e.preventDefault();
+    if (pw.newPassword !== pw.confirmPassword) { setErr("New passwords don't match"); return; }
+    if (pw.newPassword.length < 8) { setErr("Password must be at least 8 characters"); return; }
+    setErr("");
+    try {
+      await onUpdate("password", pw);
+      setPw({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setShowPw(false);
+    } catch (e) {
+      setErr(e.message || "Failed to change password");
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Password */}
+      <Card>
+        <CardHeader
+          title="Password"
+          description={user.authMethod === "google" ? "Managed by Google" : "Change your account password"}
+          action={
+            user.authMethod !== "google" && (
+              <button
+                onClick={() => setShowPw((p) => !p)}
+                className={`text-[12px] font-medium px-3 py-1.5 rounded-lg transition-colors ${
+                  darkMode ? "bg-gray-800 text-gray-300 hover:bg-gray-700" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                {showPw ? "Cancel" : "Change password"}
+              </button>
+            )
+          }
+        />
+
+        {user.authMethod === "google" && (
+          <div className="p-5">
+            <p className="text-sm text-gray-400">
+              Your account is linked to Google Sign-In. Manage your password through{" "}
+              <a href="https://myaccount.google.com/security" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">
+                Google Account settings
+              </a>.
+            </p>
+          </div>
+        )}
+
+        {showPw && user.authMethod !== "google" && (
+          <form onSubmit={handleChangePw} className="p-5 space-y-4">
+            {err && (
+              <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm">
+                <AlertTriangle size={14} /> {err}
+              </div>
+            )}
+            <div>
+              <Label>Current password</Label>
+              <input type="password" className={inputCls(darkMode)} placeholder="Enter current password"
+                value={pw.currentPassword} onChange={(e) => setPw((p) => ({ ...p, currentPassword: e.target.value }))} required />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label>New password</Label>
+                <input type="password" className={inputCls(darkMode)} placeholder="Min. 8 characters"
+                  value={pw.newPassword} onChange={(e) => setPw((p) => ({ ...p, newPassword: e.target.value }))} required />
+              </div>
+              <div>
+                <Label>Confirm new password</Label>
+                <input type="password" className={inputCls(darkMode)} placeholder="Repeat new password"
+                  value={pw.confirmPassword} onChange={(e) => setPw((p) => ({ ...p, confirmPassword: e.target.value }))} required />
+              </div>
+            </div>
+            <button type="submit" disabled={isLoading}
+              className="px-4 py-2.5 rounded-lg bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
+            >
+              {isLoading ? "Saving…" : "Update password"}
+            </button>
+          </form>
+        )}
+      </Card>
+
+      {/* Sessions / Account info */}
+      <Card>
+        <CardHeader title="Account security" description="Overview of your account's security status" />
+        <div className={`divide-y ${darkMode ? "divide-gray-800" : "divide-gray-100"}`}>
+          {[
+            { label: "Account verification", value: user.verified ? "Verified ✓" : "Not verified", ok: user.verified },
+            { label: "Sign-in method",        value: user.authMethod === "google" ? "Google OAuth" : "Email & password" },
+            { label: "Two-factor auth",       value: user.twoFactorEnabled ? "Enabled" : "Not enabled", ok: user.twoFactorEnabled },
+          ].map(({ label, value, ok }) => (
+            <div key={label} className="flex items-center justify-between px-5 py-3.5">
+              <p className={`text-[12px] ${darkMode ? "text-gray-400" : "text-gray-500"}`}>{label}</p>
+              <span className={`text-[12px] font-medium ${
+                ok === true ? "text-emerald-600" : ok === false ? "text-amber-500" : darkMode ? "text-white" : "text-gray-900"
+              }`}>
+                {value}
+              </span>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Danger zone */}
+      <DeleteAccountSection onUpdate={onUpdate} isLoading={isLoading} />
+    </div>
+  );
+};
+
+// ── Delete Account (its own card so SecurityTab stays clean) ──────────────────
+const DeleteAccountSection = ({ onUpdate, isLoading }) => {
+  const { darkMode } = useTheme();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [step, setStep] = useState(1); // 1 = confirm intent, 2 = enter password
+  const [password, setPassword] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [err, setErr] = useState("");
+
+  const handleDelete = async (e) => {
+    e.preventDefault();
+    if (!password) { setErr("Password is required"); return; }
+    setDeleting(true);
+    setErr("");
+    try {
+      await onUpdate("deleteAccount", { password, confirmation: "DELETE" });
+      dispatch(logout());
+      dispatch(logoutUser());
+      navigate("/");
+    } catch (error) {
+      setErr(error.response?.data?.message || error.message || "Failed to delete account");
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <Card className="border-red-200 dark:border-red-900/40">
+      <CardHeader title="Danger zone" description="Permanent, irreversible actions" />
+      <div className="p-5">
+        {!open ? (
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-sm text-gray-400">
+              Deleting your account removes all your data permanently and cannot be undone.
+            </p>
+            <button
+              onClick={() => setOpen(true)}
+              className="shrink-0 px-4 py-2 rounded-lg border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+            >
+              Delete account
+            </button>
+          </div>
+        ) : step === 1 ? (
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800">
+              <AlertTriangle size={16} className="text-red-500 shrink-0 mt-0.5" />
+              <p className="text-sm text-red-700 dark:text-red-400">
+                This will permanently delete your account, all donation history, and campaign data. This <strong>cannot</strong> be undone.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setOpen(false)} className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors ${darkMode ? "border-gray-700 text-gray-400 hover:border-gray-600 hover:text-white" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
+                Cancel
+              </button>
+              <button onClick={() => setStep(2)} className="flex-1 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors">
+                I understand, continue
+              </button>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleDelete} className="space-y-4">
+            <p className={`text-sm ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+              Enter your password to confirm account deletion:
+            </p>
+            {err && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm">
+                <AlertTriangle size={13} /> {err}
+              </div>
+            )}
+            <input
+              type="password"
+              placeholder="Your current password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={inputCls(darkMode)}
+              required
+              autoFocus
+            />
+            <div className="flex gap-2">
+              <button type="button" onClick={() => { setOpen(false); setStep(1); setPassword(""); setErr(""); }}
+                className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors ${darkMode ? "border-gray-700 text-gray-400 hover:text-white" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
+                Cancel
+              </button>
+              <button type="submit" disabled={deleting || !password}
+                className="flex-1 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
+                {deleting ? <><RefreshCw size={13} className="animate-spin" /> Deleting…</> : "Delete my account"}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </Card>
+  );
+};
+
+// ── Preferences Tab ───────────────────────────────────────────────────────────
+const PreferencesTab = ({ preferences, onUpdate }) => {
+  const { darkMode, setDarkMode } = useTheme();
+  const [s, setS] = useState({
     language: preferences.language || "en",
     currency: preferences.currency || "NGN",
     timezone: preferences.timezone || "Africa/Lagos",
-    theme: preferences.theme || "system",
+    theme:    preferences.theme    || "system",
   });
 
-  const handleChange = useCallback(
-    async (setting, value) => {
-      const newSettings = { ...settings, [setting]: value };
-      setSettings(newSettings);
-      await onUpdate("preferences", newSettings);
-    },
-    [settings, onUpdate],
-  );
+  const change = async (key, val) => {
+    const next = { ...s, [key]: val };
+    setS(next);
+    // Apply theme change live
+    if (key === "theme") {
+      if (val === "dark")   setDarkMode(true);
+      if (val === "light")  setDarkMode(false);
+      if (val === "system") setDarkMode(window.matchMedia("(prefers-color-scheme: dark)").matches);
+    }
+    await onUpdate("preferences", next);
+  };
 
-  const SelectItem = ({ label, icon: Icon, id, options }) => (
-    <div
-      className={`p-6 rounded-2xl border transition-all duration-500
-      ${
-        darkMode
-          ? "bg-gray-950/20 border-gray-800/50"
-          : "bg-gray-50 border-transparent hover:bg-white hover:shadow-xl hover:shadow-gray-200/40"
-      }`}
-    >
-      <div className="flex items-center gap-4 mb-6">
-        <div
-          className={`p-3 rounded-xl ${
-            darkMode
-              ? "bg-emerald-500/10 text-emerald-400"
-              : "bg-white text-emerald-600 shadow-sm"
-          }`}
-        >
-          <Icon size={18} />
-        </div>
-        <h4
-          className={`text-xs font-bold uppercase tracking-widest ${
-            darkMode ? "text-gray-200" : "text-gray-900"
-          }`}
-        >
-          {label}
-        </h4>
-      </div>
-      <select
-        value={settings[id]}
-        onChange={(e) => handleChange(id, e.target.value)}
-        className={`w-full px-6 py-4 rounded-xl font-bold text-xs uppercase tracking-widest outline-none border-2 transition-all cursor-pointer
-          ${
-            darkMode
-              ? "bg-gray-950 border-gray-800 text-white focus:border-emerald-500/50"
-              : "bg-white border-gray-100 text-gray-900 focus:border-emerald-600/30"
-          }`}
-      >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
+  const fields = [
+    { key: "language", label: "Language", icon: Activity, options: [
+      { label: "English (US)", value: "en" },
+      { label: "Yorùbá (NG)", value: "yo" },
+      { label: "Hausa (NG)",  value: "ha" },
+      { label: "Igbo (NG)",   value: "ig" },
+    ]},
+    { key: "currency", label: "Currency", icon: CreditCard, options: [
+      { label: "Nigerian Naira (₦)", value: "NGN" },
+      { label: "US Dollar ($)",       value: "USD" },
+      { label: "Euro (€)",            value: "EUR" },
+    ]},
+    { key: "timezone", label: "Timezone", icon: Clock, options: [
+      { label: "Lagos (GMT+1)", value: "Africa/Lagos" },
+      { label: "UTC",           value: "UTC" },
+    ]},
+    { key: "theme", label: "Appearance", icon: Sparkles, options: [
+      { label: "System default", value: "system" },
+      { label: "Light mode",     value: "light"  },
+      { label: "Dark mode",      value: "dark"   },
+    ]},
+  ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className={`rounded-[2.5rem] border overflow-hidden backdrop-blur-xl transition-all duration-500
-        ${
-          darkMode
-            ? "bg-gray-950/40 border-gray-800 shadow-2xl"
-            : "bg-white border-gray-100 shadow-xl shadow-gray-200/50"
-        }`}
-    >
-      <div className="p-8 sm:p-12">
-        <div className="flex items-center gap-4 mb-12">
-          <div
-            className={`p-4 rounded-xl ${
-              darkMode
-                ? "bg-emerald-500/10 text-emerald-400"
-                : "bg-emerald-50 text-emerald-600"
-            }`}
-          >
-            <Globe size={20} />
-          </div>
-          <div>
-            <h3
-              className={`text-xl font-bold tracking-tight ${
-                darkMode ? "text-white" : "text-gray-900"
-              }`}
+    <Card>
+      <CardHeader title="App preferences" description="Customize your experience" />
+      <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
+        {fields.map(({ key, label, icon: Icon, options }) => (
+          <div key={key}>
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Icon size={13} className="text-gray-400" />
+              <Label>{label}</Label>
+            </div>
+            <select
+              value={s[key]}
+              onChange={(e) => change(key, e.target.value)}
+              className={`${inputCls(darkMode)} cursor-pointer`}
             >
-              App Preferences
-            </h3>
-            <p
-              className={`text-[10px] font-semibold uppercase tracking-widest ${
-                darkMode ? "text-gray-500" : "text-gray-400"
-              }`}
-            >
-              Customize your user experience
-            </p>
+              {options.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <SelectItem
-            label="Language"
-            icon={Activity}
-            id="language"
-            options={[
-              { label: "English (US)", value: "en" },
-              { label: "Yorùbá (NG)", value: "yo" },
-              { label: "Hausa (NG)", value: "ha" },
-              { label: "Igbo (NG)", value: "ig" },
-            ]}
-          />
-          <SelectItem
-            label="Currency"
-            icon={CreditCard}
-            id="currency"
-            options={[
-              { label: "Naira (₦)", value: "NGN" },
-              { label: "Dollar ($)", value: "USD" },
-              { label: "Euro (€)", value: "EUR" },
-            ]}
-          />
-          <SelectItem
-            label="Timezone"
-            icon={Clock}
-            id="timezone"
-            options={[
-              { label: "Lagos (GMT+1)", value: "Africa/Lagos" },
-              { label: "UTC Protocol", value: "UTC" },
-            ]}
-          />
-          <SelectItem
-            label="Theme"
-            icon={Sparkles}
-            id="theme"
-            options={[
-              { label: "Sync with System", value: "system" },
-              { label: "Light Mode", value: "light" },
-              { label: "Dark Mode", value: "dark" },
-            ]}
-          />
-        </div>
+        ))}
       </div>
-    </motion.div>
+    </Card>
   );
 };
 
-// Main Settings Component
+// ── Main Settings ─────────────────────────────────────────────────────────────
 const Settings = () => {
   const { darkMode } = useTheme();
-
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [activeSection, setActiveSection] = useState("profile");
-  const [saveStatus, setSaveStatus] = useState("");
   const [initialLoading, setInitialLoading] = useState(true);
-  const [apiError, setApiError] = useState(null);
-  const [usingMockData, setUsingMockData] = useState(false);
+  const [activeTab, setActiveTab] = useState("profile");
+  const [toast, setToast] = useState(null); // { type: "success"|"error", text }
+  const [usingMock, setUsingMock] = useState(false);
 
-  console.log(userData);
-  // Fetch user settings on mount
+  const showToast = (type, text) => {
+    setToast({ type, text });
+    setTimeout(() => setToast(null), 3500);
+  };
+
   const fetchSettings = useCallback(async () => {
     try {
       setInitialLoading(true);
-      setApiError(null);
-      const response = await apiClient.get("/settings");
-      setUserData(response.data.data);
-    } catch (err) {
-      console.error("Settings fetch failed:", err);
-      // Fallback to mock data
+      const res = await apiClient.get("/settings");
+      setUserData(res.data.data);
+      setUsingMock(false);
+    } catch {
       setUserData(MOCK_USER_DATA);
-      setUsingMockData(true);
-      setApiError("Using demo data (API unavailable)");
+      setUsingMock(true);
     } finally {
       setInitialLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchSettings();
-  }, [fetchSettings]);
+  useEffect(() => { fetchSettings(); }, [fetchSettings]);
 
-  // Handle updates (skip API calls if using mock)
-  const handleUpdate = useCallback(
-    async (section, data) => {
-      if (usingMockData) {
-        // Simulate success for mock data
-        setSaveStatus("Changes saved locally (demo mode)");
-        setTimeout(() => setSaveStatus(""), 3000);
-        return;
+  const handleUpdate = useCallback(async (section, data) => {
+    if (usingMock) { showToast("success", "Saved locally (demo mode)"); return; }
+    setLoading(true);
+    try {
+      switch (section) {
+        case "profile":
+          await apiClient.put("/settings/profile", data);
+          break;
+        case "notifications":
+          await apiClient.put("/settings/notifications", data);
+          break;
+        case "privacy":
+          await apiClient.put("/settings/privacy", data);
+          break;
+        case "password":
+          await apiClient.put("/settings/password", {
+            currentPassword: data.currentPassword,
+            newPassword: data.newPassword,
+            confirmPassword: data.confirmPassword,
+          });
+          break;
+        case "twoFactor":
+          await apiClient.put("/settings/security", { twoFactorEnabled: data });
+          break;
+        case "preferences":
+          await apiClient.put("/settings/preferences", data);
+          break;
+        case "deleteAccount":
+          await apiClient.delete("/settings/account", { data });
+          break;
+        default:
+          throw new Error("Unknown settings section: " + section);
       }
-
-      setLoading(true);
-      setSaveStatus("Saving...");
-
-      try {
-        switch (section) {
-          case "profile":
-            await apiClient.put("/settings/profile", data);
-            break;
-          case "notifications":
-            await apiClient.put("/settings/notifications", data);
-            break;
-          case "privacy":
-            await apiClient.put("/settings/privacy", data);
-            break;
-          case "password":
-            await apiClient.put("/settings/password", {
-              currentPassword: data.currentPassword,
-              newPassword: data.newPassword,
-              confirmPassword: data.confirmPassword,
-            });
-            break;
-          case "twoFactor":
-            await apiClient.put("/settings/security", {
-              twoFactorEnabled: data,
-            });
-            break;
-          case "preferences":
-            await apiClient.put("/settings/preferences", data);
-            break;
-          default:
-            throw new Error("Invalid section");
-        }
-
-        // Refresh settings after update
+      if (section !== "deleteAccount") {
         await fetchSettings();
-
-        setSaveStatus("Saved successfully!");
-        setTimeout(() => setSaveStatus(""), 3000);
-      } catch (error) {
-        setSaveStatus(
-          error.response?.data?.message || "Failed to save changes",
-        );
-        setTimeout(() => setSaveStatus(""), 3000);
-        throw error;
-      } finally {
-        setLoading(false);
+        showToast("success", "Changes saved");
       }
-    },
-    [fetchSettings, usingMockData],
-  );
-
-  const handleRetryFetch = () => {
-    fetchSettings();
-  };
-
-  const sections = [
-    { id: "profile", label: "Profile", icon: User },
-    { id: "notifications", label: "Notifications", icon: Bell },
-    { id: "privacy", label: "Privacy", icon: LockIcon },
-    { id: "security", label: "Security", icon: Shield },
-    // { id: "preferences", label: "Preferences", icon: SettingsIcon },
-  ];
+    } catch (err) {
+      showToast("error", err.response?.data?.message || "Failed to save changes");
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchSettings, usingMock]);
 
   if (initialLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+      <div className="flex items-center justify-center h-64">
+        <RefreshCw size={20} className="animate-spin text-gray-400" />
       </div>
     );
   }
 
   if (!userData) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen space-y-4">
-        <p className={darkMode ? "text-white" : "text-gray-900"}>
-          Failed to load settings
-        </p>
-        <button
-          onClick={handleRetryFetch}
-          className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
-        >
-          <RefreshCw className="w-4 h-4" />
-          Retry
-        </button>
+      <div className="flex flex-col items-center justify-center h-64 gap-3">
+        <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>Failed to load settings</p>
+        <button onClick={fetchSettings} className="text-sm text-emerald-600 font-medium hover:underline">Retry</button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-fadeIn pb-12">
-      {/* Header - Governance Command */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+    <div className="max-w-3xl mx-auto space-y-6 pb-12">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <h1
-            className={`text-2xl lg:text-3xl font-bold tracking-tight uppercase ${
-              darkMode ? "text-white" : "text-gray-900"
-            }`}
-          >
-            Account Settings
-          </h1>
-          <p
-            className={`text-sm font-semibold mt-3 flex items-center gap-3 ${
-              darkMode ? "text-gray-400" : "text-gray-600"
-            }`}
-          >
-            <span className="w-12 h-[2px] bg-emerald-500" /> Manage your account
-            and preferences
-          </p>
+          <h1 className={`text-2xl font-bold ${darkMode ? "text-white" : "text-gray-900"}`}>Settings</h1>
+          <p className="text-sm text-gray-400 mt-0.5">Manage your account and preferences</p>
         </div>
 
-        <AnimatePresence>
-          {saveStatus && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, x: 20 }}
-              animate={{ opacity: 1, scale: 1, x: 0 }}
-              exit={{ opacity: 0, scale: 0.9, x: 20 }}
-              className={`px-6 py-4 rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-xl backdrop-blur-xl
-                ${
-                  saveStatus.includes("successfully")
-                    ? `${
-                        darkMode
-                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-emerald-500/10"
-                          : "bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-emerald-500/10"
-                      }`
-                    : `${
-                        darkMode
-                          ? "bg-emerald-500/10 text-rose-400 border border-emerald-500/20 shadow-emerald-500/10"
-                          : "bg-rose-50 text-rose-700 border border-rose-100 shadow-rose-500/10"
-                      }`
-                }`}
-            >
-              {saveStatus}
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Toast */}
+        {toast && (
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium ${
+            toast.type === "success"
+              ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400"
+              : "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400"
+          }`}>
+            {toast.type === "success" ? <CheckCircle2 size={14} /> : <AlertTriangle size={14} />}
+            {toast.text}
+          </div>
+        )}
       </div>
 
-      {/* API Error Notice - Non-Critical Protocol */}
-      {usingMockData && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`p-6 rounded-3xl border flex items-center justify-between backdrop-blur-xl
-            ${
-              darkMode
-                ? "bg-amber-500/5 border-amber-500/10"
-                : "bg-amber-50 border-amber-100"
-            }`}
-        >
-          <div className="flex items-center gap-4">
-            <div
-              className={`p-2 rounded-xl ${
-                darkMode
-                  ? "bg-amber-500/20 text-amber-400"
-                  : "bg-white text-amber-600 shadow-sm"
-              }`}
-            >
-              <Zap size={16} />
-            </div>
-            <p
-              className={`text-xs font-bold ${
-                darkMode ? "text-amber-200/70" : "text-amber-800/70"
-              }`}
-            >
-              {apiError || (
-                <>
-                  Operating in{" "}
-                  <span className="text-amber-500">Autonomous Demo Mode</span>.
-                  Offline synchronisation only.
-                </>
-              )}
-            </p>
+      {/* Demo mode banner */}
+      {usingMock && (
+        <div className={`flex items-center justify-between gap-3 px-4 py-3 rounded-lg border ${
+          darkMode ? "bg-amber-900/10 border-amber-800/30 text-amber-400" : "bg-amber-50 border-amber-100 text-amber-700"
+        }`}>
+          <div className="flex items-center gap-2">
+            <Zap size={14} className="shrink-0" />
+            <p className="text-[12px] font-medium">Demo mode — API unavailable. Changes are saved locally only.</p>
           </div>
-          <button
-            onClick={handleRetryFetch}
-            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
-              ${
-                darkMode
-                  ? "bg-amber-500/10 text-amber-400 hover:bg-amber-500 hover:text-white"
-                  : "bg-white text-amber-600 hover:bg-amber-600 hover:text-white shadow-sm"
-              }`}
-          >
-            Reconnect
-          </button>
-        </motion.div>
+          <button onClick={fetchSettings} className="text-[12px] font-semibold underline">Retry</button>
+        </div>
       )}
 
-      {/* Settings Navigation - Operational Vectors */}
-      <div
-        className={`rounded-2xl border overflow-hidden backdrop-blur-xl transition-all duration-500
-        ${
-          darkMode
-            ? "bg-gray-950/40 border-gray-800"
-            : "bg-white border-gray-100 shadow-lg"
-        }`}
-      >
-        <div className="flex overflow-x-auto custom-scrollbar">
-          {sections.map((section) => {
-            const Icon = section.icon;
-            const isActive = activeSection === section.id;
-            return (
-              <button
-                key={section.id}
-                onClick={() => setActiveSection(section.id)}
-                className={`flex-1 flex items-center justify-center gap-3 px-6 py-4 text-[10px] font-bold uppercase tracking-widest transition-all duration-500 relative
-                  ${
-                    isActive
-                      ? `text-emerald-500 bg-emerald-500/5`
-                      : `${
-                          darkMode
-                            ? "text-gray-500 hover:text-white hover:bg-white/5"
-                            : "text-gray-400 hover:text-gray-900 hover:bg-gray-50"
-                        }`
-                  }`}
-              >
-                {isActive && (
-                  <motion.div
-                    layoutId="active-settings-nav"
-                    className="absolute bottom-0 left-0 right-0 h-[3px] bg-emerald-500"
-                  />
-                )}
-                <Icon size={16} />
-                <span className="hidden sm:inline">{section.label}</span>
-              </button>
-            );
-          })}
-        </div>
+      {/* Tab bar */}
+      <div className={`flex gap-1 p-1 rounded-lg border ${darkMode ? "bg-gray-900 border-gray-800" : "bg-gray-100 border-gray-200"} overflow-x-auto`}>
+        {TABS.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => setActiveTab(id)}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-medium whitespace-nowrap transition-all ${
+              activeTab === id
+                ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+            }`}
+          >
+            <Icon size={13} />
+            {label}
+          </button>
+        ))}
       </div>
 
-      {/* Settings Content */}
-      <div className="space-y-6">
-        {activeSection === "profile" && (
-          <ProfileSection
-            user={userData}
-            onUpdate={handleUpdate}
-            isLoading={loading}
-            onRefresh={fetchSettings}
-          />
-        )}
-
-        {activeSection === "notifications" && (
-          <NotificationSection
-            preferences={userData.preferences}
-            onUpdate={handleUpdate}
-            isLoading={loading}
-          />
-        )}
-
-        {activeSection === "privacy" && (
-          <PrivacySection
-            preferences={userData.preferences}
-            onUpdate={handleUpdate}
-            isLoading={loading}
-          />
-        )}
-
-        {activeSection === "security" && (
-          <SecuritySection
-            user={userData}
-            onUpdate={handleUpdate}
-            isLoading={loading}
-          />
-        )}
-
-        {/* {activeSection === "preferences" && (
-          <PreferencesSection
-            preferences={userData.preferences}
-            onUpdate={handleUpdate}
-          />
-        )} */}
-      </div>
-
-      {/* Account Summary - Strategic Lifecycle Module */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={`rounded-3xl border overflow-hidden backdrop-blur-xl transition-all duration-500 mt-12
-          ${
-            darkMode
-              ? "bg-emerald-500/5 border-emerald-500/10"
-              : "bg-gray-900 border-transparent shadow-2xl shadow-emerald-500/20"
-          }`}
-      >
-        <div className="p-8 sm:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="flex items-center gap-8">
-            <div
-              className={`w-20 h-20 rounded-2xl flex items-center justify-center shadow-xl
-              ${
-                darkMode
-                  ? "bg-emerald-600 text-white shadow-emerald-500/20"
-                  : "bg-white text-emerald-600 shadow-emerald-500/10"
-              }`}
-            >
-              <Shield size={32} />
-            </div>
-            <div>
-              <h3 className={`text-xl font-bold tracking-tight text-white`}>
-                Account Summary
-              </h3>
-              <div
-                className={`flex flex-wrap gap-x-6 gap-y-2 mt-2 text-[10px] font-semibold uppercase tracking-widest ${
-                  darkMode ? "text-emerald-400" : "text-emerald-500/60"
-                }`}
-              >
-                <p>
-                  Joined: {new Date(userData.dateJoined).toLocaleDateString()}
-                </p>
-                <p>
-                  Last Activity:{" "}
-                  {new Date(userData.lastLogin).toLocaleDateString()}
-                </p>
-                <p>Status: {userData.verified ? "Verified Holder" : "Guest"}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col items-center md:items-end">
-            <p
-              className={`text-[10px] font-semibold uppercase tracking-widest mb-4 ${
-                darkMode ? "text-emerald-400" : "text-emerald-300"
-              }`}
-            >
-              Security integrity
-            </p>
-            <div className="flex gap-1">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <motion.div
-                  key={i}
-                  initial={{ scaleY: 0.1 }}
-                  animate={{ scaleY: [0.1, 1, 0.1] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: i * 0.2 }}
-                  className="w-1.5 h-6 bg-emerald-500 rounded-full origin-bottom"
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </motion.div>
+      {/* Tab content */}
+      {activeTab === "profile"       && <ProfileTab       user={userData}                onUpdate={handleUpdate} isLoading={loading} onRefresh={fetchSettings} />}
+      {activeTab === "notifications" && <NotificationsTab preferences={userData.preferences} onUpdate={handleUpdate} isLoading={loading} />}
+      {activeTab === "privacy"       && <PrivacyTab       preferences={userData.preferences} onUpdate={handleUpdate} isLoading={loading} />}
+      {activeTab === "security"      && <SecurityTab      user={userData}                onUpdate={handleUpdate} isLoading={loading} />}
+      {activeTab === "preferences"   && <PreferencesTab   preferences={userData.preferences} onUpdate={handleUpdate} />}
     </div>
   );
 };

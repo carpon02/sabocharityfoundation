@@ -1,6 +1,6 @@
+// pages/user/Help.jsx — Clerk-style redesign
 import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   BookOpen,
@@ -8,90 +8,36 @@ import {
   Target,
   Heart,
   Shield,
-  Clock,
-  MessageSquare,
-  ArrowRight,
-  HelpCircle,
-  X,
-  Send,
   PlayCircle,
   Phone,
   Mail,
   MapPin,
-  Calendar,
+  ChevronDown,
+  ChevronRight,
+  MessageSquare,
+  Send,
+  ExternalLink,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 
-// Help content data
-const HELP_CATEGORIES = [
+// ── Help content ──────────────────────────────────────────────────────────────
+const CATEGORIES = [
   {
     id: "getting-started",
     title: "Getting Started",
     icon: PlayCircle,
-    color: "text-primary-600",
-    bg: "bg-primary-100 dark:bg-primary-950/30",
-    articles: [
+    faqs: [
       {
-        id: "create-account",
-        title: "How to create an account",
-        content:
-          "Learn how to set up your account and get started with Sabo Ibadan Youth Charity Foundation.",
-        fullContent: `
-          <h3>Creating Your Account</h3>
-          <ol>
-            <li><strong>Navigate to Registration:</strong> Click "Sign Up" in the top navigation bar</li>
-            <li><strong>Provide Information:</strong> Fill in your name, email, phone number, and create a secure password</li>
-            <li><strong>Verify Email:</strong> Check your email inbox and click the verification link</li>
-            <li><strong>Complete Profile:</strong> Add your location, bio, and profile picture</li>
-          </ol>
-          <p><strong>Note:</strong> For Nigerian users, we recommend using a Nigerian phone number for SMS notifications.</p>
-        `,
-        tags: ["account", "registration", "setup"],
-        readTime: "3 min read",
+        q: "How do I create an account?",
+        a: "Click 'Sign In' in the top navigation, then switch to 'Create account'. Fill in your name, email, and password. Check your email for a verification link to activate your account.",
       },
       {
-        id: "first-donation",
-        title: "Making your first donation",
-        content:
-          "A complete guide to making your first donation, including payment methods accepted in Nigeria.",
-        fullContent: `
-          <h3>How to Make Your First Donation</h3>
-          <ol>
-            <li><strong>Find a Campaign:</strong> Browse campaigns in the Campaigns section</li>
-            <li><strong>Select Amount:</strong> Choose a preset amount or enter a custom donation</li>
-            <li><strong>Choose Payment Method:</strong> Select from bank transfer, mobile money, or card payment</li>
-            <li><strong>Complete Payment:</strong> Follow the payment instructions for your chosen method</li>
-            <li><strong>Get Receipt:</strong> Download your receipt and track the campaign's progress</li>
-          </ol>
-          <p><strong>Supported Payment Methods:</strong></p>
-          <ul>
-            <li>Nigerian bank transfers</li>
-            <li>Mobile money (OPay, PalmPay, Kuda)</li>
-            <li>Debit/Credit cards from Nigerian banks</li>
-          </ul>
-        `,
-        tags: ["donation", "payment", "first-time"],
-        readTime: "5 min read",
+        q: "How do I make my first donation?",
+        a: "Browse campaigns from the Campaigns page, open one you want to support, enter your amount, and complete payment via Paystack. You'll receive a receipt via email immediately.",
       },
       {
-        id: "platform-overview",
-        title: "Platform overview and navigation",
-        content:
-          "Understanding the main features and how to navigate through campaigns, events, and your dashboard.",
-        fullContent: `
-          <h3>Platform Navigation Guide</h3>
-          <p>Our platform is designed to make community fundraising easy and transparent.</p>
-          
-          <h4>Main Sections:</h4>
-          <ul>
-            <li><strong>Dashboard:</strong> Your personal overview with donation history</li>
-            <li><strong>Campaigns:</strong> Browse active fundraising campaigns</li>
-            <li><strong>Events:</strong> Discover community events and volunteer opportunities</li>
-            <li><strong>Impact:</strong> See the real-world impact of donations in Ibadan</li>
-          </ul>
-        `,
-        tags: ["navigation", "features", "dashboard"],
-        readTime: "4 min read",
+        q: "How do I navigate the platform?",
+        a: "Your dashboard shows an overview of your activity. Use the sidebar to access My Donations, My Campaigns, Events, and Settings.",
       },
     ],
   },
@@ -99,70 +45,22 @@ const HELP_CATEGORIES = [
     id: "donations",
     title: "Donations & Payments",
     icon: Wallet,
-    color: "text-primary-600",
-    bg: "bg-primary-100 dark:bg-primary-950/30",
-    articles: [
+    faqs: [
       {
-        id: "payment-methods",
-        title: "Accepted payment methods in Nigeria",
-        content:
-          "Bank transfers, mobile money, debit cards, and other payment options available.",
-        fullContent: `
-          <h3>Payment Methods</h3>
-          <p>We accept various payment methods convenient for Nigerian donors:</p>
-          
-          <h4>Bank Transfers:</h4>
-          <ul>
-            <li>Direct bank transfer via your banking app</li>
-            <li>Internet banking from all Nigerian banks</li>
-          </ul>
-          
-          <h4>Mobile Money:</h4>
-          <ul>
-            <li>OPay - Instant transfers</li>
-            <li>PalmPay - Zero fees</li>
-            <li>Kuda - Quick payments</li>
-          </ul>
-          
-          <h4>Cards:</h4>
-          <ul>
-            <li>Naira debit cards (Verve, Mastercard, Visa)</li>
-            <li>International cards (for diaspora donors)</li>
-          </ul>
-          
-          <p><strong>Security:</strong> All transactions are encrypted and secure.</p>
-        `,
-        tags: ["payment", "nigeria", "bank transfer", "mobile money"],
-        readTime: "6 min read",
+        q: "What payment methods are accepted?",
+        a: "We accept Nigerian bank transfers, Paystack (card + bank), OPay, PalmPay, and Kuda. All payments are processed securely via Paystack.",
       },
       {
-        id: "donation-receipts",
-        title: "Download donation receipts",
-        content:
-          "How to access and download receipts for your donations for record-keeping purposes.",
-        fullContent: `
-          <h3>Accessing Your Donation Receipts</h3>
-          
-          <h4>Instant Receipts:</h4>
-          <p>After every donation, you'll receive an instant email receipt with:</p>
-          <ul>
-            <li>Transaction reference number</li>
-            <li>Campaign details</li>
-            <li>Amount donated</li>
-            <li>Date and time of transaction</li>
-          </ul>
-          
-          <h4>Download from Dashboard:</h4>
-          <ol>
-            <li>Go to your Dashboard</li>
-            <li>Click on "Donation History"</li>
-            <li>Find the donation you need a receipt for</li>
-            <li>Click "Download Receipt" button</li>
-            <li>Choose PDF or print directly</li>
-          </ol>
-        `,
-        tags: ["receipts", "records"],
-        readTime: "3 min read",
+        q: "How do I download my donation receipt?",
+        a: "Go to My Donations, find the donation row, and click the download icon on the right. A PDF receipt will be generated automatically.",
+      },
+      {
+        q: "Can I get a refund on a donation?",
+        a: "Donations are generally non-refundable. For exceptional circumstances, contact us within 7 days at support@sabocharityfoundation.org.",
+      },
+      {
+        q: "Is my payment information secure?",
+        a: "Yes. We use Paystack, a PCI DSS-compliant payment processor. We never store your card or bank details.",
       },
     ],
   },
@@ -170,698 +68,338 @@ const HELP_CATEGORIES = [
     id: "campaigns",
     title: "Creating Campaigns",
     icon: Target,
-    color: "text-secondary-600",
-    bg: "bg-secondary-100 dark:bg-secondary-950/30",
-    articles: [
+    faqs: [
       {
-        id: "create-campaign",
-        title: "How to create a successful campaign",
-        content:
-          "Step-by-step guide to creating compelling campaigns that attract donors and achieve funding goals.",
-        fullContent: `
-          <h3>Creating a Successful Campaign</h3>
-          
-          <h4>Preparation:</h4>
-          <ul>
-            <li>Define clear, specific goals</li>
-            <li>Calculate realistic budget</li>
-            <li>Gather compelling photos</li>
-            <li>Write your story authentically</li>
-          </ul>
-          
-          <h4>Campaign Creation:</h4>
-          <ol>
-            <li>Click "Create Campaign" from dashboard</li>
-            <li>Choose campaign category</li>
-            <li>Set funding goal in Naira</li>
-            <li>Upload high-quality images</li>
-            <li>Write compelling description</li>
-            <li>Set campaign duration</li>
-          </ol>
-          
-          <h4>Best Practices:</h4>
-          <ul>
-            <li><strong>Tell a Story:</strong> Connect emotionally with donors</li>
-            <li><strong>Be Specific:</strong> Show exactly how funds will be used</li>
-            <li><strong>Regular Updates:</strong> Keep donors informed</li>
-            <li><strong>Show Impact:</strong> Share photos and results</li>
-          </ul>
-        `,
-        tags: ["create", "campaign", "fundraising"],
-        readTime: "8 min read",
+        q: "How do I create a campaign?",
+        a: "Go to My Campaigns in your dashboard, click 'New Campaign', fill in the title, category, description, target amount, and optionally add images. Submit for admin review.",
       },
       {
-        id: "campaign-guidelines",
-        title: "Campaign guidelines and policies",
-        content:
-          "Rules and best practices for campaigns, including prohibited content and community standards.",
-        fullContent: `
-          <h3>Campaign Guidelines</h3>
-          
-          <h4>Allowed Campaigns:</h4>
-          <ul>
-            <li>Education and scholarship funds</li>
-            <li>Healthcare and medical emergencies</li>
-            <li>Community development projects</li>
-            <li>Youth empowerment programs</li>
-          </ul>
-          
-          <h4>Prohibited Content:</h4>
-          <ul>
-            <li>Political campaigns</li>
-            <li>Illegal activities</li>
-            <li>Discriminatory causes</li>
-          </ul>
-          
-          <h4>Verification Requirements:</h4>
-          <ul>
-            <li>Valid Nigerian identification</li>
-            <li>Proof of need</li>
-            <li>Bank account information</li>
-          </ul>
-        `,
-        tags: ["guidelines", "policy", "rules"],
-        readTime: "6 min read",
+        q: "How long does campaign approval take?",
+        a: "Campaigns are reviewed within 1–3 business days. You'll receive an email notification once approved or if changes are needed.",
+      },
+      {
+        q: "What are the campaign guidelines?",
+        a: "Campaigns must be for genuine community needs in Sabo Ibadan or Nigeria. No political, religious, or personal profit campaigns. See our full terms for details.",
       },
     ],
   },
   {
     id: "events",
     title: "Events & Community",
-    icon: Calendar,
-    color: "text-amber-600",
-    bg: "bg-amber-100 dark:bg-amber-950/30",
-    articles: [
+    icon: Heart,
+    faqs: [
       {
-        id: "find-events",
-        title: "Finding events in Ibadan",
-        content:
-          "How to discover community events and volunteer opportunities in your area.",
-        fullContent: `
-          <h3>Discovering Local Events</h3>
-          
-          <h4>Using the Events Page:</h4>
-          <ol>
-            <li>Navigate to "Events" in the main menu</li>
-            <li>Use location filter to find events in Ibadan</li>
-            <li>Filter by category</li>
-            <li>View event details and register online</li>
-          </ol>
-          
-          <h4>Popular Event Types:</h4>
-          <ul>
-            <li>Fundraising events</li>
-            <li>Community clean-ups</li>
-            <li>Youth programs</li>
-            <li>Skills training workshops</li>
-          </ul>
-        `,
-        tags: ["events", "ibadan", "volunteer"],
-        readTime: "5 min read",
+        q: "How do I register for an event?",
+        a: "Go to Events in your dashboard, find an event, and click 'Register'. Free events register instantly. Paid events redirect you to complete payment.",
+      },
+      {
+        q: "Can I cancel my event registration?",
+        a: "Contact us at least 48 hours before the event to cancel. Refunds for paid events are processed within 5–7 business days.",
       },
     ],
   },
   {
     id: "account",
-    title: "Account & Settings",
+    title: "Account & Security",
     icon: Shield,
-    color: "text-blue-600",
-    bg: "bg-blue-100 dark:bg-blue-950/30",
-    articles: [
+    faqs: [
       {
-        id: "account-security",
-        title: "Account security and privacy",
-        content:
-          "How to secure your account with strong passwords and privacy settings.",
-        fullContent: `
-          <h3>Securing Your Account</h3>
-          
-          <h4>Password Best Practices:</h4>
-          <ul>
-            <li>Use at least 12 characters</li>
-            <li>Mix uppercase, lowercase, numbers, and symbols</li>
-            <li>Don't reuse passwords</li>
-            <li>Change password regularly</li>
-          </ul>
-          
-          <h4>Privacy Settings:</h4>
-          <ul>
-            <li>Profile visibility control</li>
-            <li>Donation history privacy</li>
-            <li>Contact information settings</li>
-          </ul>
-        `,
-        tags: ["security", "privacy", "password"],
-        readTime: "6 min read",
+        q: "How do I change my password?",
+        a: "Go to Settings → Security tab, enter your current password, then set a new one. Use a strong password with at least 8 characters.",
       },
       {
-        id: "profile-settings",
-        title: "Updating your profile information",
-        content:
-          "How to edit your profile and manage your account settings.",
-        fullContent: `
-          <h3>Managing Your Profile</h3>
-          
-          <h4>Editing Profile:</h4>
-          <ol>
-            <li>Click your profile icon</li>
-            <li>Select "Settings"</li>
-            <li>Go to "Profile" section</li>
-            <li>Update your information</li>
-            <li>Click "Save Changes"</li>
-          </ol>
-        `,
-        tags: ["profile", "update", "settings"],
-        readTime: "3 min read",
+        q: "How do I update my profile information?",
+        a: "Go to Settings → Profile tab. Update your name, phone, bio, and location, then click Save.",
+      },
+      {
+        q: "Can I delete my account?",
+        a: "Contact support@sabocharityfoundation.org from your registered email address to request account deletion. Your donation history will be retained for legal compliance.",
       },
     ],
   },
 ];
 
-const Help = () => {
+// ── Shared UI ─────────────────────────────────────────────────────────────────
+const Card = ({ children, className = "" }) => {
   const { darkMode } = useTheme();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState("all");
-  const [selectedArticle, setSelectedArticle] = useState(null);
-  const [contactForm, setContactForm] = useState({
-    name: "",
-    email: "",
-    subject: "",
-    message: "",
-  });
-
-  // Filter content
-  const filteredContent = useMemo(() => {
-    let content = HELP_CATEGORIES;
-
-    if (activeCategory !== "all") {
-      content = content.filter((cat) => cat.id === activeCategory);
-    }
-
-    if (!searchQuery) return content;
-
-    const query = searchQuery.toLowerCase();
-    return content
-      .map((cat) => ({
-        ...cat,
-        articles: cat.articles.filter(
-          (art) =>
-            art.title.toLowerCase().includes(query) ||
-            art.content.toLowerCase().includes(query) ||
-            art.tags.some((tag) => tag.toLowerCase().includes(query))
-        ),
-      }))
-      .filter((cat) => cat.articles.length > 0);
-  }, [searchQuery, activeCategory]);
-
-  const handleContactSubmit = (e) => {
-    e.preventDefault();
-    alert("Support request submitted! We will contact you shortly.");
-    setContactForm({ name: "", email: "", subject: "", message: "" });
-  };
-
   return (
-    <div className="space-y-12 pb-20">
-      {/* Hero Section */}
-      <div
-        className={`relative rounded-2xl overflow-hidden p-12 lg:p-16 ${
-          darkMode
-            ? "bg-gradient-to-br from-primary-950/30 to-dark-lighter"
-            : "bg-gradient-to-br from-primary-50 to-white"
+    <div className={`rounded-xl border ${darkMode ? "bg-[#111] border-gray-800" : "bg-white border-gray-200 shadow-sm"} ${className}`}>
+      {children}
+    </div>
+  );
+};
+
+// ── FAQ Accordion Item ────────────────────────────────────────────────────────
+const FaqItem = ({ q, a }) => {
+  const { darkMode } = useTheme();
+  const [open, setOpen] = useState(false);
+  return (
+    <div className={`border-b last:border-0 ${darkMode ? "border-gray-800" : "border-gray-100"}`}>
+      <button
+        onClick={() => setOpen((p) => !p)}
+        className={`w-full flex items-center justify-between gap-3 px-5 py-4 text-left transition-colors ${
+          darkMode ? "hover:bg-gray-800/40" : "hover:bg-gray-50"
         }`}
       >
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute inset-0 bg-[radial-gradient(#059669_0.5px,transparent_0.5px)] [background-size:24px_24px]" />
+        <span className={`text-sm font-medium ${darkMode ? "text-white" : "text-gray-900"}`}>
+          {q}
+        </span>
+        <ChevronDown
+          size={15}
+          className={`shrink-0 text-gray-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open && (
+        <div className={`px-5 pb-4 text-sm leading-relaxed ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
+          {a}
         </div>
+      )}
+    </div>
+  );
+};
 
-        <div className="relative z-10 max-w-3xl mx-auto text-center">
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="w-16 h-16 bg-primary-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6"
-          >
-            <HelpCircle size={32} className="text-primary-600" />
-          </motion.div>
-
-          <h1
-            className={`text-4xl lg:text-5xl font-bold mb-4 ${
-              darkMode ? "text-white" : "text-dark"
-            }`}
-          >
-            How Can We Help You?
-          </h1>
-          <p
-            className={`text-lg mb-8 ${
-              darkMode ? "text-gray-400" : "text-gray-600"
-            }`}
-          >
-            Find answers to common questions and get support for your account
-          </p>
-
-          {/* Search Bar */}
-          <div className="relative max-w-2xl mx-auto">
-            <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-              size={20}
-            />
-            <input
-              type="text"
-              placeholder="Search for help articles..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={`w-full pl-12 pr-4 py-4 rounded-xl border-2 outline-none transition-all ${
-                darkMode
-                  ? "bg-gray-800 border-gray-700 text-white focus:border-primary-500"
-                  : "bg-white border-gray-200 text-dark focus:border-primary-500 shadow-lg"
-              }`}
-            />
-          </div>
+// ── Category Section ──────────────────────────────────────────────────────────
+const CategorySection = ({ cat, isOpen, onToggle }) => {
+  const { darkMode } = useTheme();
+  const Icon = cat.icon;
+  return (
+    <Card className="overflow-hidden">
+      <button
+        onClick={onToggle}
+        className={`w-full flex items-center gap-3 px-5 py-4 transition-colors ${
+          darkMode ? "hover:bg-gray-800/30" : "hover:bg-gray-50"
+        }`}
+      >
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+          darkMode ? "bg-gray-800" : "bg-gray-100"
+        }`}>
+          <Icon size={15} className="text-emerald-600" />
         </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Sidebar Navigation */}
-        <div className="lg:col-span-3">
-          <div className="sticky top-24 space-y-4">
-            <h3
-              className={`text-sm font-bold mb-4 ${
-                darkMode ? "text-gray-500" : "text-gray-600"
-              }`}
-            >
-              Categories
-            </h3>
-
-            <button
-              onClick={() => setActiveCategory("all")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition-all ${
-                activeCategory === "all"
-                  ? "bg-primary-500 text-white shadow-lg shadow-primary-500/25"
-                  : darkMode
-                  ? "hover:bg-gray-800 text-gray-400"
-                  : "hover:bg-gray-100 text-gray-600"
-              }`}
-            >
-              <BookOpen size={18} /> All Articles
-            </button>
-
-            {HELP_CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setActiveCategory(cat.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition-all ${
-                  activeCategory === cat.id
-                    ? "bg-primary-500 text-white shadow-lg shadow-primary-500/25"
-                    : darkMode
-                    ? "hover:bg-gray-800 text-gray-400"
-                    : "hover:bg-gray-100 text-gray-600"
-                }`}
-              >
-                <cat.icon size={18} /> {cat.title}
-              </button>
-            ))}
-
-            {/* Contact Support Card */}
-            <div
-              className={`mt-8 p-6 rounded-2xl border ${
-                darkMode
-                  ? "bg-dark-lighter border-gray-800"
-                  : "bg-primary-50 border-primary-100"
-              }`}
-            >
-              <MessageSquare className="text-primary-600 mb-4" size={28} />
-              <h4
-                className={`text-lg font-bold mb-2 ${
-                  darkMode ? "text-white" : "text-dark"
-                }`}
-              >
-                Need More Help?
-              </h4>
-              <p
-                className={`text-sm mb-4 ${
-                  darkMode ? "text-gray-400" : "text-gray-600"
-                }`}
-              >
-                Our support team is ready to assist you
-              </p>
-              <a
-                href="#contact"
-                className="block w-full text-center py-2.5 bg-primary-500 text-white rounded-lg font-semibold hover:bg-primary-600 transition-all"
-              >
-                Contact Support
-              </a>
-            </div>
-          </div>
-        </div>
-
-        {/* Content Area */}
-        <div className="lg:col-span-9 space-y-8">
-          {filteredContent.map((category) => (
-            <motion.div
-              key={category.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`rounded-2xl border overflow-hidden ${
-                darkMode
-                  ? "bg-dark-lighter border-gray-800"
-                  : "bg-white border-gray-200 shadow-lg"
-              }`}
-            >
-              {/* Category Header */}
-              <div
-                className={`p-6 border-b ${
-                  darkMode ? "border-gray-800" : "border-gray-200"
-                }`}
-              >
-                <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-xl ${category.bg}`}>
-                    <category.icon size={24} className={category.color} />
-                  </div>
-                  <div>
-                    <h2
-                      className={`text-2xl font-bold ${
-                        darkMode ? "text-white" : "text-dark"
-                      }`}
-                    >
-                      {category.title}
-                    </h2>
-                    <p
-                      className={`text-sm ${
-                        darkMode ? "text-gray-500" : "text-gray-600"
-                      }`}
-                    >
-                      {category.articles.length} articles
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Articles List */}
-              <div
-                className={`divide-y ${
-                  darkMode ? "divide-gray-800" : "divide-gray-200"
-                }`}
-              >
-                {category.articles.map((article) => (
-                  <button
-                    key={article.id}
-                    onClick={() => setSelectedArticle(article)}
-                    className={`w-full text-left p-6 transition-colors group ${
-                      darkMode ? "hover:bg-gray-800/50" : "hover:bg-gray-50"
-                    }`}
-                  >
-                    <div className="flex justify-between items-start gap-4">
-                      <div className="flex-1">
-                        <h3
-                          className={`text-lg font-bold mb-2 group-hover:text-primary-600 transition-colors ${
-                            darkMode ? "text-white" : "text-dark"
-                          }`}
-                        >
-                          {article.title}
-                        </h3>
-                        <p
-                          className={`text-sm mb-3 ${
-                            darkMode ? "text-gray-400" : "text-gray-600"
-                          }`}
-                        >
-                          {article.content}
-                        </p>
-                        <div className="flex items-center gap-4">
-                          <span
-                            className={`text-xs font-medium px-3 py-1 rounded-full ${
-                              darkMode
-                                ? "bg-gray-800 text-gray-400"
-                                : "bg-gray-100 text-gray-600"
-                            }`}
-                          >
-                            {article.readTime}
-                          </span>
-                          <div className="flex gap-2">
-                            {article.tags.slice(0, 2).map((tag) => (
-                              <span
-                                key={tag}
-                                className="text-xs text-primary-600 font-medium"
-                              >
-                                #{tag}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      <ArrowRight
-                        size={20}
-                        className="text-gray-400 group-hover:text-primary-600 transition-colors"
-                      />
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </motion.div>
+        <span className={`flex-1 text-sm font-semibold text-left ${darkMode ? "text-white" : "text-gray-900"}`}>
+          {cat.title}
+        </span>
+        <span className="text-[11px] text-gray-400 mr-2">{cat.faqs.length} articles</span>
+        <ChevronDown
+          size={14}
+          className={`text-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+        />
+      </button>
+      {isOpen && (
+        <div className={`border-t ${darkMode ? "border-gray-800" : "border-gray-100"}`}>
+          {cat.faqs.map((faq) => (
+            <FaqItem key={faq.q} q={faq.q} a={faq.a} />
           ))}
-
-          {/* Contact Form */}
-          <motion.div
-            id="contact"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`p-8 lg:p-12 rounded-2xl border ${
-              darkMode
-                ? "bg-dark-lighter border-gray-800"
-                : "bg-white border-gray-200 shadow-lg"
-            }`}
-          >
-            <div className="max-w-2xl mx-auto">
-              <div className="text-center mb-8">
-                <h2
-                  className={`text-3xl font-bold mb-3 ${
-                    darkMode ? "text-white" : "text-dark"
-                  }`}
-                >
-                  Contact Support
-                </h2>
-                <p className={darkMode ? "text-gray-400" : "text-gray-600"}>
-                  Can't find what you're looking for? Send us a message
-                </p>
-              </div>
-
-              <form onSubmit={handleContactSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label
-                      className={`block text-sm font-medium mb-2 ${
-                        darkMode ? "text-gray-300" : "text-gray-700"
-                      }`}
-                    >
-                      Your Name
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={contactForm.name}
-                      onChange={(e) =>
-                        setContactForm({ ...contactForm, name: e.target.value })
-                      }
-                      className={`w-full px-4 py-3 rounded-xl border-2 outline-none transition-all ${
-                        darkMode
-                          ? "bg-gray-800 border-gray-700 text-white focus:border-primary-500"
-                          : "bg-gray-50 border-gray-200 text-dark focus:border-primary-500"
-                      }`}
-                    />
-                  </div>
-                  <div>
-                    <label
-                      className={`block text-sm font-medium mb-2 ${
-                        darkMode ? "text-gray-300" : "text-gray-700"
-                      }`}
-                    >
-                      Email Address
-                    </label>
-                    <input
-                      type="email"
-                      required
-                      value={contactForm.email}
-                      onChange={(e) =>
-                        setContactForm({
-                          ...contactForm,
-                          email: e.target.value,
-                        })
-                      }
-                      className={`w-full px-4 py-3 rounded-xl border-2 outline-none transition-all ${
-                        darkMode
-                          ? "bg-gray-800 border-gray-700 text-white focus:border-primary-500"
-                          : "bg-gray-50 border-gray-200 text-dark focus:border-primary-500"
-                      }`}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label
-                    className={`block text-sm font-medium mb-2 ${
-                      darkMode ? "text-gray-300" : "text-gray-700"
-                    }`}
-                  >
-                    Subject
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={contactForm.subject}
-                    onChange={(e) =>
-                      setContactForm({
-                        ...contactForm,
-                        subject: e.target.value,
-                      })
-                    }
-                    className={`w-full px-4 py-3 rounded-xl border-2 outline-none transition-all ${
-                      darkMode
-                        ? "bg-gray-800 border-gray-700 text-white focus:border-primary-500"
-                        : "bg-gray-50 border-gray-200 text-dark focus:border-primary-500"
-                    }`}
-                  />
-                </div>
-
-                <div>
-                  <label
-                    className={`block text-sm font-medium mb-2 ${
-                      darkMode ? "text-gray-300" : "text-gray-700"
-                    }`}
-                  >
-                    Message
-                  </label>
-                  <textarea
-                    rows={5}
-                    required
-                    value={contactForm.message}
-                    onChange={(e) =>
-                      setContactForm({
-                        ...contactForm,
-                        message: e.target.value,
-                      })
-                    }
-                    className={`w-full px-4 py-3 rounded-xl border-2 outline-none transition-all resize-none ${
-                      darkMode
-                        ? "bg-gray-800 border-gray-700 text-white focus:border-primary-500"
-                        : "bg-gray-50 border-gray-200 text-dark focus:border-primary-500"
-                    }`}
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-4 bg-primary-500 hover:bg-primary-600 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/25 transition-all flex items-center justify-center gap-2"
-                >
-                  <Send size={18} /> Send Message
-                </button>
-              </form>
-            </div>
-          </motion.div>
         </div>
+      )}
+    </Card>
+  );
+};
+
+// ── Main ──────────────────────────────────────────────────────────────────────
+const Help = () => {
+  const { darkMode } = useTheme();
+  const [search, setSearch] = useState("");
+  const [openCat, setOpenCat] = useState("getting-started");
+  const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
+  const [sending, setSending] = useState(false);
+
+  // Filtered search results — flatten all FAQs
+  const searchResults = useMemo(() => {
+    if (!search.trim()) return [];
+    const q = search.toLowerCase();
+    const results = [];
+    CATEGORIES.forEach((cat) => {
+      cat.faqs.forEach((faq) => {
+        if (faq.q.toLowerCase().includes(q) || faq.a.toLowerCase().includes(q)) {
+          results.push({ ...faq, category: cat.title });
+        }
+      });
+    });
+    return results;
+  }, [search]);
+
+  const handleSend = (e) => {
+    e.preventDefault();
+    setSending(true);
+    setTimeout(() => {
+      setSending(false);
+      setForm({ name: "", email: "", subject: "", message: "" });
+      alert("Message sent! We'll get back to you within 24 hours.");
+    }, 1200);
+  };
+
+  const inputCls = `w-full px-3 py-2.5 rounded-lg border text-sm outline-none transition-colors ${
+    darkMode
+      ? "bg-gray-900 border-gray-700 text-white placeholder:text-gray-500 focus:border-gray-600"
+      : "bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:bg-white"
+  }`;
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-6 pb-12">
+      {/* ── Header ──────────────────────────────────────────────────── */}
+      <div>
+        <h1 className={`text-2xl font-bold ${darkMode ? "text-white" : "text-gray-900"}`}>
+          Help & Support
+        </h1>
+        <p className="text-sm text-gray-400 mt-0.5">Find answers or contact our team</p>
       </div>
 
-      {/* Article Modal */}
-      <AnimatePresence>
-        {selectedArticle && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedArticle(null)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
-            >
-              <div
-                className={`relative w-full max-w-3xl my-8 rounded-2xl shadow-2xl ${
-                  darkMode ? "bg-dark-lighter" : "bg-white"
-                }`}
-              >
-                {/* Modal Header */}
+      {/* ── Search ──────────────────────────────────────────────────── */}
+      <div className="relative">
+        <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Search help articles…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className={`w-full pl-10 pr-4 py-3 text-sm rounded-xl border outline-none transition-colors ${
+            darkMode
+              ? "bg-[#111] border-gray-700 text-white placeholder:text-gray-500 focus:border-gray-600"
+              : "bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-gray-300 shadow-sm"
+          }`}
+        />
+      </div>
+
+      {/* ── Search Results ───────────────────────────────────────────── */}
+      {search && (
+        <Card>
+          {searchResults.length === 0 ? (
+            <div className="px-5 py-8 text-center">
+              <p className={`text-sm ${darkMode ? "text-gray-500" : "text-gray-400"}`}>
+                No results for "{search}"
+              </p>
+            </div>
+          ) : (
+            <div>
+              <p className={`px-5 py-3 text-[11px] font-semibold uppercase tracking-widest border-b ${
+                darkMode ? "text-gray-500 border-gray-800" : "text-gray-400 border-gray-100"
+              }`}>
+                {searchResults.length} result{searchResults.length !== 1 ? "s" : ""}
+              </p>
+              {searchResults.map((r, i) => (
                 <div
-                  className={`flex justify-between items-center p-6 border-b ${
-                    darkMode ? "border-gray-800" : "border-gray-200"
-                  }`}
+                  key={i}
+                  className={`px-5 py-3.5 border-b last:border-0 ${darkMode ? "border-gray-800" : "border-gray-100"}`}
                 >
-                  <span
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
-                      darkMode
-                        ? "bg-primary-950/30 text-primary-400"
-                        : "bg-primary-50 text-primary-600"
-                    }`}
-                  >
-                    {selectedArticle.readTime}
-                  </span>
-                  <button
-                    onClick={() => setSelectedArticle(null)}
-                    className={`p-2 rounded-lg transition-colors ${
-                      darkMode
-                        ? "hover:bg-gray-800 text-gray-400"
-                        : "hover:bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    <X size={20} />
-                  </button>
+                  <p className={`text-[10px] text-gray-400 mb-1`}>{r.category}</p>
+                  <p className={`text-sm font-medium ${darkMode ? "text-white" : "text-gray-900"}`}>{r.q}</p>
+                  <p className={`text-[12px] mt-1 line-clamp-2 ${darkMode ? "text-gray-500" : "text-gray-500"}`}>{r.a}</p>
                 </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
 
-                {/* Modal Content */}
-                <div className="p-6 lg:p-8 max-h-[70vh] overflow-y-auto">
-                  <h2
-                    className={`text-2xl lg:text-3xl font-bold mb-6 ${
-                      darkMode ? "text-white" : "text-dark"
-                    }`}
-                  >
-                    {selectedArticle.title}
-                  </h2>
+      {/* ── Quick Links ──────────────────────────────────────────────── */}
+      {!search && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {[
+            { to: "/campaigns", icon: Target, label: "Browse campaigns" },
+            { to: "/user/my-donations", icon: Wallet, label: "My donations" },
+            { to: "/user/events", icon: Heart, label: "Find events" },
+          ].map(({ to, icon: Icon, label }) => (
+            <Link
+              key={to}
+              to={to}
+              className={`flex items-center gap-2 p-3.5 rounded-xl border text-sm font-medium transition-all group ${
+                darkMode
+                  ? "border-gray-800 text-gray-400 hover:text-white hover:border-gray-700"
+                  : "border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300"
+              }`}
+            >
+              <Icon size={15} className="text-emerald-500 shrink-0" />
+              {label}
+              <ChevronRight size={12} className="ml-auto opacity-40 group-hover:opacity-100 transition-opacity" />
+            </Link>
+          ))}
+        </div>
+      )}
 
-                  <div
-                    className={`prose ${
-                      darkMode ? "prose-invert" : ""
-                    } max-w-none prose-headings:font-bold prose-p:leading-relaxed`}
-                    dangerouslySetInnerHTML={{
-                      __html: selectedArticle.fullContent,
-                    }}
-                  />
+      {/* ── FAQ Categories ───────────────────────────────────────────── */}
+      {!search && (
+        <div className="space-y-3">
+          <p className={`text-[11px] font-semibold uppercase tracking-widest ${darkMode ? "text-gray-500" : "text-gray-400"}`}>
+            Frequently asked questions
+          </p>
+          {CATEGORIES.map((cat) => (
+            <CategorySection
+              key={cat.id}
+              cat={cat}
+              isOpen={openCat === cat.id}
+              onToggle={() => setOpenCat(openCat === cat.id ? null : cat.id)}
+            />
+          ))}
+        </div>
+      )}
 
-                  {/* Tags */}
-                  <div
-                    className={`mt-8 pt-6 border-t ${
-                      darkMode ? "border-gray-800" : "border-gray-200"
-                    }`}
-                  >
-                    <p
-                      className={`text-sm font-medium mb-3 ${
-                        darkMode ? "text-gray-500" : "text-gray-600"
-                      }`}
-                    >
-                      Related Tags
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedArticle.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
-                            darkMode
-                              ? "bg-gray-800 text-gray-400"
-                              : "bg-gray-100 text-gray-600"
-                          }`}
-                        >
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+      {/* ── Contact Form ─────────────────────────────────────────────── */}
+      {!search && (
+        <Card className="overflow-hidden">
+          <div className={`px-5 py-4 border-b ${darkMode ? "border-gray-800" : "border-gray-100"}`}>
+            <p className={`text-sm font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>
+              Contact support
+            </p>
+            <p className="text-[12px] text-gray-400 mt-0.5">
+              We usually respond within 24 hours
+            </p>
+          </div>
+          <form onSubmit={handleSend} className="p-5 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={`block text-[11px] font-medium mb-1.5 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>Name</label>
+                <input className={inputCls} placeholder="Your name" value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })} required />
               </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+              <div>
+                <label className={`block text-[11px] font-medium mb-1.5 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>Email</label>
+                <input className={inputCls} type="email" placeholder="you@example.com" value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+              </div>
+            </div>
+            <div>
+              <label className={`block text-[11px] font-medium mb-1.5 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>Subject</label>
+              <input className={inputCls} placeholder="What's this about?" value={form.subject}
+                onChange={(e) => setForm({ ...form, subject: e.target.value })} required />
+            </div>
+            <div>
+              <label className={`block text-[11px] font-medium mb-1.5 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>Message</label>
+              <textarea rows={4} className={`${inputCls} resize-none`} placeholder="Describe your issue in detail…"
+                value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} required />
+            </div>
+            <button
+              type="submit"
+              disabled={sending}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-60"
+            >
+              {sending ? (
+                <span className="w-4 h-4 border-2 border-white/30 dark:border-gray-900/30 border-t-white dark:border-t-gray-900 rounded-full animate-spin" />
+              ) : (
+                <Send size={13} />
+              )}
+              {sending ? "Sending…" : "Send message"}
+            </button>
+          </form>
+
+          {/* Contact info */}
+          <div className={`px-5 py-4 border-t flex flex-wrap gap-4 ${darkMode ? "border-gray-800 bg-gray-900/30" : "border-gray-100 bg-gray-50"}`}>
+            {[
+              { icon: Mail, text: "support@sabocharityfoundation.org", href: "mailto:support@sabocharityfoundation.org" },
+              { icon: Phone, text: "+234 800 000 0000", href: "tel:+2348000000000" },
+              { icon: MapPin, text: "Sabo, Ibadan, Oyo State" },
+            ].map(({ icon: Icon, text, href }) => (
+              <div key={text} className="flex items-center gap-2">
+                <Icon size={12} className="text-gray-400 shrink-0" />
+                {href ? (
+                  <a href={href} className="text-[12px] text-emerald-600 hover:underline">{text}</a>
+                ) : (
+                  <span className="text-[12px] text-gray-400">{text}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
     </div>
   );
 };

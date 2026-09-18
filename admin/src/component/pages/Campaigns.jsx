@@ -78,10 +78,10 @@ const Field = ({ label, darkMode, children }) => (
 );
 
 const inputCls = (darkMode) =>
-  `w-full px-3 py-2 rounded-lg border text-sm outline-none transition-all ${
+  `w-full min-w-0 px-3 py-2.5 rounded-lg border text-sm outline-none transition-all ${
     darkMode
-      ? "bg-gray-800/60 border-gray-700/60 text-white placeholder-gray-500 focus:border-primary-500/50"
-      : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-primary-400"
+      ? "bg-gray-800/60 border-gray-700/60 text-white placeholder-gray-500 focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/20"
+      : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-primary-400 focus:ring-1 focus:ring-primary-400/20"
   }`;
 
 const Campaigns = () => {
@@ -191,6 +191,14 @@ const Campaigns = () => {
 
   const handleInput = (e) => {
     const { name, value, type, checked } = e.target;
+    if (name === "target") {
+      // Strip commas so raw numeric value is stored
+      const raw = value.replace(/,/g, "");
+      if (raw === "" || /^\d+$/.test(raw)) {
+        setFormData((p) => ({ ...p, target: raw }));
+      }
+      return;
+    }
     setFormData((p) => ({ ...p, [name]: type === "checkbox" ? checked : value }));
   };
 
@@ -598,91 +606,230 @@ const Campaigns = () => {
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => !submitting && closeModal()}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
             />
             <motion.div
-              initial={{ opacity: 0, scale: 0.97, y: 16 }}
+              initial={{ opacity: 0, scale: 0.97, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.97, y: 16 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
+              exit={{ opacity: 0, scale: 0.97, y: 20 }}
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+              className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto"
             >
-              <div className={`relative w-full max-w-2xl my-8 ${modalBase}`}>
-                {/* Header */}
-                <div className={`px-6 py-4 border-b flex items-center justify-between ${darkMode ? "border-gray-800/60" : "border-gray-100"}`}>
-                  <div>
-                    <h2 className={`text-base font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>
-                      {modalMode === "create" ? "Create Campaign" : "Edit Campaign"}
-                    </h2>
-                    <p className={`text-xs mt-0.5 ${darkMode ? "text-gray-500" : "text-gray-400"}`}>
-                      {modalMode === "create" ? "Add a new fundraising campaign" : "Update campaign details"}
-                    </p>
+              <div className={`relative w-full max-w-3xl my-8 min-w-0 overflow-hidden ${modalBase}`}>
+
+                {/* ── Header ──────────────────────────────────────────── */}
+                <div className={`px-7 py-5 border-b flex items-center justify-between gap-4 ${
+                  darkMode ? "border-gray-800" : "border-gray-100"
+                }`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2.5 rounded-xl ${
+                      darkMode ? "bg-primary-500/10" : "bg-primary-50"
+                    }`}>
+                      <Target size={18} className="text-primary-500" />
+                    </div>
+                    <div>
+                      <h2 className={`text-base font-bold tracking-tight ${
+                        darkMode ? "text-white" : "text-gray-900"
+                      }`}>
+                        {modalMode === "create" ? "Create Campaign" : "Edit Campaign"}
+                      </h2>
+                      <p className={`text-xs mt-0.5 ${
+                        darkMode ? "text-gray-500" : "text-gray-400"
+                      }`}>
+                        {modalMode === "create" ? "Add a new fundraising campaign" : "Update campaign details"}
+                      </p>
+                    </div>
                   </div>
                   <button
                     onClick={closeModal}
                     disabled={submitting}
-                    className={`p-1.5 rounded-lg transition-colors ${darkMode ? "text-gray-400 hover:bg-gray-800" : "text-gray-400 hover:bg-gray-100"}`}
+                    className={`p-2 rounded-lg transition-colors shrink-0 ${
+                      darkMode
+                        ? "text-gray-400 hover:bg-gray-800 hover:text-white"
+                        : "text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                    }`}
                   >
                     <X size={18} />
                   </button>
                 </div>
 
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[65vh] overflow-y-auto">
+                {/* ── Form ────────────────────────────────────────────── */}
+                <form onSubmit={handleSubmit} className="px-7 py-6 space-y-6 max-h-[68vh] overflow-y-auto overflow-x-hidden">
+
+                  {/* Campaign Title */}
                   <Field label="Campaign Title *" darkMode={darkMode}>
-                    <input type="text" name="title" value={formData.title} onChange={handleInput} required placeholder="Enter campaign title" className={inputCls(darkMode)} />
+                    <input
+                      type="text"
+                      name="title"
+                      value={formData.title}
+                      onChange={handleInput}
+                      required
+                      placeholder="e.g., Help Build a School in Sabo, Ibadan"
+                      className={inputCls(darkMode)}
+                      style={{ wordBreak: "break-word", overflowWrap: "break-word" }}
+                    />
                   </Field>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field label="Category *" darkMode={darkMode}>
-                      <select name="category" value={formData.category} onChange={handleInput} required className={inputCls(darkMode)}>
-                        <option value="education">Education</option>
-                        <option value="health">Health</option>
-                        <option value="poverty">Poverty Relief</option>
-                        <option value="infrastructure">Infrastructure</option>
-                        <option value="emergency">Emergency Relief</option>
-                      </select>
+                  {/* Category + Target */}
+                  <div className={`p-4 rounded-xl border ${
+                    darkMode ? "border-gray-800 bg-gray-900/40" : "border-gray-100 bg-gray-50/60"
+                  } space-y-4`}>
+                    <p className={`text-[10px] font-bold uppercase tracking-widest ${
+                      darkMode ? "text-gray-500" : "text-gray-400"
+                    }`}>Fundraising Details</p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <Field label="Category *" darkMode={darkMode}>
+                        <select name="category" value={formData.category} onChange={handleInput} required className={inputCls(darkMode)}>
+                          <option value="education">Education</option>
+                          <option value="health">Health</option>
+                          <option value="poverty">Poverty Relief</option>
+                          <option value="infrastructure">Infrastructure</option>
+                          <option value="emergency">Emergency Relief</option>
+                          <option value="basic needs">Basic Needs</option>
+                          <option value="empowerment">Empowerment</option>
+                          <option value="food relief">Food Relief</option>
+                          <option value="sports">Sports</option>
+                          <option value="welfare">Welfare</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </Field>
+
+                      {/* Naira-formatted amount */}
+                      <Field label="Target Amount (₦) *" darkMode={darkMode}>
+                        <div className="relative min-w-0">
+                          <span className={`absolute left-3 top-1/2 -translate-y-1/2 font-bold text-sm select-none ${
+                            darkMode ? "text-primary-400" : "text-primary-600"
+                          }`}>₦</span>
+                          <input
+                            type="text"
+                            name="target"
+                            inputMode="numeric"
+                            value={formData.target ? Number(formData.target).toLocaleString("en-NG") : ""}
+                            onChange={handleInput}
+                            required
+                            placeholder="e.g. 500,000"
+                            className={`${inputCls(darkMode)} pl-7`}
+                          />
+                        </div>
+                        {formData.target && Number(formData.target) >= 1000 && (
+                          <p className="text-[10px] text-primary-500 font-semibold mt-1">
+                            Goal: ₦{Number(formData.target).toLocaleString("en-NG")}
+                          </p>
+                        )}
+                      </Field>
+                    </div>
+                  </div>
+
+                  {/* Descriptions */}
+                  <div className="space-y-4">
+                    <Field label="Short Description" darkMode={darkMode}>
+                      <input
+                        type="text"
+                        name="shortDescription"
+                        value={formData.shortDescription}
+                        onChange={handleInput}
+                        placeholder="Brief one-liner shown on campaign cards (optional)"
+                        maxLength={200}
+                        className={inputCls(darkMode)}
+                      />
+                      <p className={`text-[10px] mt-1 ${
+                        darkMode ? "text-gray-600" : "text-gray-400"
+                      }`}>{formData.shortDescription.length}/200 characters</p>
                     </Field>
-                    <Field label="Target Amount (₦) *" darkMode={darkMode}>
-                      <input type="number" name="target" value={formData.target} onChange={handleInput} required min="1" placeholder="0" className={inputCls(darkMode)} />
+
+                    <Field label="Full Description *" darkMode={darkMode}>
+                      <textarea
+                        name="description"
+                        value={formData.description}
+                        onChange={handleInput}
+                        required
+                        rows={5}
+                        placeholder="Describe your campaign in detail — who it helps, how funds will be used, and why it matters..."
+                        className={`${inputCls(darkMode)} resize-y break-words`}
+                        style={{ wordBreak: "break-word", overflowWrap: "break-word" }}
+                      />
+                      <p className={`text-[10px] mt-1 ${
+                        darkMode ? "text-gray-600" : "text-gray-400"
+                      }`}>{formData.description.length}/2000 characters</p>
                     </Field>
                   </div>
 
-                  <Field label="Short Description" darkMode={darkMode}>
-                    <input type="text" name="shortDescription" value={formData.shortDescription} onChange={handleInput} placeholder="Brief summary (optional)" maxLength={200} className={inputCls(darkMode)} />
-                  </Field>
-
-                  <Field label="Full Description *" darkMode={darkMode}>
-                    <textarea name="description" value={formData.description} onChange={handleInput} required rows={4} placeholder="Describe your campaign in detail..." className={`${inputCls(darkMode)} resize-none`} />
-                  </Field>
-
+                  {/* Location + Beneficiaries */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Field label="Location" darkMode={darkMode}>
-                      <input type="text" name="location" value={formData.location} onChange={handleInput} placeholder="e.g., Ibadan, Oyo State" className={inputCls(darkMode)} />
+                      <input
+                        type="text"
+                        name="location"
+                        value={formData.location}
+                        onChange={handleInput}
+                        placeholder="e.g., Ibadan, Oyo State"
+                        className={inputCls(darkMode)}
+                      />
                     </Field>
                     <Field label="Beneficiaries Target" darkMode={darkMode}>
-                      <input type="number" name="beneficiariesTarget" value={formData.beneficiariesTarget} onChange={handleInput} placeholder="Number of beneficiaries" className={inputCls(darkMode)} />
+                      <input
+                        type="number"
+                        name="beneficiariesTarget"
+                        value={formData.beneficiariesTarget}
+                        onChange={handleInput}
+                        placeholder="Number of beneficiaries"
+                        min="1"
+                        className={inputCls(darkMode)}
+                      />
                     </Field>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field label="Start Date" darkMode={darkMode}>
-                      <input type="date" name="startDate" value={formData.startDate} onChange={handleInput} className={inputCls(darkMode)} />
-                    </Field>
-                    <Field label="End Date" darkMode={darkMode}>
-                      <input type="date" name="endDate" value={formData.endDate} onChange={handleInput} className={inputCls(darkMode)} />
-                    </Field>
+                  {/* Dates */}
+                  <div className={`p-4 rounded-xl border ${
+                    darkMode ? "border-gray-800 bg-gray-900/40" : "border-gray-100 bg-gray-50/60"
+                  } space-y-4`}>
+                    <p className={`text-[10px] font-bold uppercase tracking-widest ${
+                      darkMode ? "text-gray-500" : "text-gray-400"
+                    }`}>Campaign Duration</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <Field label="Start Date" darkMode={darkMode}>
+                        <input
+                          type="date"
+                          name="startDate"
+                          value={formData.startDate}
+                          onChange={handleInput}
+                          className={`${inputCls(darkMode)} cursor-pointer ${
+                            darkMode ? "[color-scheme:dark]" : "[color-scheme:light]"
+                          }`}
+                        />
+                      </Field>
+                      <Field label="End Date" darkMode={darkMode}>
+                        <input
+                          type="date"
+                          name="endDate"
+                          value={formData.endDate}
+                          min={formData.startDate || undefined}
+                          onChange={handleInput}
+                          className={`${inputCls(darkMode)} cursor-pointer ${
+                            darkMode ? "[color-scheme:dark]" : "[color-scheme:light]"
+                          }`}
+                        />
+                      </Field>
+                    </div>
                   </div>
 
                   {/* Images */}
                   <Field label="Campaign Images (Max 3)" darkMode={darkMode}>
-                    <div className="flex flex-wrap gap-3 mt-1">
-                      <label className={`w-20 h-20 rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all ${darkMode ? "border-gray-700 hover:border-primary-500/60" : "border-gray-200 hover:border-primary-400"}`}>
-                        <Upload size={18} className="text-primary-500 mb-1" />
-                        <span className={`text-[10px] ${darkMode ? "text-gray-500" : "text-gray-400"}`}>Upload</span>
+                    <div className="flex flex-wrap gap-3 mt-2">
+                      <label className={`w-20 h-20 rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all ${
+                        darkMode
+                          ? "border-gray-700 hover:border-primary-500/60 hover:bg-primary-500/5"
+                          : "border-gray-200 hover:border-primary-400 hover:bg-primary-50"
+                      }`}>
+                        <Upload size={16} className="text-primary-500 mb-1" />
+                        <span className={`text-[10px] font-semibold ${
+                          darkMode ? "text-gray-500" : "text-gray-400"
+                        }`}>Upload</span>
                         <input type="file" multiple accept="image/*" onChange={handleImageChange} className="hidden" />
                       </label>
                       {imagePreviews.map((src, idx) => (
-                        <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden group">
+                        <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden group shadow-sm">
                           <img src={src} alt="" className="w-full h-full object-cover" />
                           <button
                             type="button"
@@ -690,17 +837,19 @@ const Campaigns = () => {
                               setImageFiles((p) => p.filter((_, i) => i !== idx));
                               setImagePreviews((p) => p.filter((_, i) => i !== idx));
                             }}
-                            className="absolute inset-0 bg-red-600/75 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                            className="absolute inset-0 bg-red-600/80 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                           >
                             <Trash2 size={16} />
                           </button>
                         </div>
                       ))}
                       {modalMode === "edit" && imagePreviews.length === 0 && selectedCampaign?.images?.map((img, idx) => (
-                        <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden">
-                          <img src={img.url} alt="" className="w-full h-full object-cover opacity-60" />
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-[10px] text-white font-medium">Current</span>
+                        <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border ${
+                          darkMode ? 'border-gray-700' : 'border-gray-200'
+                        }">
+                          <img src={img.url} alt="" className="w-full h-full object-cover opacity-70" />
+                          <div className="absolute inset-0 flex items-end justify-center pb-1">
+                            <span className="text-[9px] text-white font-bold bg-black/50 px-1.5 py-0.5 rounded">Current</span>
                           </div>
                         </div>
                       ))}
@@ -708,44 +857,76 @@ const Campaigns = () => {
                   </Field>
 
                   {/* Flags */}
-                  <div className="flex gap-5">
+                  <div className={`flex gap-6 p-4 rounded-xl border ${
+                    darkMode ? "border-gray-800 bg-gray-900/30" : "border-gray-100 bg-gray-50"
+                  }`}>
                     {[
-                      { name: "featured", label: "Featured" },
-                      { name: "urgent", label: "Urgent" },
-                    ].map(({ name, label }) => (
-                      <label key={name} className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          name={name}
-                          checked={formData[name]}
-                          onChange={handleInput}
-                          className="w-3.5 h-3.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                        />
-                        <span className={`text-sm ${darkMode ? "text-gray-300" : "text-gray-700"}`}>{label}</span>
+                      { name: "featured", label: "Featured", desc: "Shown prominently on homepage" },
+                      { name: "urgent", label: "Urgent", desc: "Marked with urgent badge" },
+                    ].map(({ name, label, desc }) => (
+                      <label key={name} className="flex items-start gap-3 cursor-pointer flex-1">
+                        <div className="relative mt-0.5">
+                          <input
+                            type="checkbox"
+                            name={name}
+                            checked={formData[name]}
+                            onChange={handleInput}
+                            className="sr-only peer"
+                          />
+                          <div className={`w-9 h-5 rounded-full transition-colors peer-checked:bg-primary-500 ${
+                            darkMode ? "bg-gray-700" : "bg-gray-200"
+                          }`} />
+                          <div className="absolute left-0.5 top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-4" />
+                        </div>
+                        <div>
+                          <p className={`text-sm font-semibold ${
+                            darkMode ? "text-gray-200" : "text-gray-800"
+                          }`}>{label}</p>
+                          <p className={`text-[10px] ${
+                            darkMode ? "text-gray-500" : "text-gray-400"
+                          }`}>{desc}</p>
+                        </div>
                       </label>
                     ))}
                   </div>
                 </form>
 
-                {/* Footer */}
-                <div className={`px-6 py-4 border-t flex gap-2 ${darkMode ? "border-gray-800/60" : "border-gray-100"}`}>
+                {/* ── Footer ──────────────────────────────────────────── */}
+                <div className={`px-7 py-4 border-t flex items-center gap-3 ${
+                  darkMode ? "border-gray-800 bg-gray-950/50" : "border-gray-100 bg-gray-50/50"
+                }`}>
                   <button
                     type="button"
                     onClick={closeModal}
                     disabled={submitting}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-all ${darkMode ? "border-gray-700 text-gray-300 hover:bg-gray-800" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
+                    className={`flex-1 py-2.5 rounded-lg text-sm font-semibold border transition-all ${
+                      darkMode
+                        ? "border-gray-700 text-gray-300 hover:bg-gray-800"
+                        : "border-gray-200 text-gray-700 hover:bg-gray-100"
+                    }`}
                   >
                     Cancel
                   </button>
                   <button
-                    type="submit"
+                    type="button"
                     onClick={handleSubmit}
                     disabled={submitting}
-                    className="flex-1 py-2 rounded-lg text-sm font-medium bg-primary-500 hover:bg-primary-600 text-white transition-all shadow-sm disabled:opacity-50 flex items-center justify-center gap-1.5"
+                    className={`flex-[2] py-2.5 rounded-lg text-sm font-semibold text-white transition-all shadow-md flex items-center justify-center gap-2 ${
+                      submitting
+                        ? "bg-primary-400 cursor-wait opacity-80 shadow-none"
+                        : "bg-primary-500 hover:bg-primary-600 active:bg-primary-700 shadow-primary-500/20 cursor-pointer"
+                    }`}
                   >
                     {submitting ? (
-                      <><span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Saving...</>
-                    ) : modalMode === "create" ? "Create Campaign" : "Save Changes"}
+                      <>
+                        <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin shrink-0" />
+                        {modalMode === "create" ? "Creating Campaign..." : "Saving Changes..."}
+                      </>
+                    ) : modalMode === "create" ? (
+                      <><Target size={15} /> Create Campaign</>
+                    ) : (
+                      <><CheckCircle2 size={15} /> Save Changes</>
+                    )}
                   </button>
                 </div>
               </div>

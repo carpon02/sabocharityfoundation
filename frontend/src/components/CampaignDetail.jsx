@@ -370,11 +370,11 @@ const CampaignDetail = () => {
                 )}
               </div>
 
-              <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
+              <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-4 leading-tight break-words" style={{ overflowWrap: "break-word", wordBreak: "break-word" }}>
                 {campaign.title}
               </h1>
 
-              <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
+              <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed break-words" style={{ overflowWrap: "break-word" }}>
                 {campaign.shortDescription || campaign.description?.substring(0, 200)}
               </p>
             </div>

@@ -94,17 +94,22 @@ class DonationRepository extends BaseRepository {
           totalCount: { $sum: 1 },
           completedAmount: {
             $sum: {
-              $cond: [{ $eq: ["$status", "completed"] }, "$amount", 0],
+              $cond: [{ $in: ["$status", ["verified", "approved", "completed"]] }, "$amount", 0],
             },
           },
           completedCount: {
             $sum: {
-              $cond: [{ $eq: ["$status", "completed"] }, 1, 0],
+              $cond: [{ $in: ["$status", ["verified", "approved", "completed"]] }, 1, 0],
             },
           },
           pendingCount: {
             $sum: {
               $cond: [{ $eq: ["$approvalStatus", "pending"] }, 1, 0],
+            },
+          },
+          recurringCount: {
+            $sum: {
+              $cond: [{ $eq: ["$isRecurring", true] }, 1, 0],
             },
           },
         },

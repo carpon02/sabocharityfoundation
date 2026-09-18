@@ -13,7 +13,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   loginUser,
@@ -67,8 +67,14 @@ const Login = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const dispatch = useDispatch();
   const { loading, user, isAuthenticated } = useSelector((s) => s.auth);
+
+  // Where to send the user after successful login
+  const redirectTarget = searchParams.get("redirect")
+    ? decodeURIComponent(searchParams.get("redirect"))
+    : "/user/dashboard";
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -80,11 +86,10 @@ const Login = () => {
       if (!user.isEmailVerified && mode === "register") {
         navigate("/verify", { replace: true });
       } else {
-        const from = location.state?.from?.pathname || "/";
-        navigate(from, { replace: true });
+        navigate(redirectTarget, { replace: true });
       }
     }
-  }, [user, isAuthenticated, navigate, location, mode, dispatch]);
+  }, [user, isAuthenticated, navigate, redirectTarget, mode, dispatch]);
 
   useEffect(() => () => dispatch(clearError()), [dispatch]);
 

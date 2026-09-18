@@ -1,6 +1,6 @@
 // App.jsx
 import React, { useEffect, Suspense, lazy } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useParams } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
 import { restoreSession, clearSession } from "./features/auth/authSlice";
@@ -43,6 +43,12 @@ import { ThemeProvider } from "./context/ThemeContext";
 
 import { HelmetProvider, Helmet } from "react-helmet-async";
 import WhatsAppButton from "./components/WhatsAppButton";
+
+// Redirect legacy /updates/:id links to /blogs/:id
+const UpdatesRedirect = () => {
+  const { id } = useParams();
+  return <Navigate to={`/blogs/${id}`} replace />;
+};
 
 const App = () => {
   const dispatch = useDispatch();
@@ -105,7 +111,8 @@ const App = () => {
                 <Route path="/about" element={<About />} />
                 <Route path="/blogs" element={<Blogs />} />
                 <Route path="/blogs/:id" element={<BlogDetail />} />
-                <Route path="/updates/:id" element={<BlogDetail />} />
+                {/* /updates/:id is a legacy alias — redirect to /blogs/:id */}
+                <Route path="/updates/:id" element={<UpdatesRedirect />} />
                 <Route path="/campaigns" element={<Campaigns />} />
                 <Route path="/campaigns/:id" element={<CampaignDetail />} />
                 <Route path="/contact" element={<Contact />} />
@@ -118,25 +125,23 @@ const App = () => {
                 <Route path="/faq" element={<FAQ />} />
               </Route>
 
-              {/* 📝 Auth Pages WITHOUT Navbar/Footer */}
+              {/* 📝 Auth Pages — no Navbar/Footer */}
               <Route
                 path="/login"
                 element={
-                  user ? <Navigate to="/" replace /> : <Login />
+                  user ? <Navigate to="/user/dashboard" replace /> : <Login />
                 }
               />
 
-              {/* Verification page - accessible if logged in but not verified */}
-              {/* Verification page - accessible via registration redirect or email link */}
+              {/* Email verification — accessible with or without token */}
               <Route path="/verify" element={<Verify />} />
-
-              {/* Verification with token in URL */}
               <Route path="/verify/:token" element={<Verify />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
 
-              {/* 🔒 Protected User Pages WITHOUT Navbar/Footer */}
+              {/* 🔒 Protected User Pages — sidebar layout */}
               <Route element={<ProtectedRoute />}>
                 <Route element={<UserLayout />}>
+                  <Route path="/user" element={<Navigate to="/user/dashboard" replace />} />
                   <Route path="/user/dashboard" element={<Dashboard />} />
                   <Route path="/user/events" element={<Events />} />
                   <Route path="/user/events/:id" element={<EventDetails />} />

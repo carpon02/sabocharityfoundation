@@ -297,6 +297,7 @@ export const getMyDonations = asyncHandler(async (req, res, next) => {
       totalCount: stats.totalCount || 0,
       completedCount: stats.completedCount || 0,
       pendingCount: stats.pendingCount || 0,
+      recurring: stats.recurringCount || 0,
     },
     pagination: {
       page,
@@ -342,10 +343,12 @@ export const getAllDonations = asyncHandler(async (req, res, next) => {
   return ApiResponse.success(res, "Donations retrieved successfully", {
     donations,
     stats: {
-      totalAmount: stats.totalAmount || 0,
+      totalAmount: stats.completedAmount || 0,
+      grossAmount: stats.totalAmount || 0,
       totalCount: stats.totalCount || 0,
       completedCount: stats.completedCount || 0,
       pendingCount: stats.pendingCount || 0,
+      recurring: stats.recurringCount || 0,
     },
     pagination: {
       page,

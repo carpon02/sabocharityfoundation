@@ -336,8 +336,10 @@ const separateCampaignsHelper = (state, userId) => {
     const creatorIdStr = creatorId?.toString();
 
     if (creatorIdStr === userIdStr) {
+      // Owner sees ALL their own campaigns (any status)
       myCampaignsList.push(c);
-    } else {
+    } else if (c.status === "active" && c.approved === true) {
+      // Others only see active + approved campaigns
       otherCampaignsList.push(c);
     }
   });
@@ -428,13 +430,14 @@ const userCampaignsSlice = createSlice({
         state.loading = false;
         const { campaign } = action.payload;
 
-        // Add to allCampaigns
+        // Add to allCampaigns so owner can see it in their own list
         state.allCampaigns.unshift(campaign);
 
-        // Add to myCampaigns
+        // Add to myCampaigns — owner always sees their own campaigns
         state.myCampaigns.unshift(campaign);
 
-        // Campaign added to state
+        // Do NOT add to otherCampaigns — it's pending approval
+        // and must not appear in the public listing for other users
       })
       .addCase(createUserCampaign.rejected, handleRejected)
 

@@ -1,32 +1,26 @@
-// pages/MyDonations.jsx - Foundation Giving History
-import React, { useEffect, useMemo } from "react";
+// pages/user/MyDonation.jsx — Clerk-style redesign
+import React, { useEffect, useMemo, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-hot-toast";
 import { formatCurrency } from "../../utils/formatCurrency";
 import { formatDate } from "../../utils/formatDate";
 import { useTheme } from "../../context/ThemeContext";
 import {
-  Calendar,
-  RefreshCcw,
-  Target,
+  Heart,
   Wallet,
   Download,
   Share2,
-  TrendingUp,
-  BarChart3,
-  Heart,
-  Users,
-  Zap,
-  ArrowRight,
   Search,
-  Filter,
-  CheckCircle,
+  RefreshCw,
+  CheckCircle2,
   Clock,
   XCircle,
   ShieldCheck,
-  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  BarChart3,
+  Target,
 } from "lucide-react";
 import {
   fetchMyDonations,
@@ -35,252 +29,142 @@ import {
   setCurrentPage,
 } from "../../features/donation/donationSlice";
 
-// Status Configuration for Premium Look
-const getStatusConfig = (status) => {
-  const configs = {
-    completed: {
-      icon: CheckCircle,
-      color: "text-emerald-500",
-      bg: "bg-emerald-500/10",
-      label: "Success",
-      border: "border-emerald-500/20",
-    },
-    approved: {
-      icon: CheckCircle,
-      color: "text-emerald-500",
-      bg: "bg-emerald-500/10",
-      label: "Approved",
-      border: "border-emerald-500/20",
-    },
-    verified: {
-      icon: ShieldCheck,
-      color: "text-emerald-400",
-      bg: "bg-emerald-400/10",
-      label: "Awaiting Approval",
-      border: "border-emerald-400/20",
-    },
-    processing: {
-      icon: RefreshCcw,
-      color: "text-amber-500",
-      bg: "bg-amber-500/10",
-      label: "Processing",
-      border: "border-amber-500/20",
-      animate: "animate-spin",
-    },
-    pending: {
-      icon: Clock,
-      label: "Pending",
-      border: "border-emerald-500/20",
-    },
-    failed: {
-      icon: XCircle,
-      color: "text-rose-500",
-      bg: "bg-rose-500/10",
-      label: "Failed",
-      border: "border-rose-500/20",
-    },
-  };
-  return configs[status] || configs.pending;
+// ── Status config ─────────────────────────────────────────────────────────────
+const STATUS = {
+  completed:  { label: "Completed",  dot: "bg-emerald-500", text: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-900/20" },
+  approved:   { label: "Approved",   dot: "bg-emerald-500", text: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-900/20" },
+  verified:   { label: "Verified",   dot: "bg-blue-500",    text: "text-blue-600",    bg: "bg-blue-50 dark:bg-blue-900/20" },
+  processing: { label: "Processing", dot: "bg-amber-400",   text: "text-amber-600",   bg: "bg-amber-50 dark:bg-amber-900/20" },
+  pending:    { label: "Pending",    dot: "bg-amber-400",   text: "text-amber-600",   bg: "bg-amber-50 dark:bg-amber-900/20" },
+  failed:     { label: "Failed",     dot: "bg-red-500",     text: "text-red-600",     bg: "bg-red-50 dark:bg-red-900/20" },
+};
+const getStatus = (s) => STATUS[s] || STATUS.pending;
+
+// ── Shared UI ─────────────────────────────────────────────────────────────────
+const Card = ({ children, className = "" }) => {
+  const { darkMode } = useTheme();
+  return (
+    <div className={`rounded-xl border ${darkMode ? "bg-[#111] border-gray-800" : "bg-white border-gray-200 shadow-sm"} ${className}`}>
+      {children}
+    </div>
+  );
 };
 
-// Component: Modern Analytics Card
-const AnalyticsCard = ({
-  title,
-  value,
-  subtitle,
-  icon: Icon,
-  color,
-  darkMode,
-  delay = 0,
-}) => {
-  if (!Icon) return null;
-  const MotionDiv = motion.div;
+const Skeleton = ({ className = "" }) => (
+  <div className={`animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800 ${className}`} />
+);
+
+// ── Stat Mini Card ────────────────────────────────────────────────────────────
+const MiniStat = ({ icon: Icon, label, value, iconBg }) => {
+  const { darkMode } = useTheme();
+  return (
+    <Card className="flex items-center gap-3 p-4">
+      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${iconBg}`}>
+        <Icon size={16} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[11px] text-gray-400 truncate">{label}</p>
+        <p className={`text-base font-bold truncate ${darkMode ? "text-white" : "text-gray-900"}`}>{value}</p>
+      </div>
+    </Card>
+  );
+};
+
+// ── Donation Row ──────────────────────────────────────────────────────────────
+const DonationRow = ({ donation, idx }) => {
+  const { darkMode } = useTheme();
+  const dispatch = useDispatch();
+  const cfg = getStatus(donation.status);
+  const image =
+    donation.campaign?.images?.[0]?.url ||
+    donation.campaign?.images?.[0] ||
+    null;
+
+  const handleShare = () => {
+    const text = `I supported "${donation.campaign?.title || "Sabo Ibadan"}" — join me!`;
+    const url = `${window.location.origin}/campaigns/${donation.campaign?._id || ""}`;
+    if (navigator.share) {
+      navigator.share({ title: "Sabo Ibadan Impact", text, url });
+    } else {
+      navigator.clipboard.writeText(`${text} ${url}`);
+      toast.success("Link copied!");
+    }
+  };
 
   return (
-    <MotionDiv
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay }}
-      className={`relative overflow-hidden rounded-2xl border backdrop-blur-md p-6 flex flex-col justify-between min-h-[140px] transition-all duration-300 ${
+    <div
+      className={`flex items-center gap-4 px-4 py-3.5 border-b last:border-0 transition-colors ${
         darkMode
-          ? "bg-gray-950 border-gray-800 shadow-2xl shadow-emerald-500/5"
-          : "bg-white border-gray-100 shadow-xl shadow-gray-200/20"
+          ? "border-gray-800 hover:bg-gray-800/30"
+          : "border-gray-100 hover:bg-gray-50"
       }`}
     >
-      <div className="flex items-center justify-between relative z-10">
-        <div
-          className={`p-3 rounded-xl ${
-            darkMode
-              ? "bg-gray-900 border-gray-800"
-              : "bg-emerald-50 border-emerald-100/50"
-          } border`}
-        >
-          <Icon className={`w-5 h-5 ${color}`} />
-        </div>
-        <div
-          className={`w-2 h-2 rounded-full ${color.replace(
-            "text-",
-            "bg-",
-          )} animate-pulse`}
-        />
+      {/* Campaign thumb */}
+      <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0 bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+        {image ? (
+          <img src={image} alt="" className="w-full h-full object-cover" />
+        ) : (
+          <Heart size={14} className="text-emerald-500" />
+        )}
       </div>
-      <div className="mt-4 relative z-10">
-        <h3
-          className={`text-[10px] font-bold uppercase tracking-widest ${
-            darkMode ? "text-gray-500" : "text-gray-400"
-          }`}
-        >
-          {title}
-        </h3>
-        <div
-          className={`text-xl font-bold mt-1 tracking-tight ${
-            darkMode ? "text-white" : "text-gray-950"
-          }`}
-        >
-          {value}
-        </div>
-        <p
-          className={`text-[9px] mt-1 font-semibold ${
-            darkMode ? "text-gray-600" : "text-gray-400"
-          }`}
-        >
-          {subtitle}
+
+      {/* Campaign name + ID */}
+      <div className="flex-1 min-w-0">
+        <p className={`text-sm font-medium truncate ${darkMode ? "text-white" : "text-gray-900"}`}>
+          {donation.campaign?.title || "General Donation"}
+        </p>
+        <p className="text-[11px] text-gray-400 mt-0.5 font-mono">
+          #{(donation.donationId || donation._id).substring(0, 10).toUpperCase()}
         </p>
       </div>
-    </MotionDiv>
-  );
-};
 
-// Component: Donation Record (Simplified Card)
-const DonationRecord = ({ donation, dispatch, darkMode, idx = 0 }) => {
-  const statusConfig = getStatusConfig(donation.status);
-  const MotionDiv = motion.div;
-
-  return (
-    <MotionDiv
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: idx * 0.05 }}
-      className={`group relative p-5 rounded-2xl border transition-all duration-300 ${
-        darkMode
-          ? "bg-gray-950 hover:bg-gray-900 border-gray-800"
-          : "bg-white hover:bg-gray-50 border-gray-100 shadow-xl shadow-gray-200/20"
-      }`}
-    >
-      <div className="flex flex-col lg:flex-row gap-6 items-center">
-        {/* Campaign Info */}
-        <div className="flex items-center gap-5 flex-1 w-full">
-          <div className="relative w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-gray-800/10">
-            <img
-              src={
-                donation.campaign?.images?.[0]?.url ||
-                donation.campaign?.images?.[0] ||
-                "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=100&h=100&fit=crop"
-              }
-              alt=""
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-            />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h4
-              className={`text-sm font-bold tracking-tight truncate ${
-                darkMode ? "text-white" : "text-gray-950"
-              }`}
-            >
-              {donation.campaign?.title || "Deleted Project"}
-            </h4>
-            <div className="flex items-center gap-3 mt-1.5">
-              <span
-                className={`${statusConfig.bg} ${statusConfig.color} px-3 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-widest border border-current/10`}
-              >
-                {statusConfig.label}
-              </span>
-              <span
-                className={`text-[10px] font-medium ${darkMode ? "text-gray-600" : "text-gray-400"}`}
-              >
-                ID: #
-                {donation.donationId ||
-                  donation._id.substring(0, 8).toUpperCase()}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Transaction Pulse */}
-        <div className="flex items-center justify-between w-full lg:w-auto lg:gap-12 lg:border-l lg:pl-12 border-gray-800/10">
-          <div className="flex flex-col">
-            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-              Amount
-            </span>
-            <span
-              className={`text-lg font-bold ${darkMode ? "text-white" : "text-emerald-600"}`}
-            >
-              {formatCurrency(donation.amount)}
-            </span>
-          </div>
-
-          <div className="flex flex-col items-center">
-            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-              Timeline
-            </span>
-            <span
-              className={`text-[11px] font-semibold ${darkMode ? "text-gray-500" : "text-gray-600"}`}
-            >
-              {formatDate(donation.createdAt)}
-            </span>
-          </div>
-
-          <div className="flex gap-2">
-            <button
-              onClick={() => dispatch(downloadReceipt(donation._id))}
-              className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
-                darkMode
-                  ? "bg-gray-900 text-gray-500 hover:text-white"
-                  : "bg-gray-50 text-gray-400 hover:text-gray-600 hover:bg-white border border-gray-100"
-              }`}
-              title="Download Receipt"
-            >
-              <Download size={16} />
-            </button>
-            <button
-              onClick={() => {
-                const shareText = `I just supported the project "${donation.campaign?.title || "Sabo Ibadan"}" on Sabo Ibadan Youth Charity Foundation! Support the cause.`;
-                const shareUrl = `${window.location.origin}/campaigns/${donation.campaign?._id || ""}`;
-
-                if (navigator.share) {
-                  navigator.share({
-                    title: "Sabo Ibadan Impact",
-                    text: shareText,
-                    url: shareUrl,
-                  });
-                } else {
-                  navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
-                  toast.success("Link Copied to Clipboard");
-                }
-              }}
-              className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
-                darkMode
-                  ? "bg-gray-900 text-gray-500 hover:text-white"
-                  : "bg-gray-50 text-gray-400 hover:text-gray-600 hover:bg-white border border-gray-100"
-              }`}
-              title="Share Contribution"
-            >
-              <Share2 size={16} />
-            </button>
-          </div>
-        </div>
+      {/* Status */}
+      <div className="hidden sm:flex items-center gap-1.5 shrink-0">
+        <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+        <span className={`text-[11px] font-medium ${cfg.text}`}>{cfg.label}</span>
       </div>
-    </MotionDiv>
+
+      {/* Date */}
+      <p className="hidden md:block text-[12px] text-gray-400 shrink-0 w-24 text-right">
+        {formatDate(donation.createdAt)}
+      </p>
+
+      {/* Amount */}
+      <p className={`text-sm font-semibold shrink-0 w-28 text-right ${darkMode ? "text-white" : "text-gray-900"}`}>
+        {formatCurrency(donation.amount)}
+      </p>
+
+      {/* Actions */}
+      <div className="flex items-center gap-1 shrink-0">
+        <button
+          onClick={() => dispatch(downloadReceipt(donation._id))}
+          title="Download receipt"
+          className={`w-7 h-7 rounded-md flex items-center justify-center transition-colors ${
+            darkMode ? "hover:bg-gray-700 text-gray-500 hover:text-gray-200" : "hover:bg-gray-100 text-gray-400 hover:text-gray-700"
+          }`}
+        >
+          <Download size={13} />
+        </button>
+        <button
+          onClick={handleShare}
+          title="Share"
+          className={`w-7 h-7 rounded-md flex items-center justify-center transition-colors ${
+            darkMode ? "hover:bg-gray-700 text-gray-500 hover:text-gray-200" : "hover:bg-gray-100 text-gray-400 hover:text-gray-700"
+          }`}
+        >
+          <Share2 size={13} />
+        </button>
+      </div>
+    </div>
   );
 };
 
-// Main Component
+// ── Main ──────────────────────────────────────────────────────────────────────
 const MyDonations = () => {
   const dispatch = useDispatch();
   const { darkMode } = useTheme();
   const { donations, stats, loading, filters, pagination, currentPage } =
-    useSelector((state) => state.donations);
-
+    useSelector((s) => s.donations);
   const { status: filterStatus, search: searchQuery, sortBy } = filters;
   const { pages: totalPages } = pagination;
 
@@ -288,225 +172,183 @@ const MyDonations = () => {
     dispatch(fetchMyDonations({ page: currentPage }));
   }, [dispatch, currentPage, filterStatus, sortBy]);
 
-  const internalStats = useMemo(
-    () => [
-      {
-        title: "Contribution Total",
-        value: formatCurrency(stats?.totalDonated || 0),
-        subtitle: "Verified Community Impact",
-        icon: Wallet,
-        color: "text-emerald-500",
-      },
-      {
-        title: "Donation Events",
-        value: (stats?.totalCount || 0).toLocaleString(),
-        subtitle: "Acts of Support",
-        icon: Target,
-        color: "text-emerald-600",
-      },
-      {
-        title: "Monthly Support",
-        value: (stats?.recurring || 0).toLocaleString(),
-        subtitle: "Continuous Commitments",
-        icon: RefreshCcw,
-        color: "text-emerald-500",
-      },
-      {
-        title: "Trust Verification",
-        value: "Authentic",
-        subtitle: "System Verified",
-        icon: BarChart3,
-        color: "text-blue-500",
-      },
-    ],
-    [stats],
-  );
+  const miniStats = [
+    { icon: Wallet,   label: "Total donated",  value: formatCurrency(stats?.totalDonated || 0),            iconBg: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" },
+    { icon: Target,   label: "Donations made",  value: (stats?.totalCount || 0).toLocaleString(),           iconBg: "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400" },
+    { icon: RefreshCw,label: "Recurring",       value: (stats?.recurring || 0).toLocaleString(),            iconBg: "bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400" },
+    { icon: BarChart3, label: "Verification",   value: "Authentic",                                          iconBg: "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400" },
+  ];
+
+  // Filtered donations for search
+  const displayed = useMemo(() => {
+    if (!searchQuery) return donations;
+    return donations.filter((d) =>
+      (d.campaign?.title || "").toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [donations, searchQuery]);
 
   return (
-    <div className="space-y-12 sm:space-y-12 pb-12 max-w-[1600px] mx-auto">
-      {/* Dynamic Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+    <div className="max-w-5xl mx-auto space-y-6 pb-12">
+      {/* ── Header ────────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1
-            className={`text-3xl lg:text-4xl font-bold tracking-tight ${
-              darkMode ? "text-white" : "text-gray-950"
-            }`}
-          >
-            Contribution History
+          <h1 className={`text-2xl font-bold ${darkMode ? "text-white" : "text-gray-900"}`}>
+            Donations
           </h1>
-          <div className="flex items-center gap-3 mt-3">
-            <div className="w-10 h-1 bg-emerald-500 rounded-full" />
-            <span
-              className={`text-[11px] font-bold uppercase tracking-widest ${
-                darkMode ? "text-gray-500" : "text-gray-400"
-              }`}
-            >
-              Donor Intelligence • Impact Tracking
-            </span>
-          </div>
+          <p className="text-sm text-gray-400 mt-0.5">Your complete giving history</p>
         </div>
-
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => dispatch(fetchMyDonations({ page: 1 }))}
-            className={`px-6 py-3 rounded-xl flex items-center gap-3 font-bold uppercase tracking-widest text-[10px] transition-all border ${
-              darkMode
-                ? "bg-gray-950 border-gray-800 text-gray-500 hover:text-white"
-                : "bg-white border-gray-100 text-gray-500 hover:text-gray-950 shadow-lg shadow-gray-200/20"
-            }`}
-          >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />{" "}
-            Update Records
-          </button>
-        </div>
+        <button
+          onClick={() => dispatch(fetchMyDonations({ page: 1 }))}
+          disabled={loading}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-all ${
+            darkMode
+              ? "border-gray-700 text-gray-400 hover:text-white"
+              : "border-gray-200 text-gray-600 hover:text-gray-900"
+          } disabled:opacity-50`}
+        >
+          <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
+          Refresh
+        </button>
       </div>
 
-      {/* Foundation Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
-        {internalStats.map((stat, i) => (
-          <AnalyticsCard
-            key={i}
-            {...stat}
-            darkMode={darkMode}
-            delay={i * 0.1}
-          />
-        ))}
+      {/* ── Mini Stats ────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {loading
+          ? [1,2,3,4].map((i) => <Skeleton key={i} className="h-16" />)
+          : miniStats.map((s) => <MiniStat key={s.label} {...s} />)
+        }
       </div>
 
-      <div
-        className={`p-2 rounded-2xl border backdrop-blur-md flex flex-col md:flex-row items-center gap-4 transition-all duration-700 ${
-          darkMode
-            ? "bg-gray-950 border-gray-800 shadow-2xl"
-            : "bg-white border-gray-100 shadow-xl shadow-gray-200/10"
-        }`}
-      >
-        <div className="relative flex-1 w-full flex items-center">
-          <Search className="absolute left-6 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search donations by campaign name..."
-            value={searchQuery}
-            onChange={(e) =>
-              dispatch(updateFilters({ search: e.target.value }))
-            }
-            className={`w-full pl-14 pr-6 py-4 rounded-xl border font-bold text-sm transition-all outline-none ${
-              darkMode
-                ? "bg-gray-900 border-gray-800 text-white focus:border-emerald-500/50"
-                : "bg-gray-50 border-gray-100 text-gray-950 focus:border-emerald-500/50"
-            }`}
-          />
-        </div>
-        <div className="flex gap-4 w-full md:w-auto px-2 pb-2 md:pb-0">
-          <div className="relative flex-1 sm:flex-initial">
-            <select
-              value={sortBy}
-              onChange={(e) =>
-                dispatch(updateFilters({ sortBy: e.target.value }))
-              }
-              className={`w-full px-8 py-4 rounded-xl border font-bold uppercase tracking-widest text-[10px] outline-none appearance-none cursor-pointer pr-12 min-w-[160px] ${
+      {/* ── Table Card ────────────────────────────────────────────────── */}
+      <Card>
+        {/* Toolbar */}
+        <div className={`flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-3 border-b ${darkMode ? "border-gray-800" : "border-gray-100"}`}>
+          {/* Search */}
+          <div className="relative flex-1">
+            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by campaign name…"
+              value={searchQuery}
+              onChange={(e) => dispatch(updateFilters({ search: e.target.value }))}
+              className={`w-full pl-8 pr-3 py-2 text-sm rounded-lg border outline-none transition-colors ${
                 darkMode
-                  ? "bg-gray-900 border-gray-800 text-gray-400"
-                  : "bg-gray-50 border-gray-100 text-gray-500"
+                  ? "bg-gray-900 border-gray-700 text-white placeholder:text-gray-500 focus:border-gray-600"
+                  : "bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:bg-white"
               }`}
-            >
-              <option value="createdAt">Sort by Date</option>
-              <option value="amount">Highest Amount</option>
-            </select>
-            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+            />
           </div>
-
-          <button
-            className={`px-8 py-4 rounded-xl border font-bold uppercase tracking-widest text-[10px] transition-all flex items-center gap-2 ${
+          {/* Sort */}
+          <select
+            value={sortBy}
+            onChange={(e) => dispatch(updateFilters({ sortBy: e.target.value }))}
+            className={`px-3 py-2 text-sm rounded-lg border outline-none cursor-pointer ${
               darkMode
-                ? "bg-gray-900 border-gray-800 text-gray-500 hover:text-white"
-                : "bg-gray-100 border-gray-100 text-gray-400 hover:text-gray-950"
+                ? "bg-gray-900 border-gray-700 text-gray-300"
+                : "bg-white border-gray-200 text-gray-700"
             }`}
           >
-            <Filter size={14} /> Refine
-          </button>
+            <option value="createdAt">Newest first</option>
+            <option value="amount">Highest amount</option>
+          </select>
+          {/* Status filter */}
+          <select
+            value={filterStatus || "all"}
+            onChange={(e) => dispatch(updateFilters({ status: e.target.value === "all" ? "" : e.target.value }))}
+            className={`px-3 py-2 text-sm rounded-lg border outline-none cursor-pointer ${
+              darkMode
+                ? "bg-gray-900 border-gray-700 text-gray-300"
+                : "bg-white border-gray-200 text-gray-700"
+            }`}
+          >
+            <option value="all">All statuses</option>
+            <option value="completed">Completed</option>
+            <option value="approved">Approved</option>
+            <option value="pending">Pending</option>
+            <option value="failed">Failed</option>
+          </select>
         </div>
-      </div>
 
-      {/* Audit List */}
-      <div className="space-y-4">
-        <AnimatePresence mode="popLayout">
+        {/* Table header */}
+        <div className={`hidden md:grid grid-cols-[40px_1fr_120px_100px_110px_64px] items-center gap-4 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-widest ${darkMode ? "text-gray-600 border-b border-gray-800" : "text-gray-400 border-b border-gray-100"}`}>
+          <span />
+          <span>Campaign</span>
+          <span>Status</span>
+          <span className="text-right">Date</span>
+          <span className="text-right">Amount</span>
+          <span />
+        </div>
+
+        {/* Rows */}
+        <div>
           {loading && !donations.length ? (
-            [1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className={`h-24 w-full rounded-2xl animate-pulse ${
-                  darkMode ? "bg-gray-900" : "bg-gray-100/50"
-                }`}
-              />
-            ))
-          ) : donations.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="py-20 text-center"
-            >
-              <div
-                className={`w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 ${
-                  darkMode ? "bg-gray-900" : "bg-emerald-50"
-                }`}
-              >
-                <Heart size={32} className="text-emerald-500" />
-              </div>
-              <h3
-                className={`text-lg font-bold ${
-                  darkMode ? "text-white" : "text-gray-950"
-                }`}
-              >
-                No Contributions Found
-              </h3>
-              <p
-                className={`mt-4 text-[10px] font-bold uppercase tracking-widest text-gray-500`}
-              >
-                Your legacy begins with the first step of support.
+            [1,2,3,4,5].map((i) => <Skeleton key={i} className="h-14 mx-3 mb-2" />)
+          ) : displayed.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <Heart size={32} className="text-gray-300 mb-3" />
+              <p className={`font-medium text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                {searchQuery ? "No donations match your search" : "No donations yet"}
               </p>
-              <Link
-                to="/campaigns"
-                className="mt-10 inline-block px-10 py-4 bg-emerald-600 text-white rounded-xl font-bold uppercase tracking-widest text-[10px] shadow-lg shadow-emerald-600/20 active:scale-95 transition-all"
-              >
-                Support a Project
-              </Link>
-            </motion.div>
+              {!searchQuery && (
+                <Link
+                  to="/campaigns"
+                  className="mt-3 text-sm text-emerald-600 font-medium hover:underline"
+                >
+                  Browse campaigns →
+                </Link>
+              )}
+            </div>
           ) : (
-            donations.map((donation, idx) => (
-              <DonationRecord
-                key={donation._id}
-                donation={donation}
-                dispatch={dispatch}
-                darkMode={darkMode}
-                idx={idx}
-              />
+            displayed.map((d, idx) => (
+              <DonationRow key={d._id} donation={d} idx={idx} />
             ))
           )}
-        </AnimatePresence>
-      </div>
-
-      {/* Pagination Protocol */}
-      {totalPages > 1 && (
-        <div className="flex justify-center gap-3 pt-10">
-          {Array.from({ length: totalPages }).map((_, i) => (
-            <button
-              key={i}
-              onClick={() => dispatch(setCurrentPage(i + 1))}
-              aria-label={`Page ${i + 1}`}
-              aria-current={currentPage === i + 1 ? "page" : undefined}
-              className={`w-11 h-11 rounded-lg font-bold transition-all ${
-                currentPage === i + 1
-                  ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20"
-                  : darkMode
-                    ? "bg-gray-900 text-gray-500 hover:bg-gray-800"
-                    : "bg-white text-gray-400 hover:bg-gray-50 border border-gray-100"
-              }`}
-            >
-              {i + 1}
-            </button>
-          ))}
         </div>
-      )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className={`flex items-center justify-between px-4 py-3 border-t ${darkMode ? "border-gray-800" : "border-gray-100"}`}>
+            <p className="text-[12px] text-gray-400">
+              Page {currentPage} of {totalPages}
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                disabled={currentPage <= 1}
+                onClick={() => dispatch(setCurrentPage(currentPage - 1))}
+                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors disabled:opacity-40 ${
+                  darkMode ? "hover:bg-gray-800 text-gray-400" : "hover:bg-gray-100 text-gray-600"
+                }`}
+              >
+                <ChevronLeft size={14} />
+              </button>
+              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => i + 1).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => dispatch(setCurrentPage(p))}
+                  className={`w-8 h-8 rounded-lg text-[12px] font-medium transition-colors ${
+                    currentPage === p
+                      ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900"
+                      : darkMode
+                        ? "hover:bg-gray-800 text-gray-400"
+                        : "hover:bg-gray-100 text-gray-600"
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+              <button
+                disabled={currentPage >= totalPages}
+                onClick={() => dispatch(setCurrentPage(currentPage + 1))}
+                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors disabled:opacity-40 ${
+                  darkMode ? "hover:bg-gray-800 text-gray-400" : "hover:bg-gray-100 text-gray-600"
+                }`}
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        )}
+      </Card>
     </div>
   );
 };
