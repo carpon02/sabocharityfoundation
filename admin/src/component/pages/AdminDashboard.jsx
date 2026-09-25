@@ -138,6 +138,48 @@ const MetricCard = ({ label, value, subtitle, icon: Icon, change, index }) => {
   );
 };
 
+// Shimmer skeleton placeholder
+const ShimmerD = ({ darkMode, className = "" }) => (
+  <div
+    className={`animate-pulse rounded ${
+      darkMode ? "bg-gray-700/50" : "bg-gray-200"
+    } ${className}`}
+  />
+);
+
+// Metric card skeleton for loading state
+const MetricCardSkeleton = ({ darkMode, delay = 0 }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 16 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay, duration: 0.3 }}
+    className={`p-5 rounded-xl border ${
+      darkMode
+        ? "bg-dark-lighter border-gray-800/70"
+        : "bg-white border-gray-200/80 shadow-sm"
+    }`}
+  >
+    <div className="flex items-start justify-between mb-4">
+      <ShimmerD darkMode={darkMode} className="w-9 h-9 rounded-lg" />
+      <ShimmerD darkMode={darkMode} className="h-5 w-14 rounded-full" />
+    </div>
+    <ShimmerD darkMode={darkMode} className="h-7 w-24 mb-2" />
+    <ShimmerD darkMode={darkMode} className="h-4 w-20 mb-1" />
+    <ShimmerD darkMode={darkMode} className="h-3 w-16" />
+  </motion.div>
+);
+
+// Table row skeleton for loading state
+const TableRowSkeleton = ({ darkMode }) => (
+  <tr className={`border-b ${darkMode ? "border-gray-800" : "border-gray-100"}`}>
+    <td className="px-5 py-3"><ShimmerD darkMode={darkMode} className="h-3.5 w-24" /></td>
+    <td className="px-5 py-3"><ShimmerD darkMode={darkMode} className="h-3.5 w-32" /></td>
+    <td className="px-5 py-3"><ShimmerD darkMode={darkMode} className="h-3.5 w-20" /></td>
+    <td className="px-5 py-3"><ShimmerD darkMode={darkMode} className="h-5 w-16 rounded-full" /></td>
+    <td className="px-5 py-3"><ShimmerD darkMode={darkMode} className="h-3.5 w-24" /></td>
+  </tr>
+);
+
 const AdminDashboard = () => {
   const { darkMode } = useTheme();
   const dispatch = useDispatch();
